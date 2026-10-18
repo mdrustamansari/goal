@@ -28,7 +28,7 @@
         introOn: true, greetOn: true, lineOn: true, smartOn: true, animOn: true, lossOn: true, gainOn: true,
         remindOn: true, remindHour: 21, remindSnooze: null, lastBackup: null,
         lite: false, privacy: false, ageOn: false, autoLock: true, rememberPass: false, pass: '',
-        look: 'flagship', accent: 'sapphire', glow: false, flFont: 'system', follow: false, lastLight: null, lastDark: null, p: {}, acc: [], defDays: {}, open: [], orbMode: 'header', learnOn: true
+        look: 'flagship', accent: 'sapphire', glow: false, flFont: 'system', follow: true, lastLight: null, lastDark: null, p: {}, acc: [], defDays: {}, open: [], orbMode: 'header', learnOn: true
     });
     let events = [], prefs = PREF_DEFAULT(), nextId = 1, D = null, screen = 'today', storageOK = true;
 
@@ -148,6 +148,7 @@
     const ICO = { edit: '<path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>', del: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/>' };
     const icoBtn = (kind, attrs, what) => `<button type="button" class="ico-btn ico-${kind}" ${attrs} title="${kind === 'edit' ? 'Edit' : 'Delete'}" aria-label="${kind === 'edit' ? 'Edit' : 'Delete'} ${what}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICO[kind]}</svg></button>`;
     function confirmSheet(o) {
+        if (o.danger && window.GFeel) GFeel.buzz('stop');
         return new Promise(res => {
             sheet(`<h2>${esc(o.title)}</h2><p>${esc(o.sub || '')}</p><div class="modal-actions"><button class="btn-secondary" data-r="0">${esc(o.cancel || 'Cancel')}</button><button class="${o.danger ? 'btn-danger' : 'btn-primary'}" data-r="1">${esc(o.ok || 'OK')}</button></div>`, box => {
                 box.querySelectorAll('[data-r]').forEach(b => b.onclick = () => { sheetCloser = null; closeSheet(); res(b.dataset.r === '1'); });
@@ -199,7 +200,7 @@
         const pool = LINES[lineContext()];
         return pool[((n % pool.length) + pool.length) % pool.length];
     }
-    const greeting = () => { const h = new Date().getHours(); return (h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening') + ', Rustam'; };
+    const greeting = () => { const h = new Date().getHours(); return (h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening') + ', ' + (prefs.name || 'Rustam'); };
     /* ---------- Security: PIN and encrypted backups (WebCrypto) ---------- */
     const enc = new TextEncoder(), dec = new TextDecoder();
     const b64 = buf => { let s = ''; const u = new Uint8Array(buf); for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
@@ -957,6 +958,7 @@
                 h += tornStrip() + todayPanel(PP, T, J);
             }
         }
+        if (window.GWizard) h += GWizard.laterHTML();
         h += histCard();
         h += chainCard();
         if (PP.onTimeRun >= 3) h += `<div class="streak" data-sec="today:streak" style="margin:0 0 10px 4px">🔥 ${plural(PP.onTimeRun, 'piece')} in a row finished on time</div>`;
@@ -1074,12 +1076,14 @@
         let h = `<div class="card"><h3>Timeline</h3>${D.cfg ? `<div class="row"><span class="muted">JRF began</span><b class="num">${fmtK(D.cfg.start)}</b></div><div class="row"><span class="muted">Main work due</span><b class="num">${fmtDNum(D.jrf.targetN)}</b></div>` : ''}<button class="btn-line btn-accent" data-act="cfg">${D.cfg ? 'Edit timeline' : 'Set up timeline'}</button><button class="btn-line" data-act="leave">Declare leave days</button>
             <div class="sw-row"><div><div>Work order</div><div class="set-meta">Chapter by chapter (reading and drafting), or all reading then all drafting. All editing and proofreading always comes last.</div></div><select class="set-select" data-cfgorder>${[['chapter', 'Chapter by chapter'], ['phase', 'Phase by phase'], ['custom', 'Custom: I choose the next piece']].map(([v, l]) => `<option value="${v}" ${((D.cfg && D.cfg.order) || 'chapter') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div></div>`;
         h += lookCard();
-        h += foldCard(`<div class="card"><h3>Experience</h3>${sw('introOn', 'Opening screen')}${sw('greetOn', 'Greeting by name')}${sw('lineOn', 'Tips in the top banner', 'Proverbs and tips slide in now and then.')}${sw('smartOn', 'Smart sections', 'Sections you rarely open fold under More. The app learns for two weeks first.')}${sw('animOn', 'Slow task glide')}${sw('lossOn', 'Show the cost of delay', 'Days lost from the buffer on Today.')}${sw('gainOn', 'Show the reward of early work', 'Days of freedom banked on Today.')}${sw('ageOn', 'Show my age on the Life tab', 'Needs your birth date in the timeline.')}${sw('remindOn', 'Evening and backup reminders', 'Banners in the app. A web app cannot ring while closed.')}</div>`, 'set-exp', false);
-        h += foldCard(dataCard(), 'set-data', false);
-        if (window.GCompanion) h += window.GCompanion.settingsHTML();
-        if (window.GFeel) h += window.GFeel.settingsHTML();
         h += foldCard(`<div class="card"><h3>Security</h3><p class="hint">The PIN keeps people out of the app. Backups are encrypted with their own password.</p>${pin ? sw('autoLock', 'Lock when I leave the app') : ''}<button class="btn-line" data-act="pin-set">${pin ? 'Change PIN' : 'Set a PIN'}</button>${pin ? '<button class="btn-line" data-act="pin-off">Remove PIN</button>' : ''}</div>`, 'set-sec', false);
         h += foldCard(`<div class="card"><h3>Backup</h3><p class="hint">${prefs.lastBackup ? 'Last backup ' + fmtDT(prefs.lastBackup) : 'Not backed up yet.'} Share opens your phone's share sheet: choose Google Drive or Proton Drive.</p><button class="btn-line btn-accent" data-act="backup" data-m="share">Back up now (share)</button><button class="btn-line" data-act="backup" data-m="download">Save to Downloads</button><button class="btn-line" data-act="backup" data-m="plain">Share unencrypted copy</button><button class="btn-line" data-act="restore">Restore from a file</button>${sw('rememberPass', 'Remember backup password', 'Stored on this phone only.')}<button class="btn-line" data-act="erase" style="color:var(--warning)">Erase everything</button></div>`, 'set-bak', true);
+        let adv = '';
+        adv += foldCard(`<div class="card"><h3>Experience</h3><div class="wz-chips" style="margin:4px 0 10px"><button type="button" class="wz-chip" data-wrun="setup">Run setup again</button><button type="button" class="wz-chip" data-wrun="tour">Replay the tour</button></div>${sw('introOn', 'Opening screen')}${sw('greetOn', 'Greeting by name')}${sw('lineOn', 'Tips in the top banner', 'Proverbs and tips slide in now and then.')}${sw('smartOn', 'Smart sections', 'Sections you rarely open fold under More. The app learns for two weeks first.')}${sw('animOn', 'Slow task glide')}${sw('lossOn', 'Show the cost of delay', 'Days lost from the buffer on Today.')}${sw('gainOn', 'Show the reward of early work', 'Days of freedom banked on Today.')}${sw('ageOn', 'Show my age on the Life tab', 'Needs your birth date in the timeline.')}${sw('remindOn', 'Evening and backup reminders', 'Banners in the app. A web app cannot ring while closed.')}</div>`, 'set-exp', false);
+        adv += foldCard(dataCard(), 'set-data', false);
+        if (window.GCompanion) adv += window.GCompanion.settingsHTML();
+        if (window.GFeel) adv += window.GFeel.settingsHTML();
+        h += `<details class="gacc" data-gacc="set-adv" ${window.GAcc && GAcc.open('set-adv', false) ? 'open' : ''}><summary><h3>Advanced</h3><span class="gacc-n">Sound, Companion, data, setup</span></summary><div class="gacc-body">${adv}</div></details>`;
         put($('s-set'), h);
         const bb = $('bg-blur'), gb = $('glass-blur');
         if (bb) bb.oninput = () => { prefs.bgBlur = +bb.value; $('bg-blur-v').textContent = bb.value; applyTheme(); persist(); };
@@ -1204,9 +1208,25 @@
             ${IN.enough && IN.strong !== null ? `<div class="hint mt">You work most on <b>${WDN[IN.strong]}s</b> and least on <b>${WDN[IN.weak]}s</b>. Put your hardest piece on a ${WDN[IN.strong]}, and keep ${WDN[IN.weak]} for light tasks.</div>` : '<div class="hint mt">Your days look even so far. More entries will show a pattern.</div>'}
             <div class="heat mt">${cells}</div><div class="hint">Last 28 days. Filled squares are days you worked.</div>${dayPartLine()}</div>`;
     }
+
+    /* ===== Recently deleted: entries removed in the last 30 days can be put back ===== */
+    function deletedList() {
+        const lim = Date.now() - 30 * 864e5;
+        return events.filter(v => v.t === 'void' && v.del && v.ts >= lim && !events.some(r => r.t === 'restored' && r.target === v.id))
+            .map(v => ({ v, e: events.find(x => x.id === v.target) })).filter(x => x.e).reverse();
+    }
+    function deletedSheet() {
+        const L = deletedList();
+        sheet(`<h2>Recently deleted</h2><p>Entries you deleted in the last 30 days. Restore puts one back exactly where it was.</p>${L.length ? `<div style="max-height:52vh;overflow:auto">${L.map(x => `<div class="ledger-row"><div style="min-width:0"><div>${esc((x.e.t==='pos'?'Note':logInfo(x.e.goal).title)+(x.e.qty!=null?', '+N(x.e.qty)+' '+logInfo(x.e.goal).unit:''))}</div><div class="meta">${esc(fmtDNum ? new Date(x.e.ts).toDateString() : '')}</div></div><button type="button" class="mini-btn" data-rest="${x.v.id}">Restore</button></div>`).join('')}</div>` : '<div class="empty"><b>Nothing deleted</b><p>Deleted entries will wait here for 30 days.</p></div>'}<div class="modal-actions"><button class="btn-secondary" data-act="close">Close</button></div>`, box => {
+            box.querySelectorAll('[data-rest]').forEach(b => b.onclick = () => {
+                const v = events.find(x => x.id === +b.dataset.rest), e0 = v && events.find(x => x.id === v.target); if (!e0) return;
+                { const c = Object.assign({}, e0); delete c.id; delete c.ts; add(c, e0.ts); }; add({ t: 'restored', target: v.id }); render(); deletedSheet(); toast('Restored');
+            });
+        });
+    }
     function dataCard() {
         let kb = 0; try { kb = Math.round((localStorage.getItem(K_EV) || '').length / 1024); } catch (e) {}
-        return `<div class="card"><h3>Your data</h3><p class="hint">Every entry is saved on this phone only: ${events.length} entries, about ${kb} KB. The app learns from them here. Nothing is sent anywhere. Use Backup to keep a safe copy.</p>${sw('learnOn', 'Learn from my entries', 'Gives suggested days, habit insights and a work chain.')}</div>`;
+        return `<div class="card"><h3>Your data</h3><p class="hint">Every entry is saved on this phone only: ${events.length} entries, about ${kb} KB. The app learns from them here. Nothing is sent anywhere. Use Backup to keep a safe copy.</p><button type="button" class="btn-line" data-act="deleted">Recently deleted (${deletedList().length})</button>${sw('learnOn', 'Learn from my entries', 'Gives suggested days, habit insights and a work chain.')}</div>`;
     }
     function trackBlock(t, micro) {
         if (!t) return '';
@@ -1273,7 +1293,7 @@
             return `<div class="hl-row" data-hid="${x.id}"><div class="hl-main"><span class="hl-t">${tm(x.ts)}</span> <b>${esc(inf.title)}</b>${x.e.late ? '<span class="lg-late">added later</span>' : ''}<div class="hl-amt"><b>${N(x.e.qty)}</b> ${esc(inf.unit)}</div></div><div class="hl-b">${icoBtn('edit', 'data-hact="edit"', 'this entry')}${icoBtn('del', 'data-hact="del"', 'this entry')}</div></div>`; };
         sheet(`<h2>Log history</h2><p class="hint">Newest first. Fix a wrong amount or delete a wrong entry. Everything is recalculated.</p>
             ${goals.length > 1 ? `<label class="field"><span>Show</span><select id="hl-f"><option value="0">All tasks</option>${goals.map(x => `<option value="${x.g}" ${x.g === histState.filter ? 'selected' : ''}>${esc(x.title)}</option>`).join('')}</select></label>` : ''}
-            ${days.length ? days.map(d => `<div class="hl-day">${esc(hd(d))}</div>${d.list.map(row).join('')}`).join('') : '<p class="hint">Nothing logged in this period yet.</p>'}
+            ${days.length ? days.map(d => `<div class="hl-day">${esc(hd(d))}</div>${d.list.map(row).join('')}`).join('') : '<div class="empty"><span class="em-ico">🌱</span><b>Nothing logged in this period</b><p>Entries you log on Today will appear here.</p></div>'}
             ${older > 0 ? `<button type="button" class="btn-line" id="hl-more">Show older (${older})</button>` : ''}
             <div class="modal-actions"><button class="btn-secondary" data-act="close">Close</button></div>`, box => {
             box.scrollTop = prevScroll;
@@ -1285,7 +1305,7 @@
                 del.onclick = async () => {
                     const inf0 = logInfo(ent.goal);
                     if (!(await confirmSheet({ title: 'Delete this entry?', sub: ent.k === 'pos' ? 'This note will be removed.' : `${N(e0.qty)} ${inf0.unit} will be removed and your totals recalculated. You can undo straight after.`, ok: 'Delete', danger: true }))) { historySheet(undefined, true); return; }
-                    add({ t: 'void', target: id }); render(); historySheet(undefined, true); if (window.GFeel) GFeel.moment('down');
+                    add({ t: 'void', target: id, del: 1 }); render(); historySheet(undefined, true); if (window.GFeel) GFeel.moment('down');
                     const inf = logInfo(ent.goal);
                     toast(ent.k === 'pos' ? 'Note deleted.' : `Deleted ${N(e0.qty)} ${inf.unit}. Everything is recalculated.`, () => { const c = Object.assign({}, e0); delete c.id; delete c.ts; add(c, e0.ts); render(); if ($('sheet-bg').classList.contains('show') && $('sheet').querySelector('.hl-day')) historySheet(undefined, true); });
                 };
@@ -1670,7 +1690,7 @@
         const tl = ev.target.closest('[data-tell]'); if (tl && !ev.target.closest('[data-act]')) { if (GC && GC.tell) GC.tell(tl.dataset.tell, tl.dataset.tone); else toast(tl.dataset.tell); return; }
         const nav = ev.target.closest('.nav-item');
         if (nav) { screen = nav.dataset.s; render(); window.scrollTo(0, 0); return; }
-        const el = ev.target.closest('[data-act]'); if (!el) { if (ev.target === $('sheet-bg')) closeSheet(); return; }
+        const el = ev.target.closest('[data-act]'); if (!el) { if (ev.target === $('sheet-bg')) { const dirty = [].some.call($('sheet').querySelectorAll('input:not([type=checkbox]):not([type=range]),textarea'), i => i.value !== i.defaultValue && !i.classList.contains('hl-in')); if (dirty && !$('sheet').querySelector('[data-r]')) { toast('Your changes are not saved yet. Use Cancel to leave.'); return; } closeSheet(); } return; }
         const act = el.dataset.act, id = +el.dataset.id;
         switch (act) {
             case 'close': closeSheet(); break;
@@ -1715,6 +1735,7 @@
                 const made = s.pieces.map(x => add({ t: 'goal', op: 'edit', gid: x.id, f: { pdays: x.to } })); render();
                 toast(plural(made.length, 'piece') + ' updated', () => { made.forEach(e => add({ t: 'void', target: e.id })); render(); fx('down'); }); break;
             }
+            case 'deleted': deletedSheet(); break;
             case 'goto': screen = el.dataset.s; render(); window.scrollTo(0, 0); break;
             case 'to-today': screen = 'today'; render(); break;
             case 'life-add': lifeSheet(0); break;
@@ -1795,7 +1816,14 @@
         if (D && D.cfg && D.cfg.startMode !== 'pick' && !prefs.pickAsked) { prefs.pickAsked = true; add({ t: 'cfg', c: { startMode: 'pick' } }); refresh(); }
         applyTheme();
         if (pinOn() && hasCrypto()) showLock();
-        render(); companionReturns(); showSplash(); setTimeout(maybeAskPosition, 5200);
+        if (window.GWizard) GWizard.config({ app: 'goal', brand: "Rustam's Goal Manager", prefs: () => prefs, set: (k, v) => { prefs[k] = v; persist(); }, apply: () => { applyTheme(); followNow(); }, render: () => { if (D) render(); }, hasData: () => events.length > 0,
+          tour: [["Tap to learn", "Tap any graphic or number. The Companion explains it in simple words."], ["Log pages fast", "Tap + on a task, tap the last page you finished, then tap Log. The app always asks for the last page."], ["Fix a mistake", "Open Log history. Tap the pen to change an entry or the bin to delete it. You can always Undo."], ["The top banner", "It shows your last entry, and now and then a tip. Tap your last entry to see the history."], ["More", "Sections you rarely open fold under More. They come back when you open them."], ["Keep a copy", "Settings, then Backup, saves a copy of your data. You can run setup again or replay this tour in Settings."]],
+          later: [
+            { id: 'pin', after: 2, text: "Do you want a PIN to keep this app private?", opts: [["set", "Set a PIN"], ["no", "No thanks"]], apply: v => { if (v === 'set') pinSheet(); }, when: () => !pinOn() },
+            { id: 'strict', after: 8, text: "Show the cost of delay and the gain of finishing early?", opts: [["both", "Show both"], ["gain", "Only the gains"], ["none", "Hide both"]], apply: v => { prefs.lossOn = v === 'both'; prefs.gainOn = v !== 'none'; persist(); }, when: () => events.filter(e => e.t === 'log').length >= 5 },
+            { id: 'lite', after: 6, text: "This phone may be slow. Use Lite mode? It removes blur and motion. You can switch it back any time.", opts: [["1", "Use Lite"], ["0", "Keep the glass"]], apply: v => { prefs.lite = v === '1'; persist(); applyTheme(); }, when: () => !prefs.lite && window.GResume && GResume.weakPhone() }
+          ] });
+        const y0 = GResume.init({ key: 'gl_resume', screens: ['today','ins','life','mind','month','out','plan'], get: () => screen, set: s => { screen = s; } }); render(); GResume.restoreScroll(y0); companionReturns(); showSplash(); setTimeout(maybeAskPosition, 5200);
         document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(maybeAskPosition, 1800); });
         if (window.GFeel) GFeel.saveButton({ save: () => { persist(); try { return !events.length || localStorage.getItem(K_EV) !== null; } catch (e) { return false; } }, backup: () => backupSheet('share') });
         if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});

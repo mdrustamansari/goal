@@ -303,7 +303,9 @@ html.lite .gc-card, body.still .gc-card { transition: none; }
             speakUntil = performance.now() + Math.min(2600, text.length * 55); return true;
         }
         bubble.addEventListener('click', () => { bubble.classList.remove('on'); clearTimeout(bubbleTimer); });
-        function sayQuiet(text, ms) { if (PR.talk <= 0 || dayCount() >= PR.talk) return false; if (!say(text, ms)) return false; dayCount(true); return true; }
+        let lastQuiet = 0;
+        // Unasked talk: within the daily limit and never twice within 10 minutes.
+        function sayQuiet(text, ms) { if (PR.talk <= 0 || dayCount() >= PR.talk) return false; if (Date.now() - lastQuiet < 600000) return false; if (!say(text, ms)) return false; lastQuiet = Date.now(); dayCount(true); return true; }
         function stepSay(s, o) { if (!s) return; let line = s; if (s[0] === '@') { const tag = s.slice(1); if ((tag === 'proverb' || tag === 'tip') && !PR.wise) return; line = LINES.pick(tag); } if (o && o.force) { if (PR.talk > 0) say(line); } else sayQuiet(line); }
 
         // ---- actions

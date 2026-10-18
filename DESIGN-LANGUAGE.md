@@ -1,7 +1,7 @@
 # Rustam's apps: design language and philosophy
 One living file for every app (Budget Manager, Goal Manager, and any future one).
 Rule: when something new is decided, add it here in the same release. Never delete a rule; mark it "replaced by" instead.
-Last updated: 17 Oct 2026 (Goal v5.24, Budget v2.22)
+Last updated: 18 Oct 2026 (Goal v5.25, Budget v2.23)
 
 ## 1. Philosophy
 1. **Frosted glass is the heart of the design.** It is never switched off or weakened on any theme. We save energy by smarter means instead.
@@ -36,6 +36,9 @@ Last updated: 17 Oct 2026 (Goal v5.24, Budget v2.22)
 - **Icon-only Edit and Delete:** Lucide `square-pen` (neutral) and `trash-2` (red), 34 px, same spacing everywhere.
 - **Smart sections** (`sections.js`): a section tagged `data-sec` folds under "More" if untouched for 3 weeks, after 2 weeks of learning. Decided once when the app opens. Settings is never touched. Today, Plan, Life, Outlook, Month, Mindful and Insights use it.
 - **Companion** (`companion.js`): always translucent, blobby, soft, supple and cute. Gentle bloom only (no photographic flare). Rests and wakes smoothly (its own clock slows and speeds up). Speaks rarely.
+- **First-launch wizard** (`wizard.js`): short, five questions only (name, look, Companion, privacy and comfort, backup time). Appears only on a fresh install; existing data never sees it. "Run setup again" in Settings fills in current answers and changes no records. Skip is always possible.
+- **Tour:** an optional six-card tour after the wizard, replayable from Settings.
+- **Ask later:** everything else is asked one small question at a time on Today ("Quick question" card): at most one card, every answer wired to a real setting, "Later" snoozes 3 days. Never ask what the app can learn by itself. Current questions: PIN (day 2), day-close reminder (day 4) and 24-hour wait (day 5) in Budget, cost of delay (day 8) in Goal.
 - **Sheets and confirmations:** `confirmSheet` with a red primary button for dangerous actions.
 
 ## 5. Energy and speed rules
@@ -61,3 +64,17 @@ Last updated: 17 Oct 2026 (Goal v5.24, Budget v2.22)
 - Summarise and ask before big builds. Ask clarifying questions one at a time.
 - Ask before starting Release 2 (first-launch wizard and Companion tips and tricks).
 - Save durable decisions to memory and to this file.
+
+## 9. Tracker
+The progress on the ten humane-design aspects lives in HUMANE-TRACKER.md. Read it before interface work and update it with each release.
+
+## 10. Word list (same word, same meaning, in every app)
+- Entry: one thing you recorded (a spend in Budget, a log in Goal). Never "transaction" or "record".
+- Add: put something new in. Log: write progress in Goal only.
+- Edit: change an entry. Delete: remove it (it waits 30 days in Recently deleted). Undo: take back the last action.
+- Piece: one part of a goal in Goal. Task: a custom piece you made yourself.
+- Pool: the month's money in Budget. Never "wallet" or "fund".
+- Companion: the soft character. Banner: the strip at the top.
+- Button order in a sheet: Cancel on the left, the main action on the right.
+- Tone: calm, short, kind, no blame. Say what happened, then what can be done.
+- Companion unasked talk: within the daily limit, and never twice within 10 minutes.

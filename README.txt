@@ -174,3 +174,21 @@ Update (17 Oct 2026, later): The Lens flare style list is gone (only the gentle 
 
 v5.24 - Every button is visible on every theme.
       Fixed (checked with your real backup on all 10 themes): the small buttons "New daily task", "Choose another piece", "Last finished: N · change" and "Log history" now have a hairline edge. The info chips (streak, pace, percent) have an edge too, and their text is darker on light themes.
+
+Release 2 (Goal v5.25 / Budget v2.23) - First-launch wizard, tour and small questions later.
+      New: on a fresh install a short wizard asks five things: your name, the look, the Companion, privacy and comfort, and the backup time. If you already have data, you will not see it.
+      New: an optional six-card tour after the wizard. In Settings, Experience: "Run setup again" and "Replay the tour". Running setup again changes none of your records.
+      New: everything else is asked later, one small "Quick question" card at a time on Today (for example: a PIN, the evening reminder, the 24-hour wait, the cost of delay). Tap Later to be asked again in 3 days.
+      The greeting uses the name you give.
+
+Bundle A (Goal v5.26 / Budget v2.24) - Feel foundations: bigger touch areas, steady digits, one motion standard, focus rings, reduced motion on every theme, helpful empty states. Also HUMANE-TRACKER.md.
+
+Bundle B (Goal v5.27 / Budget v2.25) - Smart defaults and memory: the app reopens on the screen and scroll position you left (within 6 hours; never on Settings), Follow my phone is on for new installs, and a slow phone is offered Lite mode as a small question (never switched on without asking).
+
+Bundle C (Goal v5.28 / Budget v2.26) - Simple path: Settings now shows everyday items first, with sound, Companion, data and setup in a folded "Advanced" section. Swipe a ledger or history row left to delete (it still asks first) or right to edit; press and hold to edit. A confirmed delete gives a firm buzz.
+
+Bundle D (Goal v5.29 / Budget v2.27) - Safety nets: a Recently deleted list (Settings, Advanced, Your data) keeps deleted entries for 30 days with a Restore button; tapping outside a sheet with unsaved typing no longer closes it.
+
+Bundle E (Goal v5.30 / Budget v2.28) - Accessibility: pinch-to-zoom is allowed again, screen-reader and keyboard help for custom controls (a11y.js; Enter, Space and Escape work), clearer warning and good text on light themes (4.5:1), long names wrap instead of stretching the screen. The phone text-size setting already scales the app.
+
+Bundle F (Goal v5.31 / Budget v2.29) - The Companion never speaks unasked twice within 10 minutes. A shared word list and the sheet button order rule are now in DESIGN-LANGUAGE.md.

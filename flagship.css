@@ -284,3 +284,54 @@ html[data-scheme="light"]:not([data-fl]) .tp-chip { border-color: rgba(40, 55, 9
 .pg-edit { border: 1px solid var(--btn-line, rgba(40, 55, 95, .26)) !important; border-radius: 14px; padding: 5px 12px; }
 html[data-scheme="light"] .tp-chip.good { color: color-mix(in srgb, var(--good, #1a8f5b) 78%, #000); }
 html[data-scheme="light"] .tp-chip.bad { color: color-mix(in srgb, var(--warning, #d63a34) 82%, #000); }
+
+/* First-launch wizard, tour and ask-later cards */
+.wiz { position: fixed; inset: 0; z-index: 9500; display: flex; align-items: center; justify-content: center; padding: 18px; background: rgba(20, 28, 48, .28); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); animation: wzIn .5s ease both; }
+.wiz.out { opacity: 0; transition: opacity .35s ease; }
+@keyframes wzIn { from { opacity: 0; } to { opacity: 1; } }
+.wz-card { width: min(100%, 420px); max-height: 92vh; overflow: auto; padding: 22px 20px 18px; border-radius: 30px; color: var(--text-main); background: var(--glass-hi, var(--glass)); border: 1px solid var(--glass-line); box-shadow: 0 24px 60px -20px rgba(10, 20, 50, .45); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); animation: wzCard .55s cubic-bezier(.22, .8, .25, 1) both; }
+@keyframes wzCard { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.wz-card h2 { margin: 6px 0 6px; font-weight: 300; font-size: 1.55rem; line-height: 1.2; }
+.wz-d { margin: 0 0 14px; color: var(--text-muted); line-height: 1.45; }
+.wz-top { display: flex; align-items: center; justify-content: space-between; min-height: 24px; }
+.wz-dots { display: flex; gap: 6px; } .wz-dots i { width: 7px; height: 7px; border-radius: 50%; background: color-mix(in srgb, var(--text-main) 22%, transparent); transition: all .4s ease; } .wz-dots i.on { width: 20px; border-radius: 6px; background: linear-gradient(135deg, var(--blue-a), var(--blue-b)); }
+.wz-skip { margin-left: auto; border: none; background: none; color: var(--text-muted); font: inherit; font-size: .88rem; padding: 6px 4px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.wz-q { margin: 14px 0 7px; font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+.wz-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.wz-chip, .wz-btn { font: inherit; font-size: .95rem; color: var(--text-main); border: 1px solid var(--btn-line, rgba(40, 55, 95, .28)); background: var(--btn-bg, rgba(255, 255, 255, .6)); border-radius: 16px; padding: 9px 14px; min-height: 40px; cursor: pointer; }
+.wz-chip.on, .wz-btn.wz-go { color: var(--on-accent, #fff); text-shadow: var(--on-shadow, none); border-color: transparent; background: linear-gradient(135deg, var(--blue-a), var(--blue-b)); }
+.wz-chip:focus-visible, .wz-btn:focus-visible { outline: 2px solid var(--blue-b, #2f6fed); outline-offset: 2px; }
+.wz-field { display: block; } .wz-field span { display: block; margin-bottom: 7px; font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+.wz-field input { width: 100%; box-sizing: border-box; font: inherit; font-size: 1.15rem; padding: 12px 14px; border-radius: 16px; border: 1px solid var(--btn-line, rgba(40, 55, 95, .28)); background: var(--input-bg, #fff); color: var(--text-main); }
+.wz-btns { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; } .wz-btn { padding: 11px 22px; border-radius: 18px; }
+.ask-card .wz-q { margin-top: 0; } .ask-card p { margin: 0 0 10px; line-height: 1.4; }
+.wz-later { color: var(--text-muted); }
+@media (prefers-reduced-motion: reduce) { .wiz, .wz-card { animation: none; } }
+
+/* ===== Humane foundations (Bundle A) ===== */
+/* One motion standard: use these tokens for every new transition. */
+:root { --m-fast: .14s; --m-base: .24s; --m-slow: .45s; --ease: cubic-bezier(.2, .8, .25, 1); }
+button, .btn-primary, .btn-secondary, .btn-line, .mini-btn, .ico-btn, .tp-chip { transition: transform var(--m-fast) var(--ease), background-color var(--m-base) var(--ease), border-color var(--m-base) var(--ease), color var(--m-base) var(--ease); }
+/* Steady digits: numbers keep the same width and do not jiggle. */
+.num, .priv, b, .ring text, .mring text, .ledger-row .right, input[type="number"], input[inputmode] { font-variant-numeric: tabular-nums; }
+/* Larger touch area (about 44 px) without changing the look. */
+.ico-btn, .mini-btn, .btn-soft, .tp-chip, .more-btn, .days-chips button { position: relative; }
+.ico-btn::after, .mini-btn::after, .btn-soft::after, .tp-chip::after, .more-btn::after, .days-chips button::after { content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%); }
+/* A visible focus ring on every control (keyboard and switch users). */
+button:focus-visible, [role="button"]:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible, .seg button:focus-visible, .nav-item:focus-visible { outline: 2px solid var(--blue-b, #2f6fed); outline-offset: 2px; }
+/* Reduced motion everywhere, on every theme. */
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01s !important; animation-iteration-count: 1 !important; transition-duration: .01s !important; scroll-behavior: auto !important; } }
+/* Helpful empty state. */
+.empty { text-align: center; padding: 18px 10px 8px; color: var(--text-muted, inherit); }
+.empty .em-ico { font-size: 26px; opacity: .7; display: block; margin-bottom: 6px; }
+.empty b { display: block; font-weight: 600; color: var(--text-main); margin-bottom: 2px; }
+.empty p { margin: 0; font-size: .92em; }
+
+/* ===== Accessibility (Bundle E) ===== */
+html { touch-action: manipulation; }
+/* Long names and big numbers never push the layout wider than the screen. */
+.ledger-row > div, .hl-main, .meta, .hint, .brand, .fchip { min-width: 0; overflow-wrap: anywhere; }
+.ledger-row b, .row b { overflow-wrap: normal; }
+/* Text contrast: warning and good text a little deeper on light themes (4.5:1). */
+html[data-scheme="light"] .bad, html[data-scheme="light"] .chip.bad, html[data-scheme="light"] .pchip.bad, html[data-scheme="light"] .tp-chip.bad { color: color-mix(in srgb, var(--warning, #d63a34) 72%, #000); }
+html[data-scheme="light"] .good, html[data-scheme="light"] .tp-chip.good { color: color-mix(in srgb, var(--good, #2da872) 66%, #000); }
