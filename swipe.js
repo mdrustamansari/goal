@@ -48,6 +48,39 @@
     }
     document.addEventListener('touchend', end, { passive: true });
     document.addEventListener('touchcancel', () => { clearTimeout(lp); reset(true); }, { passive: true });
+
+    /* ---- Swipe left or right anywhere (except on rows, sliders, inputs and sideways-scrolling strips) to change tab ---- */
+    let tx = 0, ty = 0, tt = 0, tOK = false;
+    const noTab = t => {
+        if (!t || !t.closest) return true;
+        if (t.closest('input,select,textarea,[type=range],#sheet,.lock.show,.wiz,[data-no-tabswipe]')) return true;
+        if (document.getElementById('sheet-bg') && document.getElementById('sheet-bg').classList.contains('show')) return true;
+        const r = t.closest(ROW); if (r && r.querySelector('.ico-btn')) return true;
+        for (let e = t; e && e !== document.body; e = e.parentElement) { const cs = getComputedStyle(e); if ((cs.overflowX === 'auto' || cs.overflowX === 'scroll') && e.scrollWidth > e.clientWidth + 4) return true; }
+        return false;
+    };
+    document.addEventListener('touchstart', e => {
+        tOK = false; if (e.touches.length !== 1) return;
+        const t = e.touches[0]; const w = root.innerWidth || 400;
+        if (t.clientX < 24 || t.clientX > w - 24) return;           // leave the phone's own back-swipe edge alone
+        if (noTab(e.target)) return;
+        tx = t.clientX; ty = t.clientY; tt = Date.now(); tOK = true;
+    }, { passive: true });
+    document.addEventListener('touchend', e => {
+        if (!tOK) return; tOK = false;
+        const t = e.changedTouches[0], dx = t.clientX - tx, dy = t.clientY - ty;
+        if (Math.abs(dx) < 80 || Math.abs(dx) < Math.abs(dy) * 2 || Date.now() - tt > 700) return;
+        if (row) return;                                              // a row swipe was in progress
+        const tabs = [].slice.call(document.querySelectorAll('.nav-item'));
+        const i = tabs.findIndex(n => n.classList.contains('active')), j = i + (dx < 0 ? 1 : -1);
+        if (i < 0 || j < 0 || j >= tabs.length) return;
+        buzz('turn'); tabs[j].click();
+        if (reduced()) return;
+        requestAnimationFrame(() => {
+            const a = document.querySelector('.nav-item.active'), sc = a && document.getElementById('s-' + a.dataset.s);
+            if (sc && sc.animate) sc.animate([{ transform: 'translateX(' + (dx < 0 ? 28 : -28) + 'px)', opacity: .35 }, { transform: 'none', opacity: 1 }], { duration: 240, easing: 'cubic-bezier(.2,.8,.25,1)' });
+        });
+    }, { passive: true });
     // Stop the phone's long-press text menu on these rows.
     const st = document.createElement('style'); st.textContent = '.ledger-row:has(.ico-btn), .hl-row { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: pan-y; } .ledger-row:has(.ico-btn) input, .hl-row input { -webkit-user-select: text; user-select: text; }';
     document.head.appendChild(st);

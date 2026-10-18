@@ -194,3 +194,9 @@ Bundle E (Goal v5.30 / Budget v2.28) - Accessibility: pinch-to-zoom is allowed a
 Bundle F (Goal v5.31 / Budget v2.29) - The Companion never speaks unasked twice within 10 minutes. A shared word list and the sheet button order rule are now in DESIGN-LANGUAGE.md.
 
 Liquid glass (Goal v5.32 / Budget v2.30) - New Settings card "Glass style": Frosted (your glass, unchanged, the default) or Liquid (clear glass, light rim on the top-left, dark rim along the bottom, inner glow, soft tinted shadow). Liquid has sliders for Frost (starts at 7 px), Tint and Rim light, a Diagonal highlight switch (off) and a reset button. Sheets always keep a strong tint so forms stay clear. Lite mode removes the frost.
+
+Liquid fixes (Goal v5.33 / Budget v2.31) - The bottom tab bar stays fixed again in Liquid and is the same size as in Frosted. The rim light is now outside the glass edge; new Shadow and Top shine sliders; buttons follow the same design with a frostier fill; an adaptive hairline runs round every glass object (stronger when the glass is clearer).
+
+Bundle G (Goal v5.34 / Budget v2.32) - Saved and Undo messages now use glass (Frosted or Liquid, to match your Glass style); swipe left or right anywhere (not on rows, sliders or sideways strips, and not from the screen edges) to change tab.
+
+v5.35 fix: Liquid rim light — white part inside the hairline, dark part outside it.

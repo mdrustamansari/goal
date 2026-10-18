@@ -83,5 +83,8 @@ The progress on the ten humane-design aspects lives in HUMANE-TRACKER.md. Read i
 - Frosted (default): the original frosted glass. Never changed.
 - Liquid (opt-in, Settings, Glass style): clear glass learned from the macOS-style window screenshot. Parts: light rim on the top-left that fades, dark rim along the bottom, a faint inner glow, a soft tinted shadow, large smooth corners, flat translucent pills for the selected item.
 - Liquid has no refraction (bending). It was tried and dropped: the browser feature is not reliable on phones.
-- Liquid settings: Frost (default 7 px), Tint (22%, Paper pages get +16%), Rim light (70%), Diagonal highlight (off). Sheets always keep a strong tint and at least 14 px frost.
+- Liquid settings: Frost (default 7 px), Tint (22%, Paper pages get +16%), Rim light (70%, white part inside the hairline, dark part outside it), Shadow (60%), Top shine (60%, a soft white glow just inside the top edge), Diagonal highlight (off). An adaptive hairline (dark on light themes, light on dark themes, stronger when the glass is clearer) runs round every glass object. Buttons use a denser fill instead of blur, to keep the phone cool.
+- Never set position on .nav-bar in Liquid: it is fixed, and must stay the same size in both styles. Sheets always keep a strong tint and at least 14 px frost.
 - Rule: every interface change is audited with Liquid on as well as Frosted, on all 10 themes (buttons and text contrast).
+- Messages after an action (toast with Undo, Companion bubble, question card) use the chosen glass style.
+- Gestures: swipe a row left (delete, asks first) or right (edit); press and hold a row to edit; swipe anywhere else to change tab (not from the 24 px screen edges, not on sliders, inputs or sideways-scrolling strips).

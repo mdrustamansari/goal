@@ -3,7 +3,7 @@
    Settings live in the app's own prefs: glassStyle, lqFrost, lqTint, lqRim, lqStreak. */
 (function (root) {
     'use strict';
-    const D = { glassStyle: 'frosted', lqFrost: 7, lqTint: 22, lqRim: 70, lqStreak: false };
+    const D = { glassStyle: 'frosted', lqFrost: 7, lqTint: 22, lqRim: 70, lqShadow: 60, lqShine: 60, lqStreak: false };
     let cfg = null;
     const P = () => { const p = (cfg && cfg.prefs()) || {}; const o = {}; Object.keys(D).forEach(k => { o[k] = p[k] === undefined ? D[k] : p[k]; }); return o; };
     function apply() {
@@ -17,14 +17,18 @@
         h.style.setProperty('--lq-frost', p.lqFrost + 'px');
         h.style.setProperty('--lq-tint', tint.toFixed(3));
         h.style.setProperty('--lq-rim', (p.lqRim / 100).toFixed(2));
+        h.style.setProperty('--lq-shadow', (p.lqShadow / 100).toFixed(2));
+        h.style.setProperty('--lq-shine', (p.lqShine / 100).toFixed(2));
+        // Adaptive hairline: the clearer the glass, the stronger the outline.
+        h.style.setProperty('--lq-hair', Math.max(0.14, Math.min(0.42, 0.14 + (0.5 - tint) * 0.42)).toFixed(2));
     }
     const row = (k, label, max, unit, v) => `<div class="bg-row"><span>${label}</span><input type="range" data-lq="${k}" min="0" max="${max}" value="${v}" aria-label="${label}"><b class="bg-val" id="lq-${k}-v">${v}${unit}</b></div>`;
     function settingsHTML() {
         const p = P(), lq = p.glassStyle === 'liquid';
         return `<div class="card"><h3>Glass style</h3>
           <div class="seg" id="lq-style"><button type="button" data-lqstyle="frosted" class="${lq ? '' : 'on'}">Frosted</button><button type="button" data-lqstyle="liquid" class="${lq ? 'on' : ''}">Liquid</button></div>
-          <p class="hint mt">${lq ? 'Clear glass with a light rim on the top-left, a dark rim along the bottom, an inner glow and a soft shadow.' : 'The frosted glass you know. Switch to Liquid for clear, thicker-looking glass.'}</p>
-          ${lq ? row('lqFrost', 'Frost', 30, ' px', p.lqFrost) + row('lqTint', 'Tint', 60, '%', p.lqTint) + row('lqRim', 'Rim light', 100, '%', p.lqRim) +
+          <p class="hint mt">${lq ? 'Clear glass with a light rim outside the top-left edge, a dark edge along the bottom, a soft shine on top, a thin outline and a soft shadow.' : 'The frosted glass you know. Switch to Liquid for clear, thicker-looking glass.'}</p>
+          ${lq ? row('lqFrost', 'Frost', 30, ' px', p.lqFrost) + row('lqTint', 'Tint', 60, '%', p.lqTint) + row('lqRim', 'Rim light', 100, '%', p.lqRim) + row('lqShadow', 'Shadow', 100, '%', p.lqShadow) + row('lqShine', 'Top shine', 100, '%', p.lqShine) +
             `<div class="sw-row"><div><div>Diagonal highlight</div><div class="set-meta">A soft shiny streak across each card.</div></div><label class="switch"><input type="checkbox" data-lq="lqStreak" ${p.lqStreak ? 'checked' : ''}><i></i></label></div>
              <button type="button" class="btn-line" data-lqreset="1">Reset Liquid settings</button>` : ''}</div>`;
     }

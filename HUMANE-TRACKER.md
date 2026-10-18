@@ -1,7 +1,7 @@
 # Humane-design tracker
 Reference for every app (Budget Manager, Goal Manager and any future app). Read it before any interface work. Update it in the same release as the work.
 Companion file: DESIGN-LANGUAGE.md (the rules). This file is the progress: what we do, what is missing, what is next.
-Created: 18 Oct 2026. Last updated: 18 Oct 2026 (Goal v5.32, Budget v2.30).
+Created: 18 Oct 2026. Last updated: 18 Oct 2026 (Goal v5.34, Budget v2.32).
 
 Status words: DONE, PARTLY, TODO, CHECK (needs a test on a real phone).
 Work order agreed with Rustam: one aspect at a time. Start with 1, 2 and 8, then 3 to 7, then 9 and 10. Each one is built only after he says "go".
@@ -102,3 +102,4 @@ The same gesture or word means the same thing everywhere.
 - 7c, 10c: review once per release.
 - Real-phone checks by Rustam: heat, TalkBack, swipe feel.
 - 18 Oct 2026: Liquid glass style added (Goal v5.32, Budget v2.30), opt-in beside Frosted. Audit with Liquid on: 0 flags on all 10 themes. Refraction dropped.
+- 18 Oct 2026: Liquid fixes, ledger limited to 5 entries, glass Saved and Undo messages, swipe between tabs (Goal v5.34, Budget v2.32). Next: weekly and monthly report (Budget), after a design talk.
