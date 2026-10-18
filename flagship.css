@@ -335,3 +335,38 @@ html { touch-action: manipulation; }
 /* Text contrast: warning and good text a little deeper on light themes (4.5:1). */
 html[data-scheme="light"] .bad, html[data-scheme="light"] .chip.bad, html[data-scheme="light"] .pchip.bad, html[data-scheme="light"] .tp-chip.bad { color: color-mix(in srgb, var(--warning, #d63a34) 72%, #000); }
 html[data-scheme="light"] .good, html[data-scheme="light"] .tp-chip.good { color: color-mix(in srgb, var(--good, #2da872) 66%, #000); }
+
+/* ===== Liquid glass style (opt-in; Frosted stays the default) ===== */
+html { --lq-rgb: 255, 255, 255; --lq-sh: rgba(40, 70, 140, .34); --lq-frost: 7px; --lq-tint: .22; --lq-rim: .7; }
+html[data-scheme="dark"] { --lq-rgb: 18, 26, 46; --lq-sh: rgba(0, 0, 0, .55); }
+html[data-glass="liquid"] .card, html[data-glass="liquid"] .panel, html[data-glass="liquid"] .dashboard, html[data-glass="liquid"] .category-item, html[data-glass="liquid"] .history-card, html[data-glass="liquid"] .nav-bar, html[data-glass="liquid"] #sheet {
+  position: relative;
+  background: var(--lq-streak, linear-gradient(transparent, transparent)), linear-gradient(160deg, rgba(var(--lq-rgb), calc(var(--lq-tint) * 1.3)), rgba(var(--lq-rgb), calc(var(--lq-tint) * .6)) 58%, rgba(var(--lq-rgb), calc(var(--lq-tint) * .9))) !important;
+  -webkit-backdrop-filter: blur(var(--lq-frost)) saturate(1.5) brightness(1.03) !important; backdrop-filter: blur(var(--lq-frost)) saturate(1.5) brightness(1.03) !important;
+  border-color: transparent !important;
+  box-shadow: inset 0 0 26px rgba(255, 255, 255, calc(.2 * var(--lq-rim))), inset 0 0 0 1px rgba(60, 75, 115, calc(.12 * var(--lq-rim) + .04)), 0 26px 40px -18px var(--lq-sh), 0 3px 10px rgba(20, 40, 90, .10) !important;
+}
+html[data-glass="liquid"][data-scheme="dark"] .card, html[data-glass="liquid"][data-scheme="dark"] .panel, html[data-glass="liquid"][data-scheme="dark"] .nav-bar, html[data-glass="liquid"][data-scheme="dark"] #sheet { box-shadow: inset 0 0 26px rgba(255, 255, 255, calc(.07 * var(--lq-rim))), inset 0 0 0 1px rgba(255, 255, 255, calc(.10 * var(--lq-rim))), 0 26px 40px -18px var(--lq-sh), 0 3px 10px rgba(0, 0, 0, .25) !important; }
+html[data-glass="liquid"][data-streak="1"] { --lq-streak: linear-gradient(115deg, transparent 16%, rgba(255, 255, 255, .26) 25%, rgba(255, 255, 255, .03) 34%, transparent 40%); }
+/* the rim: bright on the top-left, fading, dark along the bottom, plus a faint inner outline */
+html[data-glass="liquid"] .card::before, html[data-glass="liquid"] .panel::before, html[data-glass="liquid"] .dashboard::before, html[data-glass="liquid"] .category-item::before, html[data-glass="liquid"] .history-card::before, html[data-glass="liquid"] .nav-bar::before, html[data-glass="liquid"] #sheet::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; padding: 1.6px; z-index: 1;
+  background: linear-gradient(155deg, rgba(255, 255, 255, calc(.98 * var(--lq-rim))) 0%, rgba(255, 255, 255, calc(.55 * var(--lq-rim))) 16%, rgba(255, 255, 255, 0) 38%, rgba(15, 25, 55, 0) 62%, rgba(15, 25, 55, calc(.42 * var(--lq-rim))) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+}
+html[data-glass="liquid"][data-scheme="dark"] .card::before, html[data-glass="liquid"][data-scheme="dark"] .panel::before, html[data-glass="liquid"][data-scheme="dark"] .nav-bar::before, html[data-glass="liquid"][data-scheme="dark"] #sheet::before { background: linear-gradient(155deg, rgba(255, 255, 255, calc(.85 * var(--lq-rim))) 0%, rgba(255, 255, 255, calc(.35 * var(--lq-rim))) 18%, rgba(255, 255, 255, 0) 40%, rgba(0, 0, 0, 0) 62%, rgba(0, 0, 0, calc(.55 * var(--lq-rim))) 100%); }
+html[data-glass="liquid"] .nav-item.active { background: rgba(255, 255, 255, .38) !important; box-shadow: none !important; border-color: transparent !important; }
+html[data-glass="liquid"][data-scheme="dark"] .nav-item.active { background: rgba(255, 255, 255, .16) !important; }
+html.lite[data-glass="liquid"] { --lq-frost: 0px; }
+@media (prefers-reduced-transparency: reduce) { html[data-glass="liquid"] { --lq-tint: .7; --lq-frost: 0px; } }
+/* Sheets hold forms and sit over busy content: always a strong tint and some frost, whatever the sliders say. */
+html[data-glass="liquid"] #sheet {
+  --lq-ts: max(var(--lq-tint), .92);
+  background-color: rgba(var(--lq-rgb), calc(var(--lq-ts) * .95)) !important; background-image: linear-gradient(160deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, 0) 60%) !important;
+  -webkit-backdrop-filter: blur(max(var(--lq-frost), 14px)) saturate(1.4) !important; backdrop-filter: blur(max(var(--lq-frost), 14px)) saturate(1.4) !important;
+}
+/* Colour swatches keep a hairline so they never vanish on clear glass. */
+html[data-glass="liquid"] .swatch, html[data-glass="liquid"] .lk { border: 1px solid rgba(60, 75, 115, .34) !important; }
+html[data-glass="liquid"][data-scheme="dark"] .swatch, html[data-glass="liquid"][data-scheme="dark"] .lk { border: 1px solid rgba(255, 255, 255, .30) !important; }
+html[data-glass="liquid"] #sheet button:not(.btn-primary):not(.btn-accent):not(.on):not(.ico-btn):not(.mini-btn) { border: 1px solid rgba(60, 75, 115, .30); }
+html[data-glass="liquid"][data-scheme="dark"] #sheet button:not(.btn-primary):not(.btn-accent):not(.on):not(.ico-btn):not(.mini-btn) { border: 1px solid rgba(255, 255, 255, .30); }

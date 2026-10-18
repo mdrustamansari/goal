@@ -192,3 +192,5 @@ Bundle D (Goal v5.29 / Budget v2.27) - Safety nets: a Recently deleted list (Set
 Bundle E (Goal v5.30 / Budget v2.28) - Accessibility: pinch-to-zoom is allowed again, screen-reader and keyboard help for custom controls (a11y.js; Enter, Space and Escape work), clearer warning and good text on light themes (4.5:1), long names wrap instead of stretching the screen. The phone text-size setting already scales the app.
 
 Bundle F (Goal v5.31 / Budget v2.29) - The Companion never speaks unasked twice within 10 minutes. A shared word list and the sheet button order rule are now in DESIGN-LANGUAGE.md.
+
+Liquid glass (Goal v5.32 / Budget v2.30) - New Settings card "Glass style": Frosted (your glass, unchanged, the default) or Liquid (clear glass, light rim on the top-left, dark rim along the bottom, inner glow, soft tinted shadow). Liquid has sliders for Frost (starts at 7 px), Tint and Rim light, a Diagonal highlight switch (off) and a reset button. Sheets always keep a strong tint so forms stay clear. Lite mode removes the frost.

@@ -78,3 +78,10 @@ The progress on the ten humane-design aspects lives in HUMANE-TRACKER.md. Read i
 - Button order in a sheet: Cancel on the left, the main action on the right.
 - Tone: calm, short, kind, no blame. Say what happened, then what can be done.
 - Companion unasked talk: within the daily limit, and never twice within 10 minutes.
+
+## 11. Glass styles
+- Frosted (default): the original frosted glass. Never changed.
+- Liquid (opt-in, Settings, Glass style): clear glass learned from the macOS-style window screenshot. Parts: light rim on the top-left that fades, dark rim along the bottom, a faint inner glow, a soft tinted shadow, large smooth corners, flat translucent pills for the selected item.
+- Liquid has no refraction (bending). It was tried and dropped: the browser feature is not reliable on phones.
+- Liquid settings: Frost (default 7 px), Tint (22%, Paper pages get +16%), Rim light (70%), Diagonal highlight (off). Sheets always keep a strong tint and at least 14 px frost.
+- Rule: every interface change is audited with Liquid on as well as Frosted, on all 10 themes (buttons and text contrast).
