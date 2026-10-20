@@ -340,7 +340,7 @@ html.lite .gc-card, body.still .gc-card { transition: none; }
             ['dance', 2, 3], ['coffee', 2, 3], ['work', 2, 3], ['nap', 1, 3], ['sleep', 1, 3], ['rocket', 1, 3], ['party', 1, 3], ['stand', 2, 3], ['sit', 2, 3], ['relax', 2, 3]
         ];
         function idleTick() {
-            nextIdle = null; if (document.hidden || PR.place === 'off' || PR.act <= 0) { scheduleIdle(8000); return; }
+            nextIdle = null; if (document.hidden || PR.place === 'off' || PR.act <= 0) return;   // no polling: visibility and settings changes restart it
             const A = PR.act, maxE = A < 30 ? 1 : A < 65 ? 2 : 3, busyUi = opts.busy && opts.busy(), hr = new Date().getHours(), night = hr >= 23 || hr < 5;
             if (act || dragging || performance.now() - lastTouch < 3000 || (busyUi && Math.random() < 0.85) || still()) { scheduleIdle(9000); return; }
             const pool = IDLE.filter(x => x[2] <= maxE && !(busyUi && x[2] > 1)).map(x => { let w = x[1]; if (night) { if (x[0] === 'nap' || x[0] === 'sleep' || x[0] === 'yawn') w *= 6; if (x[0] === 'dance' || x[0] === 'party' || x[0] === 'rocket') w *= 0.15; } if (!PR.wise && (x[0] === 'proverb' || x[0] === 'tipTalk')) w = 0; return [x[0], w]; });
@@ -492,7 +492,7 @@ html.lite .gc-card, body.still .gc-card { transition: none; }
         function frame(now) {
             if (!running) return;
             if (now - last < ((dragging || gliding || spr) ? 15 : 30)) { requestAnimationFrame(frame); return; }   // 60 pictures a second only while you drag it or it springs; 30 is plenty for the rest   // never faster than about 60 pictures a second (many phones refresh at 90 or 120 Hz, which would double the work for nothing)
-            if (!document.hidden && PR.place === 'off') { setTimeout(() => requestAnimationFrame(frame), 500); return; }   // hidden by the owner: no drawing at all
+            if (!document.hidden && PR.place === 'off') { running = false; return; }   // hidden by the owner: no drawing and no timer; a settings change starts it again
             if (!document.hidden && shown && !act && !dragging && !gliding && !motion && !spr && !poseOver && still() && now - last < 250) { wake(250 - (now - last)); return; }   // still or Lite mode: the picture only needs a refresh now and then
             if (!document.hidden && shown && !act && !dragging && !gliding && !motion && !spr && !poseOver && Math.abs(ks) < 0.004 && Math.abs(kv) < 0.05 && now - ptAt > 2400 && now - last < (root.__gcAmb || ambMs(now))) { wake((root.__gcAmb || ambMs(now)) - (now - last)); return; }   // resting: ambient drifting only needs about 20 pictures a second (it was 30); every picture also makes the phone re-blur the frosted glass under it
             const dt = Math.min(0.1, (now - last) / 1000 || 0.016); last = now;
@@ -701,7 +701,7 @@ html.lite .gc-card, body.still .gc-card { transition: none; }
         }
         function glideTo(x, y) { springTo(x, y, { style: PR.evade, spd: PR.evspeed }); }
         function avoidRestart() { clearInterval(avTimer); avTimer = null; overSince = 0; if (PR.avoid && PR.avoid !== 'off') avTimer = setInterval(avoidStep, 600); }
-        avoidRestart(); watchers.push(avoidRestart);
+        avoidRestart(); watchers.push(avoidRestart); document.addEventListener('visibilitychange', () => { if (document.hidden) { clearInterval(avTimer); avTimer = null; } else avoidRestart(); });
         const cosmic = [auraT, auraG, auraV, orb1, orb2, sp1, sp2, star1, star2, flare].concat(twink.map(t => t.e));
         // ---- shifting spectrum colour: two or three soft colours of the spectrum at a time, slowly drifting (one colour a day when still or Lite)
         const ORIG = {}; Object.keys(SS).forEach(k => { ORIG[k] = SS[k].map(e => e.getAttribute('stop-color')); }); const FLO = ['#ffe2a8', '#ffe2a8', '#ffe9c2'];
@@ -719,7 +719,9 @@ html.lite .gc-card, body.still .gc-card { transition: none; }
             setStops('r', [hsl(B, 70, 78), hsl(A, 65, 72), hsl(B, 70, 78)]); setStops('o', [hsl(A, 70, 78), null, hsl(B, 70, 80)]); setStops('oc', [hsl(B, 75, 82), hsl(B, 75, 82)]);
             if (flTint[0]) flTint[0].setAttribute('flood-color', hsl(B, 80, 84)); if (flTint[1]) flTint[1].setAttribute('flood-color', hsl(A, 80, 82)); if (flTint[2]) flTint[2].setAttribute('flood-color', hsl(B, 70, 90));
         }
-        applyHue(); setInterval(applyHue, 250); watchers.push(() => { hueKey = ''; applyHue(); });
+        let hueT = null;
+        function hueRestart() { clearInterval(hueT); hueT = null; if (document.hidden) return; applyHue(); if (PR.hue === 'shift') hueT = setInterval(applyHue, still() ? 60000 : 1000); }   // no timer when the colours are fixed, hidden, or still
+        hueRestart(); watchers.push(() => { hueKey = ''; hueRestart(); }); document.addEventListener('visibilitychange', hueRestart);
         let lkLook = PR.look, lkRest = PR.rest;
         function applyLook() {
             const orbMode = PR.look === 'orb'; orbHi.setAttribute('opacity', orbMode ? 1 : 0); orbCa.setAttribute('opacity', orbMode ? 1 : 0);

@@ -143,7 +143,7 @@
         if (onMount) onMount(box);
         const first = box.querySelector('[autofocus]'); if (first && !(opts && opts.noFocus)) setTimeout(() => { try { first.focus(); } catch (e) {} }, 60);
     }
-    function closeSheet() { $('sheet-bg').classList.remove('show'); const f = sheetCloser; sheetCloser = null; if (f) f(); }
+    function closeSheet() { $('sheet-bg').classList.remove('show'); const f = sheetCloser; sheetCloser = null; if (f) f(); if (window.GFresh) setTimeout(GFresh.afterBusy, 60); }
     // Icon-only Edit (Lucide square-pen) and Delete (Lucide trash-2): same size, tooltip and spoken label
     const ICO = { edit: '<path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>', del: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/>' };
     const icoBtn = (kind, attrs, what) => `<button type="button" class="ico-btn ico-${kind}" ${attrs} title="${kind === 'edit' ? 'Edit' : 'Delete'}" aria-label="${kind === 'edit' ? 'Edit' : 'Delete'} ${what}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICO[kind]}</svg></button>`;
@@ -446,7 +446,7 @@
 
     const sw = (k, t, d) => `<div class="sw-row"><div><div>${t}</div>${d ? `<div class="set-meta">${d}</div>` : ''}</div><label class="switch"><input type="checkbox" data-pref="${k}" ${prefs[k] ? 'checked' : ''}><i></i></label></div>`;
     const slider = (id, l, max, v) => `<div class="bg-row"><span>${l}</span><input type="range" id="${id}" min="0" max="${max}" value="${v}"><b class="bg-val" id="${id}-v">${v}</b></div>`;
-    /* ================= Version 3: chapters, pieces and the chain clock ================= */
+    /* ================= Version 3: chapters, tasks and the chain clock ================= */
     const DEFD0 = { skim: 3, scan: 5, intro: 14, review: 40, concl: 14, orient: 5, def: 2, inst: 5, ta: 5, trans: 1, synth: 5, struct: 1, lang: 1, cite: 3, proof: 3 };
     const DEFD_LABEL = [['skim', 'Skim Reading'], ['scan', 'Scan Reading'], ['orient', 'Orientation'], ['def', 'Definition'], ['inst', 'Instances and Ramifications'], ['ta', 'Theoretical Application'], ['trans', 'Concluding lines (transition)'], ['synth', 'Synthesis'], ['intro', 'Introduction chapter, drafting'], ['review', 'Theory and Review chapter, drafting'], ['concl', 'Conclusion chapter, drafting'], ['struct', 'Structural edit, per theme or part'], ['lang', 'Language edit, per theme or part'], ['cite', 'Citations and MLA check'], ['proof', 'Final proofread']];
     const defDays = k => { const v = Number((prefs.defDays || {})[k]); return v > 0 ? v : DEFD0[k]; };
@@ -517,7 +517,7 @@
         return `<span class="muted">starts ${dShort(p.start)}</span>`;
     }
     const dayF = n => { const r = Math.round(Math.abs(n) * 10) / 10; return N(r) + (r === 1 ? ' day' : ' days'); };
-    // work done on a piece against where the clock says it should be
+    // work done on a task against where the clock says it should be
     function pieceWorkBar(p, cls) {
         if (p.done || !p.hasWork) return '';
         return `<span class="${cls}"><i style="width:${Math.round(p.work * 100)}%"></i>${p.workExp !== null ? `<b style="left:${Math.round(p.workExp * 100)}%"></b>` : ''}</span>`;
@@ -554,10 +554,10 @@
             const open = PP.open.length, need = PP.list.filter(p => !p.done).reduce((s, p) => s + p.days, 0);
             const fit = T.baseN - J.targetN;
             h += `<div class="card"><h3>The plan as you set it</h3>
-                <div class="row"><span class="muted">Open pieces</span><b class="num">${open} · ${dN(need)} of work</b></div>
+                <div class="row"><span class="muted">Open tasks</span><b class="num">${open} · ${dN(need)} of work</b></div>
                 <div class="row"><span class="muted">Days left to the year-${J.target} target</span><b class="num">${dN(Math.max(0, J.daysToTarget))}</b></div>
-                <div class="row"><span class="muted">Finishes (if every piece takes its allotted days)</span><b class="num ${fit > 0 ? 'bad' : 'good'}">${fmtDNum(T.baseN)}</b></div>
-                <div class="hint mt">${fit > 0 ? `That is ${dN(fit)} after your target. Shorten, drop or merge pieces, or accept using ${dN(fit)} of the fifth year.` : `That is ${dN(-fit)} before your target.`}</div></div>`;
+                <div class="row"><span class="muted">Finishes (if every task takes its allotted days)</span><b class="num ${fit > 0 ? 'bad' : 'good'}">${fmtDNum(T.baseN)}</b></div>
+                <div class="hint mt">${fit > 0 ? `That is ${dN(fit)} after your target. Shorten, drop or merge tasks, or accept using ${dN(fit)} of the fifth year.` : `That is ${dN(-fit)} before your target.`}</div></div>`;
         }
         h += chainStrip() + chapterBars();
         h += `<div class="grid2" style="margin-bottom:14px"><button class="btn-line btn-accent" data-act="chap-add">Add a chapter</button><button class="btn-line" data-act="custom-add">Add a custom task</button></div>`;
@@ -580,8 +580,8 @@
         });
         const customs = PP.list.filter(p => p.g.custom);
         if (customs.length) h += `<div class="card" data-sec="plan:custom-tasks"><h3>Custom tasks</h3>${customs.map(p => pieceRow(p, 0)).join('')}</div>`;
-        if (D.tasks.length) h += `<div class="card" data-sec="plan:earlier-daily-tasks"><h3>Earlier daily tasks</h3><p class="tight">Quantity-based tasks from before. They still count in their own pace.</p>${D.tasks.map(t => `<div class="ol-row ol-plan" data-act="task" data-id="${t.id}"><span class="ol-chev">📅</span><span class="ol-title">${esc(t.g.title)} · ${N(t.done)}/${N(t.total)} ${esc(t.unit)}</span>${statusChip(t)}</div>`).join('')}</div>`;
-        h += `<button class="btn-line" data-act="defaults">Default days for each kind of piece</button>`;
+        if (D.tasks.length) h += `<div class="card" data-sec="plan:earlier-daily-tasks"><h3>Earlier tasks</h3><p class="tight">Quantity-based tasks from before. They still count in their own pace.</p>${D.tasks.map(t => `<div class="ol-row ol-plan" data-act="task" data-id="${t.id}"><span class="ol-chev">📅</span><span class="ol-title">${esc(t.g.title)} · ${N(t.done)}/${N(t.total)} ${esc(t.unit)}</span>${statusChip(t)}</div>`).join('')}</div>`;
+        h += `<button class="btn-line" data-act="defaults">Default days for each kind of task</button>`;
         put($('s-plan'), h);
     }
 
@@ -589,7 +589,7 @@
     function consequence(p, finKey) {
         const f = E.dn(finKey), took = f - p.start + 1, over = took - p.days;
         if (over > 0) return `<div class="pwarn">Allotted ${dN(p.days)}, taking ${dN(took)}: ${dN(over)} over. Everything after it moves ${dN(over)} later.</div>`;
-        if (over < 0) return `<div class="pinfo">Allotted ${dN(p.days)}, taking ${dN(took)}: ${dN(-over)} early. The next piece can start ${dN(-over)} sooner.</div>`;
+        if (over < 0) return `<div class="pinfo">Allotted ${dN(p.days)}, taking ${dN(took)}: ${dN(-over)} early. The next task can start ${dN(-over)} sooner.</div>`;
         return `<div class="pinfo">Exactly on time: ${dN(p.days)} allotted, ${dN(took)} taken.</div>`;
     }
     function finishSheet(id) {
@@ -619,21 +619,21 @@
         const needRead = new Set();
         open.forEach(p => { if (p.locked && p.lockWhy === 'reading' && p.chapter != null) P().list.filter(r => r.grp === 'reading' && r.chapter === p.chapter && !r.done).forEach(r => needRead.add(r.id)); });
         const all = open.concat([...needRead].filter(i => !open.find(o => o.id === i)).map(i => P().byId.get(i))).sort((a, b) => a.i - b.i);
-        sheet(`<h2>Mark as done</h2><p>${esc(label)}: ${plural(all.length, 'piece')} will be ticked as finished${needRead.size ? ', including the chapter reading that unlocks it' : ''}.</p>
+        sheet(`<h2>Mark as done</h2><p>${esc(label)}: ${plural(all.length, 'task')} will be ticked as finished${needRead.size ? ', including the chapter reading that unlocks it' : ''}.</p>
             <label class="field"><span>Finished around (optional)</span><input type="date" id="b-d" max="${today}"></label>
             <p class="hint">Leave it blank if you do not remember. Dates are only used to learn your real speed and to place later work after them. Work finished before today never counts as late.</p>
             <div class="error" id="b-e"></div><div class="modal-actions"><button class="btn-secondary" data-act="close">Cancel</button><button class="btn-primary" id="b-go">Mark ${all.length} done</button></div>`, box => {
             box.querySelector('#b-go').onclick = () => {
                 const d = val(box, '#b-d') || null; if (d && d > today) { box.querySelector('#b-e').textContent = 'That day has not come yet'; return; }
                 const made = all.map(p => add({ t: 'fin', goal: p.id, day: d }));
-                closeSheet(); render(); toast(plural(all.length, 'piece') + ' marked done', () => { made.forEach(e => add({ t: 'void', target: e.id })); render(); fx('down'); });
+                closeSheet(); render(); toast(plural(all.length, 'task') + ' marked done', () => { made.forEach(e => add({ t: 'void', target: e.id })); render(); fx('down'); });
             };
         });
     }
     function lockedSheet(p) {
         if (p.lockWhy === 'edit') {
             const n = P().rdOpen;
-            sheet(`<h2>Editing comes last</h2><p>Editing and proofreading begin only after all reading and drafting for the whole thesis is done. ${plural(n, 'reading or drafting piece')} still ${n === 1 ? 'remains' : 'remain'}.</p>
+            sheet(`<h2>Editing comes last</h2><p>Editing and proofreading begin only after all reading and drafting for the whole thesis is done. ${plural(n, 'reading or drafting task')} still ${n === 1 ? 'remains' : 'remain'}.</p>
                 <div class="modal-actions"><button class="btn-secondary" data-act="close">Close</button><button class="btn-primary" id="l-rd">I have already done this</button></div>`, box => {
                 box.querySelector('#l-rd').onclick = () => { closeSheet(); bulkSheet([p.id], pTitle(p)); };
             });
@@ -652,7 +652,7 @@
         finishSheet(id);
     }
 
-    /* ---------- sheets: piece, section, group, chapter ---------- */
+    /* ---------- sheets: task, section, group, chapter ---------- */
     function pieceSheet(id) {
         const p = P().byId.get(id); if (!p) return;
         const g = p.g, young = Date.now() - (g.createdAt || 0) <= 86400000, canStartEarlier = P().pickMode ? (!p.done && !p.picked && !p.locked) : (!p.done && p.start > D.todayN);
@@ -660,7 +660,7 @@
             <div class="row mt"><span class="muted">Status</span>${p.done ? '<span class="chip good">Done</span>' : p.status === 'late' ? `<span class="chip bad">${dN(p.lateDays)} late</span>` : p.status === 'later' ? `<span class="chip">Starts ${dShort(p.start)}</span>` : p.status === 'ready' ? '<span class="chip">Ready to start</span>' : '<span class="chip">In progress</span>'}</div>
             <div class="row"><span class="muted">Clock</span><b class="num">${fmtDNum(p.start)} to ${fmtDNum(p.due)}</b></div>
             ${pieceWorkRows(p)}
-            ${p.dl0 !== null ? `<div class="row"><span class="muted">Original deadline (fixed)</span><b class="num">${fmtDNum(p.dl0)}</b></div>` : '<div class="hint">The deadline is fixed 24 hours after you create the piece.</div>'}
+            ${p.dl0 !== null ? `<div class="row"><span class="muted">Original deadline (fixed)</span><b class="num">${fmtDNum(p.dl0)}</b></div>` : '<div class="hint">The deadline is fixed 24 hours after you create the task.</div>'}
             ${p.done && !p.doneUndated ? `<div class="row"><span class="muted">Finished</span><b class="num">${fmtDNum(p.finN)}${p.over !== null ? ` · ${p.over > 0 ? dN(p.over) + ' over' : p.over < 0 ? dN(-p.over) + ' early' : 'on time'}` : ''}</b></div>` : ''}
             ${p.locked ? `<div class="pwarn">${p.lockWhy === 'edit' ? 'Locked until all reading and drafting is done.' : 'Locked until the chapter reading is done.'}</div>` : ''}
             <div class="grid2 mt"><label class="field"><span>Allotted days</span><input type="number" inputmode="numeric" id="pc-d" value="${p.days}"></label>
@@ -670,8 +670,8 @@
             <div class="modal-actions"><button class="btn-secondary" data-act="close">Close</button><button class="btn-primary" id="pc-go">Save</button></div>
             ${trackBlock(trackOf(id))}
             ${p.done ? '' : `<div class="grid2" style="margin-top:8px">${trackOf(id) ? `<button class="btn-line" data-act="tset" data-id="${trackOf(id).id}">Change daily pace</button>` : `<button class="btn-line" data-act="tset" data-id="${id}">Set a daily pace</button>`}<button class="btn-line" data-act="split" data-id="${id}">Split into sub-sections</button></div>${(D.cfg && D.cfg.order === 'custom') ? `<button class="btn-line" data-act="next" data-id="${id}" style="margin-top:8px">Do this next</button>` : ''}`}
-            <div class="grid2" style="margin-top:8px">${p.done ? `<button class="btn-line" data-act="tick" data-id="${id}">Mark not done</button>` : `<button class="btn-line btn-accent" data-act="tick" data-id="${id}">${p.locked ? 'Why locked?' : 'Mark done'}</button>`}${p.began && !p.hasWork && !p.done && P().pickMode ? '<button class="btn-line" id="pc-stop">Stop working on this</button>' : ''}${canStartEarlier ? `<button class="btn-line btn-accent" id="pc-st">${P().pickMode ? 'Start this piece' : 'Start now'}</button>` : '<span></span>'}</div>
-            <button class="btn-extra" id="pc-del" style="margin-top:8px">Delete piece</button>`, box => {
+            <div class="grid2" style="margin-top:8px">${p.done ? `<button class="btn-line" data-act="tick" data-id="${id}">Mark not done</button>` : `<button class="btn-line btn-accent" data-act="tick" data-id="${id}">${p.locked ? 'Why locked?' : 'Mark done'}</button>`}${p.began && !p.hasWork && !p.done && P().pickMode ? '<button class="btn-line" id="pc-stop">Stop working on this</button>' : ''}${canStartEarlier ? `<button class="btn-line btn-accent" id="pc-st">${P().pickMode ? 'Start this task' : 'Start now'}</button>` : '<span></span>'}</div>
+            <button class="btn-extra" id="pc-del" style="margin-top:8px">Delete task</button>`, box => {
             box.querySelector('#pc-go').onclick = () => {
                 const days = Math.round(numv(box, '#pc-d')); if (!(days >= 1)) { box.querySelector('#pc-e').textContent = 'Allot at least one day'; return; }
                 const f = { pdays: days }; const t = box.querySelector('#pc-t'); if (t && t.value.trim()) f.title = t.value.trim();
@@ -680,7 +680,7 @@
             };
             const st = box.querySelector('#pc-st'); if (st) st.onclick = () => { if (P().pickMode) { closeSheet(); beginPiece(id); return; } add({ t: 'pstart', goal: id, day: todayKey() }); closeSheet(); render(); toast('Clock started today'); };
             const sp = box.querySelector('#pc-stop'); if (sp) sp.onclick = () => { add({ t: 'unbegin', goal: id }); closeSheet(); render(); toast('Moved back to the recommended list'); };
-            box.querySelector('#pc-del').onclick = async () => { if (await confirmSheet({ title: 'Delete this piece?', sub: 'It leaves the plan. Later pieces move up.', ok: 'Delete', danger: true })) { add({ t: 'goal', op: 'del', gid: id }); render(); } };
+            box.querySelector('#pc-del').onclick = async () => { if (await confirmSheet({ title: 'Delete this task?', sub: 'It leaves the plan. Later tasks move up.', ok: 'Delete', danger: true })) { add({ t: 'goal', op: 'del', gid: id }); render(); } };
         });
     }
     function nodeSheet2(id) {
@@ -689,17 +689,17 @@
         const ids = a ? a.pieces.map(p => p.id) : [];
         sheet(`<h2>${esc(g.title)}</h2><div class="hint">${esc(pathOf(id))}</div>
             ${a && a.count ? `<div class="row mt"><span class="muted">Done</span><b class="num">${a.doneCount} of ${a.count} · ${pctTxt(a.pct)}</b></div><div class="row"><span class="muted">Days still to do</span><b class="num">${dN(a.openDays)}</b></div>${a.dl0 !== null && a.projN !== null ? `<div class="row"><span class="muted">Finishes</span><b class="num ${a.slip > 0.5 ? 'bad' : a.slip < -0.5 ? 'good' : ''}">${fmtDNum(a.projN)} · ${slipText(a.slip)}</b></div>` : ''}` : '<p class="hint mt">Nothing inside yet.</p>'}
-            ${isGrp ? `<div class="grid2"><label class="field"><span>Days budget (optional)</span><input type="number" inputmode="numeric" id="n-b" value="${g.budget || ''}" placeholder="e.g. 60"></label><div class="field"><span>Pieces add up to</span><b class="num" style="font-size:1.1rem">${a ? a.totalDays : 0} d</b></div></div>
-                ${g.budget && a ? (a.totalDays === g.budget ? '<div class="pinfo">The pieces match the budget.</div>' : `<div class="pwarn">The pieces add up to ${dN(a.totalDays)}, ${dN(Math.abs(a.totalDays - g.budget))} ${a.totalDays > g.budget ? 'over' : 'under'} the budget.</div>`) : ''}
-                ${g.budget ? '<button class="btn-line" id="n-share">Share the budget across the pieces</button>' : ''}` : ''}
-            <div class="grid2 mt"><button class="btn-line btn-accent" data-act="piece-add" data-id="${id}">Add a piece</button><button class="btn-line" data-act="sec-add2" data-id="${id}">Add a section</button></div>
+            ${isGrp ? `<div class="grid2"><label class="field"><span>Days budget (optional)</span><input type="number" inputmode="numeric" id="n-b" value="${g.budget || ''}" placeholder="e.g. 60"></label><div class="field"><span>Tasks add up to</span><b class="num" style="font-size:1.1rem">${a ? a.totalDays : 0} d</b></div></div>
+                ${g.budget && a ? (a.totalDays === g.budget ? '<div class="pinfo">The tasks match the budget.</div>' : `<div class="pwarn">The tasks add up to ${dN(a.totalDays)}, ${dN(Math.abs(a.totalDays - g.budget))} ${a.totalDays > g.budget ? 'over' : 'under'} the budget.</div>`) : ''}
+                ${g.budget ? '<button class="btn-line" id="n-share">Share the budget across the tasks</button>' : ''}` : ''}
+            <div class="grid2 mt"><button class="btn-line btn-accent" data-act="piece-add" data-id="${id}">Add a task</button><button class="btn-line" data-act="sec-add2" data-id="${id}">Add a section</button></div>
             <button class="btn-line" data-act="tset" data-id="${id}">${P().tracks.find(x => x.id === id) ? 'Change the daily pace' : 'Set a daily pace (pages or steps)'}</button>
             ${P().tracks.find(x => x.id === id) ? trackBlock(P().tracks.find(x => x.id === id)) : ''}
             ${g.role === 'analysis' ? `<button class="btn-line" data-act="themes-add" data-id="${chapOf(id).id}">Add themes</button>` : ''}
             ${ids.length ? `<button class="btn-line" id="n-bulk">Mark everything here as done</button>` : ''}
             <div class="modal-actions"><button class="btn-secondary" data-act="close">Close</button><button class="btn-secondary" id="n-ren">Rename</button>${isGrp ? '' : '<button class="btn-extra" id="n-del">Delete</button>'}</div>`, box => {
             const bd = box.querySelector('#n-b'); if (bd) bd.onchange = () => { add({ t: 'goal', op: 'edit', gid: id, f: { budget: Math.max(0, Math.round(+bd.value || 0)) } }); render(); nodeSheet2(id); };
-            const sh = box.querySelector('#n-share'); if (sh) sh.onclick = () => { shareBudget(id); closeSheet(); render(); toast('Budget shared across the pieces'); };
+            const sh = box.querySelector('#n-share'); if (sh) sh.onclick = () => { shareBudget(id); closeSheet(); render(); toast('Budget shared across the tasks'); };
             const bk = box.querySelector('#n-bulk'); if (bk) bk.onclick = () => { closeSheet(); bulkSheet(ids, g.title); };
             box.querySelector('#n-ren').onclick = async () => { const v = await promptSheet('Rename', g.title); if (v) { add({ t: 'goal', op: 'edit', gid: id, f: { title: v } }); closeSheet(); render(); } };
             const dl = box.querySelector('#n-del'); if (dl) dl.onclick = async () => { if (await confirmSheet({ title: 'Delete "' + g.title + '"?', sub: 'Everything inside it is removed.', ok: 'Delete', danger: true })) { add({ t: 'goal', op: 'del', gid: id }); closeSheet(); render(); } };
@@ -732,17 +732,17 @@
             ${descendants(id, g => g.role === 'analysis').length ? `<button class="btn-line btn-accent" data-act="themes-add" data-id="${id}">Add themes to the analysis</button>` : ''}
             <div class="modal-actions"><button class="btn-secondary" data-act="close">Close</button><button class="btn-secondary" id="c-ren">Rename</button><button class="btn-extra" id="c-del">Delete chapter</button></div>`, box => {
             box.querySelector('#c-ren').onclick = async () => { const v = await promptSheet('Rename chapter', c.title); if (v) { add({ t: 'goal', op: 'edit', gid: id, f: { title: v } }); closeSheet(); render(); } };
-            box.querySelector('#c-del').onclick = async () => { if (await confirmSheet({ title: 'Delete "' + c.title + '"?', sub: 'All its reading, drafting and editing pieces are removed.', ok: 'Delete', danger: true })) { add({ t: 'goal', op: 'del', gid: id }); closeSheet(); render(); } };
+            box.querySelector('#c-del').onclick = async () => { if (await confirmSheet({ title: 'Delete "' + c.title + '"?', sub: 'All its reading, drafting and editing tasks are removed.', ok: 'Delete', danger: true })) { add({ t: 'goal', op: 'del', gid: id }); closeSheet(); render(); } };
         });
     }
     function pieceAddSheet(parentId) {
         const g = D.goals.get(parentId);
-        sheet(`<h2>Add pieces</h2><p>One per line. Add allotted days after a bar, for example <i>Definition | 2</i>. Lines without days use the default below.</p>
-            <label class="field"><span>Pieces</span><textarea id="a-l" style="min-height:90px" autofocus></textarea></label>
+        sheet(`<h2>Add tasks</h2><p>One per line. Add allotted days after a bar, for example <i>Definition | 2</i>. Lines without days use the default below.</p>
+            <label class="field"><span>Tasks</span><textarea id="a-l" style="min-height:90px" autofocus></textarea></label>
             <label class="field"><span>Default days</span><input type="number" inputmode="numeric" id="a-d" value="3"></label><div class="error" id="a-e"></div>
             <div class="modal-actions"><button class="btn-secondary" data-act="close">Cancel</button><button class="btn-primary" id="a-go">Add</button></div>`, box => {
             box.querySelector('#a-go').onclick = () => {
-                const def = Math.round(numv(box, '#a-d')), lines = parseLines(val(box, '#a-l')); if (!lines.length) { box.querySelector('#a-e').textContent = 'Type at least one piece'; return; } if (!(def >= 1)) { box.querySelector('#a-e').textContent = 'Default days must be 1 or more'; return; }
+                const def = Math.round(numv(box, '#a-d')), lines = parseLines(val(box, '#a-l')); if (!lines.length) { box.querySelector('#a-e').textContent = 'Type at least one task'; return; } if (!(def >= 1)) { box.querySelector('#a-e').textContent = 'Default days must be 1 or more'; return; }
                 commit(parentId, lines.map(l => { const [a, b] = l.split('|'); const d = parseInt(b, 10); return pc(a.trim(), d >= 1 ? d : def); }));
                 if ((prefs.open || []).indexOf(parentId) < 0) { prefs.open = (prefs.open || []).concat([parentId]); persist(); }
                 closeSheet(); render(); toast('Added');
@@ -757,7 +757,7 @@
     }
     function themesSheet(chapterId) {
         const c = D.goals.get(chapterId), have = descendants(chapterId, g => g.role === 'theme').length;
-        sheet(`<h2>Add themes</h2><p><b>${esc(c.title)}</b> has ${plural(have, 'theme')}. One theme per line. Each gets Definition (${defDays('def')} d), Instances and Ramifications (${defDays('inst')} d), Theoretical Application (${defDays('ta')} d) and concluding lines for the transition (${defDays('trans')} d), plus a matching piece in the structural and language edits. Change the defaults in Plan.</p>
+        sheet(`<h2>Add themes</h2><p><b>${esc(c.title)}</b> has ${plural(have, 'theme')}. One theme per line. Each gets Definition (${defDays('def')} d), Instances and Ramifications (${defDays('inst')} d), Theoretical Application (${defDays('ta')} d) and concluding lines for the transition (${defDays('trans')} d), plus a matching task in the structural and language edits. Change the defaults in Plan.</p>
             <label class="field"><span>Themes</span><textarea id="h-l" style="min-height:110px" placeholder="Memory and Loss&#10;Belonging" autofocus></textarea></label><div class="error" id="h-e"></div>
             <div class="modal-actions"><button class="btn-secondary" data-act="close">Cancel</button><button class="btn-primary" id="h-go">Add</button></div>`, box => {
             box.querySelector('#h-go').onclick = () => { const names = parseLines(val(box, '#h-l')); if (!names.length) { box.querySelector('#h-e').textContent = 'Type at least one theme'; return; } addThemes(chapterId, names); closeSheet(); render(); toast(plural(names.length, 'theme') + ' added'); };
@@ -794,14 +794,14 @@
         });
     }
     function defaultsSheet() {
-        sheet(`<h2>Default days</h2><p>Used whenever the app creates new pieces. Existing pieces are not changed.</p>${DEFD_LABEL.map(([k, l]) => `<div class="sw-row"><span>${l}</span><input type="number" inputmode="numeric" data-dd="${k}" value="${defDays(k)}" style="width:72px;text-align:right" class="set-select"></div>`).join('')}
+        sheet(`<h2>Default days</h2><p>Used whenever the app creates new tasks. Existing tasks are not changed.</p>${DEFD_LABEL.map(([k, l]) => `<div class="sw-row"><span>${l}</span><input type="number" inputmode="numeric" data-dd="${k}" value="${defDays(k)}" style="width:72px;text-align:right" class="set-select"></div>`).join('')}
             <div class="modal-actions"><button class="btn-secondary" data-act="close">Cancel</button><button class="btn-primary" id="d-go">Save</button></div>`, box => {
             box.querySelector('#d-go').onclick = () => { const o = {}; box.querySelectorAll('[data-dd]').forEach(i => { const v = Math.round(+i.value); if (v >= 1) o[i.dataset.dd] = v; }); prefs.defDays = o; persist(); closeSheet(); toast('Defaults saved'); };
         });
     }
     function rebaseSheet() {
         const T = D.thesis;
-        sheet(`<h2>Re-baseline the plan</h2><p>This resets every open piece's deadline to where it stands now, so the delay so far stops showing as lateness. Use it only after a real change of plan, such as adding chapters. The days it forgives (${dN(Math.max(0, T.slip))}) stay on record in the Outlook ledger for good.</p>
+        sheet(`<h2>Re-baseline the plan</h2><p>This resets every open task's deadline to where it stands now, so the delay so far stops showing as lateness. Use it only after a real change of plan, such as adding chapters. The days it forgives (${dN(Math.max(0, T.slip))}) stay on record in the Outlook ledger for good.</p>
             <div class="modal-actions"><button class="btn-secondary" data-act="close">Cancel</button><button class="btn-primary" id="rb-go">Re-baseline</button></div>`, box => {
             box.querySelector('#rb-go').onclick = () => { const map = {}; P().open.forEach(p => { map[p.id] = E.keyOf(p.projN); }); add({ t: 'lock', map, rebase: true, forgiven: Math.max(0, T.slip) }); closeSheet(); render(); toast('Plan re-baselined. It is on record.'); };
         });
@@ -809,7 +809,7 @@
 
     function nowCard(p) {
         const late = p.status === 'late', dayNo = Math.max(1, Math.min(p.days, D.todayN - p.start + 1));
-        const cost = late ? `<div class="pwarn" style="margin-top:8px">${dN(p.lateDays)} over. Each extra day moves everything after this piece one day later${prefs.lossOn ? ` (the thesis now finishes ${fmtDNum(D.thesis.projN)})` : ''}.</div>` : '';
+        const cost = late ? `<div class="pwarn" style="margin-top:8px">${dN(p.lateDays)} over. Each extra day moves everything after this task one day later${prefs.lossOn ? ` (the thesis now finishes ${fmtDNum(D.thesis.projN)})` : ''}.</div>` : '';
         const chap = chapOf(p.id);
         return `<div class="card pnow ${late ? 'late' : ''}" data-act="pc" data-id="${p.id}">
             <div class="row"><div style="min-width:0"><div class="safe-lbl">${esc(chap ? chap.title : 'Custom task')}</div><div class="pt">${esc(pTitle(p))}</div><div class="hint">${esc(pathOf(p.parent).split(' › ').slice(chap ? 1 : 0).join(' › '))}</div></div>
@@ -822,14 +822,14 @@
         if (p.locked) { fx('stop'); toast(p.lockWhy === 'edit' ? 'Locked until all reading and drafting is done.' : 'Locked until the chapter reading is done.'); return; }
         if (P().pickMode && !p.picked) {
             if (P().active.length >= 2) fx('stop');
-            if (P().active.length >= 2 && !(await confirmSheet({ title: 'Two pieces are already under way', sub: 'Two at a time is easier to keep up, and the thesis forecast assumes one steady chain. You can still start a third.', ok: 'Start anyway', cancel: 'Not now' }))) return;
+            if (P().active.length >= 2 && !(await confirmSheet({ title: 'Two tasks are already under way', sub: 'Two at a time is easier to keep up, and the thesis forecast assumes one steady chain. You can still start a third.', ok: 'Start anyway', cancel: 'Not now' }))) return;
             add({ t: 'begin', goal: id, day: todayKey() });
         }
         render(); howSheet(id);
     }
     function howSheet(id) {
         const p = P().byId.get(id); if (!p) return;
-        sheet(`<h2>${esc(pTitle(p))}</h2><p>This piece is now under way and its clock has started. How do you want to work on it?</p>
+        sheet(`<h2>${esc(pTitle(p))}</h2><p>This task is now under way and its clock has started. How do you want to work on it?</p>
             <button class="btn-line btn-accent" data-h="pace">Set a daily pace (pages or steps)</button>
             <button class="btn-line" data-h="split">Split into sub-sections</button>
             <button class="btn-line" data-h="clock">Just follow the clock</button>`, box => {
@@ -843,26 +843,26 @@
     }
     function newDailySheet() {
         const PP = P(), rec = PP.active.filter(p => !trackOf(p.id)).concat(PP.upcoming).slice(0, 4);
-        sheet(`<h2>New daily task</h2><p class="hint">Daily tasks are the small steps of a Plan piece. Start from the Plan, so the progress counts towards your thesis.</p>
+        sheet(`<h2>Start a task</h2><p class="hint">Pick a task from the Plan, so the work counts towards your thesis.</p>
             <div class="set-title">From the Plan</div>
             ${rec.length ? rec.map((p, i) => `<div class="ledger-row" data-act="begin" data-id="${p.id}" style="cursor:pointer"><span>${esc(pTitle(p))}<span class="muted"> · ${p.days} d${i === 0 ? ' · recommended' : ''}</span></span><span class="muted">Pick</span></div>`).join('') : '<p class="hint">Nothing is waiting in the Plan.</p>'}
-            <button class="btn-line" data-act="pick">Choose another piece from the Plan</button>
+            <button class="btn-line" data-act="pick">Choose another task from the Plan</button>
             <div class="set-title" style="margin-top:12px">Outside the Plan</div>
             <p class="hint">For something that is not in the thesis outline. It does not move the thesis clock.</p>
             <button class="btn-line" data-act="task-add">New task outside the Plan</button>`);
     }
     function pickToday(PP) {
         let h = `<div class="list-header"><span>Working on</span><span class="hint">tap Done on the day you finish</span></div>`;
-        h += PP.active.length ? PP.active.map(nowCard).join('') : `<div class="card"><p class="hint">${PP.upcoming[0] ? 'Nothing is under way yet. Pick a piece below to start its clock.' : 'Everything is done. Well earned.'}</p></div>`;
+        h += PP.active.length ? PP.active.map(nowCard).join('') : `<div class="card"><p class="hint">${PP.upcoming[0] ? 'Nothing is under way yet. Pick a task below to start its clock.' : 'Everything is done. Well earned.'}</p></div>`;
         if (PP.upcoming.length) {
             const f = PP.upcoming[0];
             h += `<div class="card"><h3>${PP.active.length ? 'Recommended next' : 'Recommended to start'}</h3>
                 <div class="ledger-row" style="cursor:default"><span><b>${esc(pTitle(f))}</b><span class="muted"> · ${f.days} d</span><span class="hint" style="display:block">${esc(pathOf(f.parent))}</span></span></div>
                 <button class="btn-line btn-accent" data-act="begin" data-id="${f.id}">Start this</button>
                 ${PP.upcoming.slice(1).map(p => `<div class="ledger-row" data-act="begin" data-id="${p.id}" style="cursor:pointer"><span>${esc(pTitle(p))}<span class="muted"> · ${p.days} d</span></span><span class="muted">Start</span></div>`).join('')}
-                ${PP.active.length ? '' : '<button class="btn-line" data-act="pick">Choose another piece</button>'}</div>`;
+                ${PP.active.length ? '' : '<button class="btn-line" data-act="pick">Choose another task</button>'}</div>`;
         }
-        return h + (PP.active.length ? `<div class="soft-row"><button class="btn-soft" data-act="newdaily">New daily task</button>${PP.upcoming.length ? '<button class="btn-soft" data-act="pick">Choose another piece</button>' : ''}</div>` : `<button class="btn-line" data-act="newdaily" style="margin-bottom:14px">New daily task</button>`);
+        return h + (PP.active.length ? `<div class="soft-row"><button class="btn-soft" data-act="newdaily">Start a task</button>${PP.upcoming.length ? '<button class="btn-soft" data-act="pick">Choose another task</button>' : ''}</div>` : `<button class="btn-line" data-act="newdaily" style="margin-bottom:14px">Start a task</button>`);
     }
     /* ---------- the top panel of Today: today's work, pace, week and month, and where you are heading ---------- */
     function todayPanel(PP, T, J) {
@@ -884,7 +884,7 @@
             const p = PP.active[0], dayNo = Math.max(1, Math.min(p.days, D.todayN - p.start + 1));
             ringSvg = mring(Math.max(0, Math.min(1, dayNo / p.days)), 'Day ' + dayNo, 'of ' + p.days).replace('class="ring mring"', 'class="ring mring tp-ringbox"');
             ringTell = `This is day ${dayNo} of ${p.days} for ${pTitle(p)}. Set a daily pace to see today's goal.`;
-        } else { ringSvg = mring(0, '–', '').replace('class="ring mring"', 'class="ring mring tp-ringbox"'); ringTell = 'Nothing is under way. Pick a piece below to start it.'; }
+        } else { ringSvg = mring(0, '–', '').replace('class="ring mring"', 'class="ring mring tp-ringbox"'); ringTell = 'Nothing is under way. Pick a task below to start it.'; }
         // ---- chips: flame (chain), clock (pace), arrow (week against week)
         const ico = { flame: '<path d="M12 3c1 3 4 5 4 9a4 4 0 0 1-8 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 0-8z"/>', clock: '<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>', up: '<path d="M12 19V6M6 12l6-6 6 6"/>', down: '<path d="M12 5v13M6 12l6 6 6-6"/>' };
         const chip = (k, txt, tell, tone) => `<button type="button" class="tp-chip ${tone || ''}" ${tt(tell, tone)}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ico[k]}</svg><b>${txt}</b></button>`;
@@ -961,16 +961,16 @@
         if (window.GWizard) h += GWizard.laterHTML();
         h += histCard();
         h += chainCard();
-        if (PP.onTimeRun >= 3) h += `<div class="streak" data-sec="today:streak" style="margin:0 0 10px 4px">🔥 ${plural(PP.onTimeRun, 'piece')} in a row finished on time</div>`;
+        if (PP.onTimeRun >= 3) h += `<div class="streak" data-sec="today:streak" style="margin:0 0 10px 4px">🔥 ${plural(PP.onTimeRun, 'task')} in a row finished on time</div>`;
         if (PP.list.length && PP.pickMode) h += pickToday(PP);
         else if (PP.list.length) {
             h += `<div class="list-header"><span>Working on</span><span class="hint">tap Done on the day you finish</span></div>`;
             h += PP.active.length ? PP.active.map(nowCard).join('') : `<div class="card"><p class="hint">${PP.upcoming[0] ? `Done for today. Next is <b>${esc(pTitle(PP.upcoming[0]))}</b>, starting ${fmtDNum(PP.upcoming[0].start)}. You can press Start on it if you want to begin sooner.` : 'Everything is done. Well earned.'}</p>${PP.upcoming[0] ? `<button class="btn-line" data-act="pc" data-id="${PP.upcoming[0].id}">Open it</button>` : ''}</div>`;
-            if (PP.upcoming.length) h += foldCard(`<div class="card"><h3>Coming up</h3>${PP.upcoming.map(p => `<div class="ledger-row" data-act="pc" data-id="${p.id}" style="cursor:pointer"><span>${esc(pTitle(p))}${p.locked ? ' 🔒' : ''}<span class="muted"> · ${p.days} d</span></span><span class="muted">${fmtDNshort(p.start)}</span></div>`).join('')}</div>`, 'tdy-up', PP.upcoming.length <= 2, plural(PP.upcoming.length, 'piece'));
+            if (PP.upcoming.length) h += foldCard(`<div class="card"><h3>Coming up</h3>${PP.upcoming.map(p => `<div class="ledger-row" data-act="pc" data-id="${p.id}" style="cursor:pointer"><span>${esc(pTitle(p))}${p.locked ? ' 🔒' : ''}<span class="muted"> · ${p.days} d</span></span><span class="muted">${fmtDNshort(p.start)}</span></div>`).join('')}</div>`, 'tdy-up', PP.upcoming.length <= 2, plural(PP.upcoming.length, 'task'));
         }
-        if (PP.list.length && D.cfg && D.cfg.order === 'custom') h += `<button class="btn-line btn-accent" data-act="pick" style="margin-bottom:14px">Choose my next piece</button>`;
+        if (PP.list.length && D.cfg && D.cfg.order === 'custom') h += `<button class="btn-line btn-accent" data-act="pick" style="margin-bottom:14px">Choose my next task</button>`;
         const active = D.tasks.filter(t => t.started && !t.finished).sort((a, b) => (b.status === 'behind') - (a.status === 'behind'));
-        if (active.length) h += `<div class="list-header"><span>Daily tasks</span><span class="hint">tap + to log</span></div><div id="cats">${active.map(taskRow).join('')}</div>`;
+        if (active.length) h += `<div class="list-header"><span>Tasks under way</span><span class="hint">tap + to log</span></div><div id="cats">${active.map(taskRow).join('')}</div>`;
         const nx = D.life.flatMap(l => l.ms.filter(m => !m.done && m.due).map(m => ({ l, m }))).sort((a, b) => a.m.daysLeft - b.m.daysLeft)[0];
         if (nx) h += `<div class="card tap" data-sec="today:beyond-the-thesis" data-act="goto" data-s="life"><h3>Beyond the thesis</h3><div class="row"><span>${esc(nx.m.title)}</span><b class="num ${nx.m.daysLeft < 0 ? 'bad' : ''}">${nx.m.daysLeft < 0 ? dN(nx.m.daysLeft) + ' overdue' : nx.m.daysLeft === 0 ? 'today' : dN(nx.m.daysLeft)}</b></div><div class="hint">${esc(nx.l.title)}</div></div>`;
         put(el, h);
@@ -982,23 +982,130 @@
         PP.tracks.filter(t => !t.finished && t.behind).slice(0, 2).forEach(t => r.push({ c: 'bad', h: `<b>${esc(D.goals.get(t.id).title)}</b>: ${N(t.done)} of ${N(t.total)} ${esc(t.unit)} done. At ${N(t.pace)} a day you finish ${fmtDNum(t.projN)}, ${dN(t.projN - t.deadline)} after ${fmtDNum(t.deadline)}. You need ${N(t.need)} a day.` }));
         if (T.toTarget > 0.5) {
             const need = PP.open.reduce((s, p) => s + p.days, 0), per = PP.open.length ? Math.max(0, J.daysToTarget) / PP.open.length : 0;
-            r.push({ c: 'bad', h: `The plan as set runs ${dN(T.toTarget)} past your year-${J.target} target. To fit, the ${PP.open.length} open pieces would have to average ${N(per)} days each (they now average ${N(need / Math.max(1, PP.open.length))}). Shorten, merge or drop work worth about ${dN(T.toTarget)}, or accept using that much of the fifth year.` });
+            r.push({ c: 'bad', h: `The plan as set runs ${dN(T.toTarget)} past your year-${J.target} target. To fit, the ${PP.open.length} open tasks would have to average ${N(per)} days each (they now average ${N(need / Math.max(1, PP.open.length))}). Shorten, merge or drop work worth about ${dN(T.toTarget)}, or accept using that much of the fifth year.` });
         }
-        if (PP.paced >= 3 && PP.ratio > 1.1) r.push({ c: 'bad', h: `Over your last ${PP.paced} timed pieces you took ${N(PP.ratio)} times the days you allotted. At that real pace the thesis finishes ${fmtDNum(T.forecastN)}${T.forecastToTarget > 0 ? `, ${dN(T.forecastToTarget)} after the target` : ''}. Allot days you can really keep, or protect more time each day.` });
-        else if (PP.paced >= 3 && PP.ratio < 0.9) r.push({ c: 'good', h: `You are finishing pieces in ${N(PP.ratio)} times your allotted days. Your estimates are generous; you could tighten them and bank more time.` });
+        if (PP.paced >= 3 && PP.ratio > 1.1) r.push({ c: 'bad', h: `Over your last ${PP.paced} timed tasks you took ${N(PP.ratio)} times the days you allotted. At that real pace the thesis finishes ${fmtDNum(T.forecastN)}${T.forecastToTarget > 0 ? `, ${dN(T.forecastToTarget)} after the target` : ''}. Allot days you can really keep, or protect more time each day.` });
+        else if (PP.paced >= 3 && PP.ratio < 0.9) r.push({ c: 'good', h: `You are finishing tasks in ${N(PP.ratio)} times your allotted days. Your estimates are generous; you could tighten them and bank more time.` });
         const lockedCh = [...new Set(PP.list.filter(p => p.lockWhy === 'reading' && !p.done).map(p => (chapOf(p.id) || {}).title).filter(Boolean))];
-        if (PP.rdOpen > 0 && PP.list.some(p => p.lockWhy === 'edit' && !p.done)) r.push({ c: '', h: `Editing and proofreading are locked until all ${PP.rdOpen} remaining reading and drafting pieces are done.` });
+        if (PP.rdOpen > 0 && PP.list.some(p => p.lockWhy === 'edit' && !p.done)) r.push({ c: '', h: `Editing and proofreading are locked until all ${PP.rdOpen} remaining reading and drafting tasks are done.` });
         if (lockedCh.length) r.push({ c: '', h: `Drafting is locked until reading is done: ${lockedCh.slice(0, 3).map(esc).join(', ')}${lockedCh.length > 3 ? ' and more' : ''}.` });
         const worst = [...D.goals.values()].filter(g => g.chap).map(g => PP.agg.get(g.id)).filter(a => a && a.slip > 0.5).sort((a, b) => b.slip - a.slip)[0];
         if (worst) r.push({ c: 'bad', h: `The chapter dragging most is <b>${esc(D.goals.get(worst.id).title)}</b>, ${dN(worst.slip)} behind its plan.` });
-        if (PP.earlyDays > 0 && prefs.gainOn) r.push({ c: 'good', h: `You have banked ${dN(PP.earlyDays)} by finishing pieces early.` });
-        if (PP.onTimeRun >= 3) r.push({ c: 'good', h: `${PP.onTimeRun} pieces in a row on time. Keep the chain unbroken.` });
+        if (PP.earlyDays > 0 && prefs.gainOn) r.push({ c: 'good', h: `You have banked ${dN(PP.earlyDays)} by finishing tasks early.` });
+        if (PP.onTimeRun >= 3) r.push({ c: 'good', h: `${PP.onTimeRun} tasks in a row on time. Keep the chain unbroken.` });
         const nx = PP.active[0] || PP.upcoming[0]; if (nx && !r.some(x => x.c === 'bad' && /over its allotted/.test(x.h))) r.push({ c: '', h: `Next: <b>${esc(pTitle(nx))}</b>, ${dN(nx.days)} allotted${nx.status === 'later' ? ', starting ' + fmtDNum(nx.start) : nx.status === 'ready' ? ', ready to start' : ''}.` });
         return r;
     }
+    /* ================= Work report (Outlook) ================= */
+    let grKind = 'week', grBack = 0, grTouched = false, grSel = 0;
+    const GPAL = ['#4f8cff', '#e0679a', '#2fb58a', '#f09a3e', '#7a64f0', '#e5b92b', '#d9534f', '#4cb8c4'];
+    const gCol = t => t.grp === 'reading' ? GPAL[0] : t.grp === 'drafting' ? GPAL[1] : t.grp === 'editing' ? GPAL[2] : GPAL[3 + (Math.abs(t.id) % 5)];
+    const gIco = t => t.grp === 'reading' ? '📖' : t.grp === 'drafting' ? '✍️' : t.grp === 'editing' ? '🔍' : unitIcon(t.unit);
+    const gTile = (t, big) => `<span class="rp-ic${big ? ' big' : ''}" style="background:${gCol(t)}" aria-hidden="true">${gIco(t)}</span>`;
+    const fh = h => h < 0.95 ? `${Math.max(1, Math.round(h * 60 / 5) * 5)} min` : `${N(h)} h`;
+    const fhW = h => { if (h < 0.95) return `${plural(Math.max(1, Math.round(h * 60 / 5) * 5), 'minute')}`; const v = h >= 10 ? Math.round(h) : Math.round(h * 2) / 2; return `${N(v)} ${v === 1 ? 'hour' : 'hours'}`; };
+    // more work is good (green), less is red; the triangle is always the same one
+    const gm = (d, text) => d === 0 ? `<span class="rf neutral">– ${text || 'same'}</span>` : `<span class="rf ${d > 0 ? 'wu' : 'wd'}"><i aria-hidden="true">${d > 0 ? '▲' : '▼'}</i> ${text}</span>`;
+    const gMove = (d, text) => d === 0 ? `<span class="rf neutral">– ${text || 'steady'}</span>` : `<span class="rf neutral"><i aria-hidden="true">${d > 0 ? '▲' : '▼'}</i> ${text}</span>`;
+    const gDay = ts => new Date(ts).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    const gDate = ts => new Date(ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    function gInputs() {
+        const tracks = P().tracks.map(t => ({ id: t.id, title: t.g.title, unit: t.unit, total: t.total, done: t.done }));
+        const finished = P().list.filter(p => p.status === 'done' && p.finN != null).map(p => ({ title: pTitle(p), at: p.finN * 864e5 + 12 * 36e5 }));
+        return { events, goals: D.goals, speed: spd(), tracks, leave: D.leave, finished, now: Date.now() };
+    }
+    function gDonut(r) {
+        const R = 46, L = 2 * Math.PI * R, tot = r.hours, seg = r.tasks.filter(t => t.cur > 0).slice(0, 6);
+        let o = 0, s = `<circle cx="65" cy="65" r="${R}" fill="none" stroke="var(--track)" stroke-width="17"/>`;
+        seg.forEach(t => { const f = t.cur / tot, d = Math.max(0.5, f * L - (seg.length > 1 ? 3 : 0)), sel = grSel === t.id;
+            s += `<circle class="rp-dn-seg" data-act="gr-task" data-id="${t.id}" cx="65" cy="65" r="${R}" fill="none" stroke="${gCol(t)}" stroke-width="${sel ? 22 : 17}" stroke-dasharray="${d} ${L - d}" stroke-dashoffset="${-o * L}" transform="rotate(-90 65 65)"/>`; o += f; });
+        const sc = r.tasks.find(t => t.id === grSel), mid = sc ? sc.cur : tot, lab = sc ? sc.title : 'Total';
+        s += `<text x="65" y="60" text-anchor="middle" font-size="10" fill="var(--text-muted)">${esc(lab.length > 12 ? lab.slice(0, 11) + '…' : lab)}</text><text x="65" y="80" text-anchor="middle" font-size="17" font-weight="700" fill="var(--text-main)">${esc(fh(mid))}</text>`;
+        return `<svg class="rp-dn" viewBox="0 0 130 130" role="img" aria-label="Hours of work by task">${s}</svg>`;
+    }
+    function gDays(r) {
+        const wk = r.kind === 'week', mx = Math.max(0.5, ...r.day.map(v => v || 0));
+        if (wk) {
+            const L = ['M', 'T', 'W', 'T', 'F', 'S', 'S'], WD = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], today = r.running ? r.elapsed - 1 : -1;
+            return `<div class="rp-wkb">${r.day.map((v, i) => { const fut = v === null, lv = !fut && r.leaveIdx[i] && !v, h = fut ? 14 : Math.max(lv ? 14 : 6, (v || 0) / mx * 70);
+                return `<div class="${fut ? 'f' : lv ? 'lv' : ''}${i === today ? ' td' : ''}" role="img" aria-label="${WD[i]}: ${fut ? 'still to come' : lv ? 'rest day' : v ? fh(v) : 'no work logged'}"><span style="height:${h}px"></span><em>${L[i]}</em></div>`; }).join('')}</div>`;
+        }
+        const off = (r.firstDow + 6) % 7, today = r.running ? r.elapsed - 1 : -1; let cells = '<i class="rp-mo-b"></i>'.repeat(off);
+        r.day.forEach((v, i) => { const fut = v === null, a = fut ? 0 : Math.min(1, (v || 0) / mx);
+            cells += `<b class="${fut ? 'f' : v ? '' : r.leaveIdx[i] ? 'lv' : 'z'}${i === today ? ' td' : ''}" style="${!fut && v ? `--a:${a.toFixed(2)};--o:1` : ''}" aria-label="${gDate(r.start + i * 864e5 + 12 * 36e5)}: ${fut ? 'still to come' : v ? fh(v) : r.leaveIdx[i] ? 'rest day' : 'no work logged'}">${i + 1}</b>`; });
+        return `<div class="rp-mo-h">${['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(x => `<em>${x}</em>`).join('')}</div><div class="rp-mo-g">${cells}</div>`;
+    }
+    function gSpark(vals, col) {
+        const v = vals.filter(x => x !== null); if (v.length < 3) return '';
+        const mx = Math.max(...v), mn = Math.min(...v), rg = Math.max(mx - mn, mx * 0.2, 0.1), n = vals.length;
+        const pts = vals.map((x, i) => x === null ? null : `${(2 + i * 66 / (n - 1)).toFixed(1)},${(26 - (x - mn) / rg * 22).toFixed(1)}`).filter(Boolean).join(' ');
+        return `<svg class="rp-spark" viewBox="0 0 70 30" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    }
+    function gHabit(h) {
+        const t = { id: h.id, grp: h.grp, unit: h.unit }, S = spd().get(h.id), few = h.n < 3;
+        const badge = few || (!h.sure && !h.likely) ? '<span class="rp-chip wait">still learning</span>' : h.sure ? '<span class="rp-chip ok">confident</span>' : '<span class="rp-chip">likely</span>';
+        const dots = ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((x, i) => `<i class="${h.share[i] >= 0.5 ? 'on' : ''}" title="${x}"></i>`).join('');
+        const unit = h.unit && h.unit !== 'hours' && h.unit !== 'sessions' ? h.unit : '';
+        let line = few ? `${plural(h.n, 'sitting')} so far · not enough to call it a habit` : [h.rhythm, h.tod, h.perHours ? `about ${fhW(h.perHours)} a sitting` : ''].filter(Boolean).join(' · ');
+        const sp = unit && h.speedNow ? (h.move ? gMove(h.move, `speed ${N(h.speedNow)} ${unit} an hour, was ${N(h.was)}`) : `<span class="rf neutral">– speed steady at ${N(h.speedNow)} ${unit} an hour</span>`) : '';
+        return `<div class="rp-hab" role="group">${gTile(t, 1)}<div class="rp-hb"><div class="rp-hn"><b>${esc(D.goals.get(h.id) ? D.goals.get(h.id).title : h.title)}</b>${badge}</div><div class="rp-dots" aria-hidden="true">${dots}</div><div class="hint">${esc(line)}</div>${sp ? `<div class="rp-hl">${sp}</div>` : ''}</div>${S && S.weeks ? gSpark(S.weeks, gCol(t)) : ''}</div>`;
+    }
+    function gNote(r, hs) {
+        const mv = hs.find(h => h.move > 0 && h.speedNow);
+        if (r.estimated && r.hours > 0) return 'Some hours are worked out from your speed, because no time was entered. Timing a few sittings makes them more exact.';
+        if (mv) return `${esc(D.goals.get(mv.id) ? D.goals.get(mv.id).title : mv.title)} speed is up a little. That often happens when the material becomes familiar.`;
+        if (r.hours > 0 && r.prevHours > 0 && r.diff < 0) return 'A lighter stretch than before. That is fine; rest is part of the work.';
+        if (r.hours > 0 && r.kept !== null && r.kept >= 0.8) return 'A steady stretch. The plan is being kept well.';
+        return '';
+    }
+    function gProject() {
+        const pj = GReport.project(gInputs()); if (!pj.items.length) return '';
+        const rows = pj.items.map(x => {
+            const S = spd().get(x.id), t = { id: x.id, grp: (D.goals.get(x.id) || {}).grp, unit: x.unit };
+            if (x.hours === null) return `<div class="rp-pj">${gTile(t)}<div class="rp-pjb"><b>${esc(x.title)}</b><div class="hint">Add how much you do in one hour, and this shows the hours left.</div></div></div>`;
+            const how = S && S.status === 'confident' ? 'confident' : S && S.status === 'learning' ? 'still learning' : 'your setting';
+            const wks = x.lo ? (x.hi <= 1 ? 'about a week' : x.lo === x.hi ? `about ${plural(x.lo, 'week')}` : `about ${x.lo} to ${x.hi} weeks`) : '';
+            return `<div class="rp-pj">${gTile(t)}<div class="rp-pjb"><div class="rp-hn"><b>${esc(x.title)}</b><span class="rp-chip${how === 'confident' ? ' ok' : how === 'still learning' ? ' wait' : ''}">${how}</span></div><div class="hint">About ${fhW(x.hours)} left at ${N(x.speed)} ${esc(x.unit)} an hour${wks ? `, which is ${wks} at your usual hours` : ''}.</div></div></div>`;
+        }).join('');
+        const tot = pj.totalHours !== null ? `<div class="hint mt"><b>In all, about ${fhW(pj.totalHours)}</b> of work remains${pj.perWeek > 0.2 ? `. You have been doing about ${fhW(pj.perWeek)} a week` : ''}.</div>` : '';
+        return `<div class="card" data-sec="out:work-left"><h3>Work left, at your speed</h3>${rows}${tot}<div class="hint mt">This only shows how the work looks at your current speed. It never moves a deadline.</div></div>`;
+    }
+    function reportHTML() {
+        const inp = gInputs(), k = grKind, w = k === 'week', noun = w ? 'week' : 'month';
+        let back = grBack, auto = false;
+        const r0 = GReport.report(Object.assign({ kind: k, back: 0 }, inp));
+        if (!grTouched && back === 0 && r0.elapsed <= 1 && r0.count === 0 && GReport.report(Object.assign({ kind: k, back: 1 }, inp)).count > 0) { back = 1; auto = true; }
+        const r = back === 0 ? r0 : GReport.report(Object.assign({ kind: k, back }, inp));
+        const segs = `<div class="seg" role="group" aria-label="Report period"><button type="button" class="${w ? 'on' : ''}" data-act="gr-kind" data-v="week" aria-pressed="${w}">Week</button><button type="button" class="${!w ? 'on' : ''}" data-act="gr-kind" data-v="month" aria-pressed="${!w}">Month</button></div><div class="seg mt" role="group" aria-label="Which ${noun}"><button type="button" class="${back === 0 ? 'on' : ''}" data-act="gr-back" data-v="0" aria-pressed="${back === 0}">This ${noun}</button><button type="button" class="${back === 1 ? 'on' : ''}" data-act="gr-back" data-v="1" aria-pressed="${back === 1}">Last ${noun}</button></div>`;
+        let h = `<div class="card" data-sec="out:report"><h3>Work report</h3>${segs}</div>`;
+        if (!events.some(e => e.t === 'log' && e.qty > 0)) return h + `<div class="card"><p class="hint">Your report appears here after your first logged work. It shows about how many hours you worked, where they went, and how that compares with the ${noun} before.</p></div>`;
+        const span = w ? (r.running ? `${gDay(r.start)} to ${gDay(r.start + (r.elapsed - 1) * 864e5 + 12 * 36e5)}` : `${gDay(r.start)} to ${gDay(r.end - 12 * 36e5)}`) : (r.running ? `1 to ${gDate(r.start + (r.elapsed - 1) * 864e5 + 12 * 36e5)}` : new Date(r.start).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }));
+        const vs = r.running ? `than the same days last ${noun}` : `than the ${noun} before`;
+        const pct = r.kept === null ? null : Math.round(r.kept * 100), C = 2 * Math.PI * 26;
+        const ring = pct === null ? '' : `<svg class="rp-ring" viewBox="0 0 64 64" role="img" aria-label="Plan kept ${pct} per cent"><circle cx="32" cy="32" r="26" fill="none" stroke="var(--track)" stroke-width="7"/><circle cx="32" cy="32" r="26" fill="none" stroke="var(--blue-b)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(r.kept * C).toFixed(1)} ${C}" transform="rotate(-90 32 32)"/><text x="32" y="34" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-main)">${pct}%</text><text x="32" y="45" text-anchor="middle" font-size="6.5" fill="var(--text-muted)">plan kept</text></svg>`;
+        const cmp = r.hours === 0 && r.prevHours === 0 ? 'No hours yet.' : r.prevHours === 0 ? `Nothing to compare with last ${noun}.` : `${gm(Math.round(r.diff * 10) / 10 === 0 ? 0 : r.diff, `${fh(Math.abs(r.diff))} ${r.diff > 0 ? 'more' : 'less'}`)} ${vs}`;
+        const unk = r.unknown ? ` ${plural(r.unknown, 'entry')} had no time and no speed yet, so ${r.unknown === 1 ? 'it is' : 'they are'} left out.` : '';
+        h += `<div class="card" data-sec="out:hours"><div class="row" style="align-items:center;gap:12px"><div style="flex:1;min-width:0"><div class="label">Work ${r.running ? 'this' : 'last'} ${noun}</div><div class="rp-big">${r.hours > 0 ? 'About ' + fhW(r.hours) : 'No hours yet'}</div><div class="rp-cmp">${cmp}</div></div>${ring}</div><div class="hint mt">${esc(span)}.${auto ? ` A new ${noun} has just begun, so here is last ${noun} in full.` : r.running ? ` Day ${r.elapsed} of ${r.days}. Rest and leave days are never counted as missed.` : ` The full ${noun} against the ${noun} before it. Rest and leave days are never counted as missed.`}${unk}</div></div>`;
+        if (r.hours > 0) {
+            const lg = r.tasks.filter(t => t.cur > 0).slice(0, 6).map(t => `<div class="rp-leg${grSel === t.id ? ' sel' : ''}" data-act="gr-task" data-id="${t.id}" role="button" tabindex="0">${gTile(t)}<span class="rp-ln">${esc(t.title)}</span><b>${fh(t.cur)}</b></div>`).join('');
+            h += `<div class="card" data-sec="out:where-hours-went"><h3>Where your hours went</h3><div class="row" style="align-items:center;gap:10px">${gDonut(r)}<div class="rp-legs">${lg}</div></div><div class="hint mt">Tap a slice or a name to see one task.</div></div>`;
+        }
+        const mx = Math.max(0.25, ...r.tasks.map(t => Math.max(t.cur, t.prev)));
+        if (r.tasks.length) h += `<div class="card" data-sec="out:this-vs-last"><h3>${r.running ? 'This ' + noun + ' and last, same days' : 'Last ' + noun + ' and the one before'}</h3>${r.tasks.slice(0, 8).map(t => {
+            const un = t.unit && t.unit !== 'hours' && t.unit !== 'sessions' ? t.unit : '', facts = [fh(t.cur), un && t.qty > 0 ? `${N(t.qty)} ${un}` : '', un && t.total > 0 ? `${N(t.done)} of ${N(t.total)} overall` : ''].filter(Boolean).join(' · ');
+            return `<div class="rp-pb">${gTile(t)}<div class="rp-bars2"><div class="rp-pt"><span>${esc(t.title)}</span>${t.cur === 0 && t.prev === 0 ? '' : gm(Math.abs(t.diff) < 0.05 ? 0 : t.diff, Math.abs(t.diff) < 0.05 ? 'same' : fh(Math.abs(t.diff)))}</div><div class="rp-bar"><i style="width:${t.cur / mx * 100}%;background:${gCol(t)}"></i></div><div class="rp-bar old"><i style="width:${t.prev / mx * 100}%;background:${gCol(t)}"></i></div><div class="hint">${esc(facts)}${t.est ? ' · estimated' : ''}</div></div></div>`; }).join('')}<div class="hint">The solid bar is ${r.running ? 'this' : 'last'} ${noun}; the faint bar is the ${noun} before.</div></div>`;
+        const kept = `${r.keptDays} of ${r.planDays} planned ${r.planDays === 1 ? 'day' : 'days'}`;
+        h += `<div class="card" data-sec="out:days-worked"><h3>${w ? 'Days you worked' : 'Your month'}</h3>${gDays(r)}<div class="hint mt">${r.planDays ? `You worked on ${kept}${r.running ? ' so far' : ''}. ` : ''}${r.running ? (w ? 'Dashed days are still to come. ' : 'Dashed days are still to come. ') : ''}Rest and leave days stay out of the count.</div></div>`;
+        const hs = GReport.habits(inp).filter(x => x.n >= 2);
+        h += `<div class="card" data-sec="out:how-you-work"><h3>How you work</h3>${hs.length ? hs.map(gHabit).join('') + `<div class="hint">From the last eight weeks. <b>Confident</b> means three or more clues agree. Speed markers are neutral, because faster is not always better.</div>` : `<p class="hint">After about three sittings on a task, your usual days, times and speed show here.</p>`}</div>`;
+        if (r.finished.length) h += `<div class="card" data-sec="out:finished"><h3>Finished this ${noun}</h3><div class="rp-fin">${(() => { const c = new Map(); r.finished.forEach(t => c.set(t, (c.get(t) || 0) + 1)); return [...c].map(([t, n]) => esc(t) + (n > 1 ? ' ×' + n : '')).join(' · '); })()}</div></div>`;
+        h += gProject();
+        const note = gNote(r, hs); if (note) h += `<div class="card rp-note" data-sec="out:a-small-note"><span aria-hidden="true">🌤</span><span>${note}</span></div>`;
+        return h;
+    }
     function renderOutlook() {
         if (!D.cfg) { $('s-out').innerHTML = '<div class="card"><p class="hint">Set your timeline first (Settings).</p></div>'; return; }
-        const J = D.jrf, T = D.thesis, PP = P(); let h = '';
+        const J = D.jrf, T = D.thesis, PP = P(); let h = reportHTML();
         const has = PP.list.length > 0;
         h += `<div class="card" data-sec="out:your-five-years"><h3>Your five years</h3>${timelineHtml()}
             <div class="row mt"><span class="muted">Year ${J.target} target</span><b class="num">${fmtDNum(J.targetN)}</b></div>
@@ -1011,11 +1118,11 @@
             const net = T.slip;
             h += `<div class="card" data-sec="out:if-you-continue-like-this"><h3>If you continue like this</h3>
                 <p class="${net > 0.5 || T.toTarget > 0.5 ? 'bad' : 'good'}" style="font-size:1.15rem;font-family:var(--font-serif)">${net > 0.5 ? `Delays have already cost ${dN(net)}. The fifth-year buffer is ${Math.round(T.buffer)} days, down from ${Math.round(T.planned)}.` : net < -0.5 ? `You are ${dN(-net)} ahead of the plan. The fifth-year buffer is ${Math.round(T.buffer)} days, up from ${Math.round(T.planned)}.` : `You are on the plan. The fifth-year buffer is ${Math.round(T.buffer)} days.`}${T.toTarget > 0.5 ? ` The work ends ${dN(T.toTarget)} after the year-${J.target} target.` : ''}</p>
-                <p class="tight">Pieces follow one another on a single clock, so every day a piece runs over moves all later pieces. Each day a piece finishes early comes back as time.</p>`;
+                <p class="tight">Tasks follow one another on a single clock, so every day a task runs over moves all later tasks. Each day a task finishes early comes back as time.</p>`;
             [...D.goals.values()].filter(g => g.chap).sort((a, b) => a.id - b.id).forEach(c => { const a = PP.agg.get(c.id); if (!a || !a.count) return; const w = Math.min(100, Math.abs(a.slip) / 60 * 100); h += `<div class="env"><div class="top"><span>${esc(c.title)}</span><b class="${a.slip > 0.5 ? 'bad' : a.slip < -0.5 ? 'good' : ''}">${a.doneCount === a.count ? 'done' : slipText(a.slip)}</b></div><div class="slipbar"><i style="width:${a.doneCount === a.count ? 100 : w}%;background:${a.slip > 0.5 ? 'var(--warning)' : '#2da872'}"></i></div></div>`; });
             h += `</div>`;
-            const ph = [['reading', 'Reading', '📖'], ['drafting', 'Drafting', '✍️'], ['editing', 'Editing and proofreading', '🔍']].map(([k, l, ico]) => { const ps = PP.list.filter(p => p.grp === k); if (!ps.length) return ''; const td = ps.reduce((s, p) => s + p.days, 0), dd = ps.filter(p => p.done).reduce((s, p) => s + p.days, 0); return `<div class="env"><div class="top"><span>${ico} ${l}</span><b>${pctTxt(dd / td)}</b></div><div class="slipbar"><i style="width:${dd / td * 100}%;background:linear-gradient(90deg,var(--blue-a),var(--blue-b))"></i></div><div class="meta muted" style="font-size:0.85rem">${ps.filter(p => p.done).length} of ${ps.length} pieces</div></div>`; }).join('');
-            h += `<div class="card"><h3>Thesis progress</h3>${ph}<div class="hint mt">Progress is counted in allotted days, so a long piece weighs more than a short one.</div></div>`;
+            const ph = [['reading', 'Reading', '📖'], ['drafting', 'Drafting', '✍️'], ['editing', 'Editing and proofreading', '🔍']].map(([k, l, ico]) => { const ps = PP.list.filter(p => p.grp === k); if (!ps.length) return ''; const td = ps.reduce((s, p) => s + p.days, 0), dd = ps.filter(p => p.done).reduce((s, p) => s + p.days, 0); return `<div class="env"><div class="top"><span>${ico} ${l}</span><b>${pctTxt(dd / td)}</b></div><div class="slipbar"><i style="width:${dd / td * 100}%;background:linear-gradient(90deg,var(--blue-a),var(--blue-b))"></i></div><div class="meta muted" style="font-size:0.85rem">${ps.filter(p => p.done).length} of ${ps.length} tasks</div></div>`; }).join('');
+            h += `<div class="card"><h3>Thesis progress</h3>${ph}<div class="hint mt">Progress is counted in allotted days, so a long task weighs more than a short one.</div></div>`;
             const recs = recsList();
             if (recs.length) h += `<div class="card"><h3>What to do next</h3>${recs.map(x => `<div class="rec ${x.c}">${x.h}</div>`).join('')}</div>`;
             const late = PP.open.filter(p => p.status === 'late').sort((a, b) => b.lateDays - a.lateDays);
@@ -1074,7 +1181,7 @@
     function renderSet() {
         const pin = pinOn();
         let h = `<div class="card"><h3>Timeline</h3>${D.cfg ? `<div class="row"><span class="muted">JRF began</span><b class="num">${fmtK(D.cfg.start)}</b></div><div class="row"><span class="muted">Main work due</span><b class="num">${fmtDNum(D.jrf.targetN)}</b></div>` : ''}<button class="btn-line btn-accent" data-act="cfg">${D.cfg ? 'Edit timeline' : 'Set up timeline'}</button><button class="btn-line" data-act="leave">Declare leave days</button>
-            <div class="sw-row"><div><div>Work order</div><div class="set-meta">Chapter by chapter (reading and drafting), or all reading then all drafting. All editing and proofreading always comes last.</div></div><select class="set-select" data-cfgorder>${[['chapter', 'Chapter by chapter'], ['phase', 'Phase by phase'], ['custom', 'Custom: I choose the next piece']].map(([v, l]) => `<option value="${v}" ${((D.cfg && D.cfg.order) || 'chapter') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div></div>`;
+            <div class="sw-row"><div><div>Work order</div><div class="set-meta">Chapter by chapter (reading and drafting), or all reading then all drafting. All editing and proofreading always comes last.</div></div><select class="set-select" data-cfgorder>${[['chapter', 'Chapter by chapter'], ['phase', 'Phase by phase'], ['custom', 'Custom: I choose the next task']].map(([v, l]) => `<option value="${v}" ${((D.cfg && D.cfg.order) || 'chapter') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div></div>`;
         h += lookCard();
         if (window.GLiquid) h += GLiquid.settingsHTML();
         h += foldCard(`<div class="card"><h3>Security</h3><p class="hint">The PIN keeps people out of the app. Backups are encrypted with their own password.</p>${pin ? sw('autoLock', 'Lock when I leave the app') : ''}<button class="btn-line" data-act="pin-set">${pin ? 'Change PIN' : 'Set a PIN'}</button>${pin ? '<button class="btn-line" data-act="pin-off">Remove PIN</button>' : ''}</div>`, 'set-sec', false);
@@ -1089,7 +1196,7 @@
         const bb = $('bg-blur'), gb = $('glass-blur');
         if (bb) bb.oninput = () => { prefs.bgBlur = +bb.value; $('bg-blur-v').textContent = bb.value; applyTheme(); persist(); };
         if (gb) gb.oninput = () => { prefs.glassBlur = +gb.value; $('glass-blur-v').textContent = gb.value; document.documentElement.style.setProperty('--glass-blur', gb.value + 'px'); persist(); };
-        const co = document.querySelector('[data-cfgorder]'); if (co) co.onchange = async () => { if (await confirmSheet({ title: 'Change the work order?', sub: 'The chain of pieces is re-ordered. Original deadlines stay fixed, so some pieces may suddenly look late or early.', ok: 'Change' })) { add({ t: 'cfg', c: { order: co.value } }); } render(); };
+        const co = document.querySelector('[data-cfgorder]'); if (co) co.onchange = async () => { if (await confirmSheet({ title: 'Change the work order?', sub: 'The chain of tasks is re-ordered. Original deadlines stay fixed, so some tasks may suddenly look late or early.', ok: 'Change' })) { add({ t: 'cfg', c: { order: co.value } }); } render(); };
     }
 
     /* ================= Version 4: daily paces, splitting, custom order ================= */
@@ -1105,7 +1212,7 @@
     function orbMessage() {
         if (!IN) return 'Hello.';
         if (IN.atRisk) return `Your ${IN.streak}-day chain needs a little work today. One more missed day breaks it.`;
-        if (IN.late && IN.mood === 'dim') return 'A piece is late. Finish it to get back on track.';
+        if (IN.late && IN.mood === 'dim') return 'A task is late. Finish it to get back on track.';
         const L = MOODS[IN.mood]; return L[Math.floor(Date.now() / 3600e3) % L.length];
     }
     let GC = null, lastScreen = null, lastDone = null, lastStreak = null;
@@ -1115,9 +1222,9 @@
         if (!GC) GC = window.GCompanion.create(host, { legacyPlace: prefs.orbMode, tip: () => (Math.random() < 0.5 ? orbMessage() : ''), busy: () => $('sheet-bg').classList.contains('show') });
         if (!IN) return;
         GC.mood({ glow: 'happy', calm: 'calm', dim: 'concerned', rest: 'sleepy' }[IN.mood] || 'calm');
-        // small, purposeful reactions: a piece finished, a new chain milestone, a new screen
+        // small, purposeful reactions: a task finished, a new chain milestone, a new screen
         const doneN = D.pieces.list.filter(p => p.done).length;
-        if (lastDone !== null && doneN > lastDone) { GC.do('celebrate', { force: true }); GC.say('Piece finished. Good work.', 3400); fx('fanfare'); }
+        if (lastDone !== null && doneN > lastDone) { GC.do('celebrate', { force: true }); GC.say('Task finished. Good work.', 3400); fx('fanfare'); }
         lastDone = doneN;
         if (lastStreak !== null && IN.streak > lastStreak && (IN.streak === 7 || IN.streak === 30 || IN.streak === 100)) { GC.do('celebrate', { force: true }); GC.say(`${IN.streak} days in a row. Well done.`, 4200); fx('fanfare'); }
         if (lastStreak !== null && lastStreak > 2 && IN.streak === 0) { try { const k = 'gf_sad', t = new Date().toDateString(); if (localStorage.getItem(k) !== t) { localStorage.setItem(k, t); fx('sad'); } } catch (e) {} }
@@ -1145,12 +1252,12 @@
     }
     const mring = (frac, centre, sub) => { const f = Math.max(0, Math.min(1, frac)), L = 226.2; return `<div class="ring mring"><svg viewBox="0 0 80 80"><circle class="ring-track" cx="40" cy="40" r="36" fill="none" stroke-width="7"/><circle class="arc" cx="40" cy="40" r="36" fill="none" stroke-width="7" stroke-linecap="round" stroke="url(#mrG)" style="--v:${(f * L).toFixed(1)}"/><defs><linearGradient id="mrG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--blue-a)"/><stop offset="1" stop-color="var(--blue-b)"/></linearGradient></defs></svg><div class="ring-center"><div class="ring-pct">${centre}</div>${sub ? `<div class="ring-cap">${sub}</div>` : ''}</div></div>`; };
     const WDN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], WDS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-    // the piece you are working on, in numbers and pictures
+    // the task you are working on, in numbers and pictures
     function focusBlock(p) {
         const t = trackOf(p.id);
         if (!t) {
             const dayNo = Math.max(1, Math.min(p.days, D.todayN - p.start + 1)), left = Math.max(0, p.due - D.todayN);
-            return `<div class="focus">${mring(dayNo / p.days, `${dayNo}/${p.days}`, 'days')}<div class="focus-t"><div><b>Day ${dayNo}</b> of ${p.days} allotted</div><div class="hint">${p.status === 'late' ? `${dN(p.lateDays)} over its time` : left === 0 ? 'Due today' : `${dN(left)} left`}</div>${IN && IN.learned[p.grp] && IN.learned[p.grp].ratio ? `<div class="hint">You usually take about ${N(p.days * IN.learned[p.grp].ratio)} days for this kind of piece.</div>` : ''}</div></div>`;
+            return `<div class="focus">${mring(dayNo / p.days, `${dayNo}/${p.days}`, 'days')}<div class="focus-t"><div><b>Day ${dayNo}</b> of ${p.days} allotted</div><div class="hint">${p.status === 'late' ? `${dN(p.lateDays)} over its time` : left === 0 ? 'Due today' : `${dN(left)} left`}</div>${IN && IN.learned[p.grp] && IN.learned[p.grp].ratio ? `<div class="hint">You usually take about ${N(p.days * IN.learned[p.grp].ratio)} days for this kind of task.</div>` : ''}</div></div>`;
         }
         const today = IN ? IN.qtyOn(t.id, D.todayN) : 0, goal = t.need || t.pace || 0;
         const bars = []; for (let i = 6; i >= 0; i--) bars.push(IN ? IN.qtyOn(t.id, D.todayN - i) : 0);
@@ -1173,7 +1280,7 @@
         const seg = p => { const c = p.done ? 'done' : p.status === 'late' ? 'late' : p.lockWhy ? 'lk' : (P().pickMode ? p.picked : p.start <= D.todayN) ? 'now' : 'later'; return `<i class="${c}" style="flex:${p.days}" title="${esc(pTitle(p))}"></i>`; };
         return `<div class="card"><h3>The whole chain</h3><div class="cstrip">${PP.list.map(seg).join('')}</div>
             <div class="legend"><span><i class="done"></i>done</span><span><i class="now"></i>now</span><span><i class="late"></i>late</span><span><i class="later"></i>to come</span><span><i class="lk"></i>locked</span></div>
-            <div class="hint mt">Each block is one piece. A wider block has more allotted days.</div></div>`;
+            <div class="hint mt">Each block is one task. A wider block has more allotted days.</div></div>`;
     }
     function chapterBars() {
         const chs = [...D.goals.values()].filter(g => g.chap).sort((a, b) => a.id - b.id); if (!chs.length) return '';
@@ -1184,10 +1291,10 @@
         const GN = { reading: 'Reading', drafting: 'Drafting', editing: 'Editing and proofreading' };
         let h = `<div class="card"><h3>What the app has learned</h3>`;
         if (prefs.learnOn === false) return h + `<p class="hint">Learning is switched off in Settings.</p></div>`;
-        const rows = window.GInsight.GROUPS.map(g => { const L = IN.learned[g]; return L.ratio === null ? `<div class="row"><span class="muted">${GN[g]}</span><span class="muted">needs ${window.GInsight.MIN_SAMPLES - L.n} more finished ${window.GInsight.MIN_SAMPLES - L.n === 1 ? 'piece' : 'pieces'}</span></div>` : `<div class="row"><span class="muted">${GN[g]}</span><b class="num ${L.ratio > 1.15 ? 'bad' : L.ratio < 0.85 ? 'good' : ''}">${N(L.ratio)}× your plan</b></div>`; }).join('');
-        h += rows + `<div class="hint mt">The app compares the days you take with the days you allot. Newer pieces count more. It needs ${window.GInsight.MIN_SAMPLES} finished pieces of one kind before it learns.</div>`;
+        const rows = window.GInsight.GROUPS.map(g => { const L = IN.learned[g]; return L.ratio === null ? `<div class="row"><span class="muted">${GN[g]}</span><span class="muted">needs ${window.GInsight.MIN_SAMPLES - L.n} more finished ${window.GInsight.MIN_SAMPLES - L.n === 1 ? 'task' : 'tasks'}</span></div>` : `<div class="row"><span class="muted">${GN[g]}</span><b class="num ${L.ratio > 1.15 ? 'bad' : L.ratio < 0.85 ? 'good' : ''}">${N(L.ratio)}× your plan</b></div>`; }).join('');
+        h += rows + `<div class="hint mt">The app compares the days you take with the days you allot. Newer tasks count more. It needs ${window.GInsight.MIN_SAMPLES} finished tasks of one kind before it learns.</div>`;
         IN.suggestions.forEach(s => {
-            h += `<div class="sugg"><div><b>${GN[s.grp]}</b> takes you ${N(s.ratio)} times the days you allot.</div><div class="hint">${plural(s.pieces.length, 'piece')} not yet started would change by ${s.change > 0 ? '+' : ''}${s.change} days in total. Your first deadlines stay fixed, so the delay still shows.</div><div class="hint">${s.pieces.slice(0, 3).map(x => `${esc(x.title)} ${x.from}→${x.to}`).join(' · ')}${s.pieces.length > 3 ? ' …' : ''}</div><button class="btn-line btn-accent" data-act="sugg" data-g="${s.grp}">Use these days</button></div>`;
+            h += `<div class="sugg"><div><b>${GN[s.grp]}</b> takes you ${N(s.ratio)} times the days you allot.</div><div class="hint">${plural(s.pieces.length, 'task')} not yet started would change by ${s.change > 0 ? '+' : ''}${s.change} days in total. Your first deadlines stay fixed, so the delay still shows.</div><div class="hint">${s.pieces.slice(0, 3).map(x => `${esc(x.title)} ${x.from}→${x.to}`).join(' · ')}${s.pieces.length > 3 ? ' …' : ''}</div><button class="btn-line btn-accent" data-act="sugg" data-g="${s.grp}">Use these days</button></div>`;
         });
         return h + '</div>';
     }
@@ -1206,7 +1313,7 @@
         const order = [1, 2, 3, 4, 5, 6, 0];
         const cells = IN.days28.map(d => `<i class="${d.on ? 'on' : d.rest ? 'rest' : ''}" title="${fmtDNum(d.n)}"></i>`).join('');
         return `<div class="card"><h3>Your work habits</h3><div class="bars7 wk">${order.map((w, i) => `<div class="b7"><i class="${IN.strong === w ? 'hit' : ''} ${IN.weak === w ? 'low' : ''}" style="height:${Math.max(4, IN.rate[w] * 100)}%;--d:${i * 70}ms"></i><span>${WDS[w]}</span></div>`).join('')}</div>
-            ${IN.enough && IN.strong !== null ? `<div class="hint mt">You work most on <b>${WDN[IN.strong]}s</b> and least on <b>${WDN[IN.weak]}s</b>. Put your hardest piece on a ${WDN[IN.strong]}, and keep ${WDN[IN.weak]} for light tasks.</div>` : '<div class="hint mt">Your days look even so far. More entries will show a pattern.</div>'}
+            ${IN.enough && IN.strong !== null ? `<div class="hint mt">You work most on <b>${WDN[IN.strong]}s</b> and least on <b>${WDN[IN.weak]}s</b>. Put your hardest task on a ${WDN[IN.strong]}, and keep ${WDN[IN.weak]} for light tasks.</div>` : '<div class="hint mt">Your days look even so far. More entries will show a pattern.</div>'}
             <div class="heat mt">${cells}</div><div class="hint">Last 28 days. Filled squares are days you worked.</div>${dayPartLine()}</div>`;
     }
 
@@ -1331,7 +1438,7 @@
         const isPg = /^(pages|steps|sections)$/.test(t.unit), base = Math.floor(t.done + 1e-9), pgLast = Math.min(t.total, base + 30);
         sheet(`<h2>${esc(D.goals.get(id).title)}</h2><div class="hint">${esc(pathOf(id))}</div>
             <div class="amt-disp" id="l-amt"></div>${isPg ? `<div class="pg-wrap"><div class="pg-cap"><span>Tap the last ${unitWord(t.unit, 1)} you finished</span><button class="pg-edit" type="button" id="pg-edit">Last finished: <b>${N(base)}</b> · change</button></div><div class="pg-row" id="pg-row"></div><div class="pg-ind" id="pg-ind"><i></i></div><div class="pg-sw" id="pg-sw"></div></div>` : ''}${daySegHtml(dayKeys)}
-            <div class="grid2 mt" id="l-q"></div><div class="keypad" id="l-pad"></div><div class="error" id="l-e"></div><button type="button" class="pg-edit hl-link" data-act="hist" data-id="${id}">Log history</button>
+            <div class="grid2 mt" id="l-q"></div>${unitCount(t.unit) ? minRowHtml() : ''}<div class="keypad" id="l-pad"></div><div class="error" id="l-e"></div><button type="button" class="pg-edit hl-link" data-act="hist" data-id="${id}">Log history</button>
             <div class="modal-actions"><button class="btn-secondary" data-act="close">Cancel</button><button class="btn-primary" id="l-go">Log</button></div>`, box => {
             const disp = box.querySelector('#l-amt'), pgRow = box.querySelector('#pg-row');
             const selOf = () => { const q = parseFloat(amt); return q > 0 && Math.abs(q - Math.round(q)) < 1e-9 ? base + Math.round(q) : 0; };
@@ -1360,13 +1467,13 @@
                 if (k === '⌫') amt = amt.slice(0, -1); else if (k === '.') { if (amt.indexOf('.') < 0) amt = (amt || '0') + '.'; } else if (amt.replace('.', '').length < 6) amt += k;
                 if (amt === '0' || amt === '00') amt = ''; upd();
             }, true);
-            bindDays(box, v => { day = v; }, upd); upd();
+            bindDays(box, v => { day = v; }, upd); upd(); const getMin = minBind(box);
             box.querySelector('#l-go').onclick = () => {
                 const v = parseFloat(amt); if (!(v > 0)) { box.querySelector('#l-e').textContent = 'Enter an amount'; return; }
-                const ev = add({ t: 'log', goal: id, qty: v, day, late: day !== todayKey() }); closeSheet(); render();
+                const mn = getMin(), ev = add(Object.assign({ t: 'log', goal: id, qty: v, day, late: day !== todayKey() }, mn > 0 ? { min: mn } : {})); closeSheet(); render();
                 const n = P().tracks.find(x => x.id === id);
                 { const g = Math.max(n.pace || 0, n.need || 0), dq = IN ? IN.qtyOn(id, D.todayN) : 0; fx(n.finished ? 'fanfare' : (g > 0 && dq >= g - 0.05) ? (dq - v >= g - 0.05 ? 'bonus' : 'goalmet') : 'reward'); }
-                toast(`+${N(v)} ${t.unit}. ` + (n.finished ? 'Finished: the pieces are ticked done.' : `${N(n.remaining)} to go${n.need > 0 && n.deadline !== null ? ', ' + N(n.need) + ' a day to make ' + fmtDNshort(n.deadline) : ''}.`), () => { add({ t: 'void', target: ev.id }); render(); fx('down'); });
+                toast(`+${N(v)} ${t.unit}. ` + (n.finished ? 'Finished: the tasks are ticked done.' : `${N(n.remaining)} to go${n.need > 0 && n.deadline !== null ? ', ' + N(n.need) + ' a day to make ' + fmtDNshort(n.deadline) : ''}.`), () => { add({ t: 'void', target: ev.id }); render(); fx('down'); });
             };
         });
     }
@@ -1395,15 +1502,57 @@
             GC.ask(`What is the last ${w} you finished in ${D.goals.get(t.id).title}?`, { value: Math.floor(t.done + 1e-9), max: t.total, onSave: v => savePos(t.id, Math.round(v)) });
         } catch (e) {}
     }
+
+    /* ---------- speed: how much you do in one hour, learned from your logs (see speed.js) ---------- */
+    const spd = () => D.__sp || (D.__sp = window.Speed ? Speed.build(D.events, D.goals, Date.now()) : new Map());
+    const minRowHtml = () => `<div class="min-row"><div class="set-title">How long did it take? <span class="muted">Optional</span></div><div class="min-chips" id="l-min">${[[30, '30 min'], [60, '1 hour'], [90, '1½ hours'], [120, '2 hours']].map(([v, l]) => `<button type="button" class="mini-btn" data-m="${v}" aria-pressed="false">${l}</button>`).join('')}<button type="button" class="mini-btn" data-m="other" aria-pressed="false">Other</button></div><label class="field" id="l-min-o" hidden><span>Minutes</span><input type="number" inputmode="numeric" id="l-min-v" placeholder="45"></label></div>`;
+    function minBind(box) {
+        let m = 0; const row = box.querySelector('#l-min'), o = box.querySelector('#l-min-o'), inp = box.querySelector('#l-min-v'); if (!row) return () => 0;
+        row.onclick = ev => {
+            const b = ev.target.closest('[data-m]'); if (!b) return; const same = b.classList.contains('on');
+            row.querySelectorAll('[data-m]').forEach(x => { x.classList.remove('on'); x.setAttribute('aria-pressed', 'false'); });
+            if (same) { m = 0; o.hidden = true; return; }
+            b.classList.add('on'); b.setAttribute('aria-pressed', 'true');
+            if (b.dataset.m === 'other') { o.hidden = false; m = 0; if (inp) { inp.focus(); } } else { o.hidden = true; m = +b.dataset.m; }
+        };
+        if (inp) inp.oninput = () => { m = Math.max(0, Math.min(600, Math.round(parseFloat(inp.value) || 0))); };
+        return () => m;
+    }
+    const unitCount = u => (u === 'hours' || u === 'sessions') ? null : u;
+    function speedCard(id, kind) {
+        const S = spd().get(id), g = D.goals.get(id); if (!g || !window.Speed) return '';
+        const t = P().tracks.find(x => x.id === id), nt = D.byId.get(id), unit = unitCount(t ? t.unit : g.unit); if (!unit) return '';
+        if (!S || (!S.eff && !S.A)) return `<div class="spd"><div class="set-title">Your speed</div><p class="hint">Add how much you do in one hour below, and time a few sittings when you log. The app then learns your real speed and keeps it up to date.</p></div>`;
+        const eff = S.eff, rem = t ? t.remaining : (nt ? nt.remaining : 0);
+        const badge = S.status === 'confident' ? '<span class="spd-badge ok">confident</span>' : S.status === 'learning' ? '<span class="spd-badge wait">still learning</span>' : S.status === 'pinned' ? '<span class="spd-badge">set by you</span>' : '<span class="spd-badge">your setting</span>';
+        const wk = S.weeks, have = wk.map((v, i) => [v, i]).filter(x => x[0] !== null);
+        let spark = '';
+        if (have.length >= 3) { const mx = Math.max(...have.map(x => x[0])), mn = Math.min(...have.map(x => x[0])), rg = Math.max(mx - mn, mx * 0.2, 0.1); spark = `<svg class="spd-sp" viewBox="0 0 300 48" preserveAspectRatio="none" role="img" aria-label="Your speed each week"><polyline points="${have.map(([v, i]) => `${(6 + i * 48).toFixed(0)},${(40 - (v - mn) / rg * 32).toFixed(1)}`).join(' ')}" fill="none" stroke="var(--blue-b, #4a6fe3)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
+        let trend = ''; if (have.length >= 2) { const a = have[0][0], b = have[have.length - 1][0], d = r1(b - a); if (Math.abs(d) >= 0.2) trend = `<span class="rf neutral"><i aria-hidden="true">${d > 0 ? '▲' : '▼'}</i> ${N(Math.abs(d))} ${unit} an hour since ${have.length > 3 ? 'a few weeks ago' : 'the first weeks'}</span>`; else trend = '<span class="rf neutral">– steady</span>'; }
+        const clue = (ok, txt) => `<span class="spd-clue ${ok ? 'y' : 'n'}">${txt}</span>`;
+        const clues = clue(S.nTimed >= 3, S.nTimed ? plural(S.nTimed, 'timed sitting') : 'no timed sittings yet') + (S.nUntimed >= 3 ? clue(S.usualAgrees, S.usualAgrees ? 'your usual sittings agree' : 'your usual sittings differ') : clue(false, 'too few untimed sittings')) + (S.nearSetting === null ? '' : clue(S.nearSetting, S.nearSetting ? 'close to your setting' : 'differs from your setting'));
+        let body = '';
+        if (S.status === 'confident') body = `<p class="hint">The clues agree, so the app uses this speed for your estimates.</p>`;
+        else if (S.status === 'learning') body = `<p class="hint">Nothing has changed yet. ${S.ask && S.suggest ? `Your recent timed sittings look like about <b>${N(S.suggest)} ${unit} an hour</b>.` : 'A few more timed sittings will settle it.'}</p>${S.ask && S.suggest ? `<div class="grid2"><button type="button" class="btn-line" data-act="sp-keep" data-id="${id}" data-k="${kind}">Keep ${eff ? N(eff) : 'mine'}</button><button type="button" class="btn-line btn-accent" data-act="sp-use" data-id="${id}" data-v="${S.suggest}" data-k="${kind}">Use ${N(S.suggest)}</button></div>` : ''}`;
+        else if (S.status === 'pinned') body = `<p class="hint">You set this speed yourself, so the app will not change it.</p><button type="button" class="btn-line" data-act="sp-auto" data-id="${id}" data-k="${kind}">Let the app adapt it</button>`;
+        else body = `<p class="hint">This is your own setting. Time a few sittings when you log, and the app learns your real speed.</p>`;
+        const hist = (S.adapted ? `Adapted about ${plural(S.adapted.daysAgo, 'day')} ago: ${N(S.adapted.from)} → ${N(S.adapted.to)} · <button type="button" class="link-btn" data-act="sp-undo" data-id="${id}" data-v="${S.adapted.from}" data-k="${kind}">Undo</button><br>` : '') + (S.base && S.eff && Math.abs(S.base - S.eff) > 0.04 ? `Your first setting: ${N(S.base)} ${unit} an hour` : '');
+        let proj = '';
+        if (eff && rem > 0.05) { const hrs = rem / eff, wk2 = S.avgWeek > 0 ? rem / S.avgWeek : null; proj = `<div class="spd-proj"><b>About ${N(Math.round(hrs))} ${Math.round(hrs) === 1 ? 'hour' : 'hours'} to go</b> at your speed.${wk2 ? ` At your recent amount of about ${N(Math.round(S.avgWeek))} ${unit} a week, that is ${wk2 < 1.5 ? 'about a week' : `about ${Math.max(1, Math.floor(wk2 * 0.85))} to ${Math.ceil(wk2 * 1.15)} weeks`}.` : ' A weekly estimate appears after two weeks of logs.'}</div>`; }
+        return `<div class="spd"><div class="set-title">Your speed</div><div class="spd-big"><b>${eff ? N(eff) : '–'}</b> <span>${unit} an hour</span> ${badge}</div>${spark}<div class="hint">${trend}</div><div class="spd-clues">${clues}</div>${body}${hist ? `<div class="spd-hist">${hist}</div>` : ''}${proj}</div>`;
+    }
+    const r1 = v => Math.round(v * 10) / 10;
     function trackSheet(id) {
         const g = D.goals.get(id); if (!g) return;
         const t = P().tracks.find(x => x.id === id), unitDef = t ? t.unit : (g.grp === 'reading' ? 'pages' : 'steps');
         const logs = D.logs.filter(l => l.goal === id).sort((a, b) => b.ts - a.ts).slice(0, 5);
         const scope = [...D.pieces.list].filter(p => { let x = p.g; while (x) { if (x.id === id) return true; x = x.parent ? D.goals.get(x.parent) : null; } return false; }).filter(p => !p.done);
-        sheet(`<h2>Daily pace</h2><p><b>${esc(g.title)}</b>. Log ${g.grp === 'reading' ? 'the pages you read' : 'the amount you finish'} each day. When the total is reached, ${scope.length > 1 ? 'all ' + scope.length + ' pieces inside are' : 'the piece is'} ticked done on that day.</p>
+        const spdSetting = (() => { const s = spd().get(id); return s && s.eff ? s.eff : (g.uph || ''); })();
+        sheet(`<h2>Daily pace</h2>${t ? speedCard(id, 'track') : ''}<p><b>${esc(g.title)}</b>. Log ${g.grp === 'reading' ? 'the pages you read' : 'the amount you finish'} each day. When the total is reached, ${scope.length > 1 ? 'all ' + scope.length + ' tasks inside are' : 'the task is'} ticked done on that day.</p>
             <div class="grid2"><label class="field"><span>Total</span><input type="number" inputmode="decimal" id="k-n" value="${t ? t.total : ''}" placeholder="246"></label><label class="field"><span>Counted in</span><select id="k-u">${['pages', 'steps', 'sections', 'words', 'hours'].map(u => `<option ${u === unitDef ? 'selected' : ''}>${u}</option>`).join('')}</select></label></div>
             <div class="grid2"><label class="field"><span>My pace each day</span><input type="number" inputmode="decimal" id="k-p" value="${t && t.pace ? t.pace : ''}" placeholder="15"></label>${t ? '<div></div>' : '<label class="field"><span>Already done</span><input type="number" inputmode="decimal" id="k-d" value="0"></label>'}</div>
-            ${scope.length ? '<label class="field check"><input type="checkbox" id="k-a" checked><span>Set the pieces\' allotted days from this pace (the first gets the days, the others one day each, because they finish together)</span></label>' : ''}
+            ${scope.length ? '<label class="field check"><input type="checkbox" id="k-a" checked><span>Set the tasks\' allotted days from this pace (the first gets the days, the others one day each, because they finish together)</span></label>' : ''}
+            ${unitCount(unitDef) ? `<label class="field"><span>In one hour I usually do about</span><input type="number" inputmode="decimal" id="k-ph" value="${spdSetting}" placeholder="5"></label><div class="hint">Optional. It lets the app turn your work into hours and learn your speed.</div>` : ''}
             <div id="k-pv"></div><div class="error" id="k-e"></div>
             ${logs.length ? `<div class="set-title" style="margin-top:10px">Recent</div>${logs.map(l => `<div class="ledger-row"><span>${fmtK(l.day || E.localKey(l.ts))}${l.late ? '<span class="lg-late">added later</span>' : ''}</span><span><b>${N(l.qty)}</b> <button class="mini-btn" data-act="void" data-id="${l.id}">Undo</button></span></div>`).join('')}` : ''}
             <div class="modal-actions"><button class="btn-secondary" data-act="close">Cancel</button><button class="btn-primary" id="k-go">Save</button>${t ? '<button class="btn-extra" id="k-off">Remove pace</button>' : ''}</div>`, box => {
@@ -1412,18 +1561,20 @@
             box.querySelector('#k-go').onclick = () => {
                 const n = numv(box, '#k-n'), p = numv(box, '#k-p'), u = val(box, '#k-u'), e = box.querySelector('#k-e');
                 if (!(n > 0)) { e.textContent = 'Enter the total'; return; } if (!(p > 0)) { e.textContent = 'Enter your pace per day'; return; }
-                add({ t: 'goal', op: 'edit', gid: id, f: { qty: n, qunit: u, qpace: p } });
+                const ph = numv(box, '#k-ph'), f = { qty: n, qunit: u, qpace: p };
+                if (ph > 0 && Math.abs(ph - (+spdSetting || 0)) > 0.04) { f.uph = ph; }
+                add({ t: 'goal', op: 'edit', gid: id, f }); if (f.uph) add({ t: 'speed', goal: id, op: 'use', rate: ph });
                 const d0 = t ? 0 : (numv(box, '#k-d') || 0); if (d0 > 0) add({ t: 'log', goal: id, qty: Math.min(d0, n), day: todayKey() });
                 const done = (t ? t.done : 0) + Math.min(d0, n), a = box.querySelector('#k-a');
                 if (a && a.checked && scope.length) { const days = Math.max(1, Math.ceil(Math.max(0, n - done) / p)); scope.forEach((q, i) => add({ t: 'goal', op: 'edit', gid: q.id, f: { pdays: i === 0 ? days : 1 } })); }
                 closeSheet(); render(); toast('Daily pace saved');
             };
-            const off = box.querySelector('#k-off'); if (off) off.onclick = async () => { if (await confirmSheet({ title: 'Remove this daily pace?', sub: 'The pages you logged stay on record but no longer finish the pieces.', ok: 'Remove', danger: true })) { add({ t: 'goal', op: 'edit', gid: id, f: { qty: 0 } }); closeSheet(); render(); } };
+            const off = box.querySelector('#k-off'); if (off) off.onclick = async () => { if (await confirmSheet({ title: 'Remove this daily pace?', sub: 'The pages you logged stay on record but no longer finish the tasks.', ok: 'Remove', danger: true })) { add({ t: 'goal', op: 'edit', gid: id, f: { qty: 0 } }); closeSheet(); render(); } };
         });
     }
     function splitSheet(id) {
         const p = P().byId.get(id); if (!p || p.done) return;
-        sheet(`<h2>Split into sub-sections</h2><p><b>${esc(pTitle(p))}</b> becomes several smaller pieces, each ticked done on its own day. The ${dN(p.days)} are shared out; change any of them afterwards.</p>
+        sheet(`<h2>Split into sub-sections</h2><p><b>${esc(pTitle(p))}</b> becomes several smaller tasks, each ticked done on its own day. The ${dN(p.days)} are shared out; change any of them afterwards.</p>
             <div class="grid2"><label class="field"><span>How many sub-sections</span><input type="number" inputmode="numeric" id="x-n" value="3" min="2" max="12"></label><label class="field"><span>Days for each</span><input type="number" inputmode="numeric" id="x-d" value="${Math.max(1, Math.ceil(p.days / 3))}"></label></div>
             <div class="error" id="x-e"></div><div class="modal-actions"><button class="btn-secondary" data-act="close">Cancel</button><button class="btn-primary" id="x-go">Split</button></div>`, box => {
             const nn = box.querySelector('#x-n'); nn.oninput = () => { const n = Math.round(+nn.value); if (n >= 2) box.querySelector('#x-d').value = Math.max(1, Math.ceil(p.days / n)); };
@@ -1441,7 +1592,7 @@
         const open = P().open.filter(p => !p.locked);
         const rows = chs.map(c => { const ps = open.filter(p => p.chapter === c.id); return ps.length ? `<div class="set-title" style="margin-top:10px">${esc(c.title)}</div>${ps.slice(0, 40).map(p => `<div class="ledger-row" data-act="${P().pickMode ? 'begin' : 'next'}" data-id="${p.id}" style="cursor:pointer"><span>${esc(pTitle(p))}<span class="muted"> · ${esc(pathOf(p.parent).split(' › ').slice(1, 2).join(''))} · ${p.days} d</span></span><span class="muted">Pick</span></div>`).join('')}` : ''; }).join('');
         const loose = open.filter(p => p.chapter === null).map(p => `<div class="ledger-row" data-act="${P().pickMode ? 'begin' : 'next'}" data-id="${p.id}" style="cursor:pointer"><span>${esc(pTitle(p))}</span><span class="muted">Pick</span></div>`).join('');
-        sheet(`<h2>What will you do next?</h2><p>${P().pickMode ? 'Pick any piece that is not done. Its clock starts today, and the app will ask how you want to break it down.' : 'Pick any piece that is not done. It moves to the front of the chain and its clock starts the day after your current piece finishes.'} Locked drafting is not listed until its reading is done.</p><div style="max-height:52vh;overflow:auto">${rows}${loose ? '<div class="set-title" style="margin-top:10px">Custom tasks</div>' + loose : ''}${!rows && !loose ? '<p class="hint">Nothing left to pick.</p>' : ''}</div><div class="modal-actions"><button class="btn-secondary" data-act="close">Close</button></div>`);
+        sheet(`<h2>What will you do next?</h2><p>${P().pickMode ? 'Pick any task that is not done. Its clock starts today, and the app will ask how you want to break it down.' : 'Pick any task that is not done. It moves to the front of the chain and its clock starts the day after your current task finishes.'} Locked drafting is not listed until its reading is done.</p><div style="max-height:52vh;overflow:auto">${rows}${loose ? '<div class="set-title" style="margin-top:10px">Custom tasks</div>' + loose : ''}${!rows && !loose ? '<p class="hint">Nothing left to pick.</p>' : ''}</div><div class="modal-actions"><button class="btn-secondary" data-act="close">Close</button></div>`);
     }
 
     let IN = null, quiet = false;
@@ -1451,6 +1602,7 @@
         return D;
     }
     function render() {
+        if (window.GFresh) GFresh.touch();
         if (!render.gs && window.GSections) { render.gs = 1; GSections.init({ app: 'goal', enabled: () => prefs.smartOn !== false }); }
         lockPass(); applyTheme(); renderBanner();
         $('brand-sub').textContent = (prefs.greetOn ? greeting() + ' · ' : '') + fmtK(todayKey());
@@ -1485,12 +1637,13 @@
         const t = id ? D.goals.get(id) : null;
         const g = t || { title: '', unit: 'pages', total: '', perDay: '', days: E.WORK_DEFAULT.slice(), start: todayKey(), parent: parentPref || '' };
         const days = new Set(g.days);
-        sheet(`<h2>${id ? 'Edit' : 'New'} task</h2>
+        const spdSetting = id ? (() => { const s = spd().get(id); return s && s.eff ? s.eff : (g.uph || ''); })() : '';
+        sheet(`<h2>${id ? 'Edit' : 'New'} task</h2>${id ? speedCard(id, 'task') : ''}
             <label class="field"><span>What will you do?</span><input type="text" id="t-t" value="${esc(g.title)}" placeholder="Read Gurnah, Afterlives" autofocus></label>
             <div class="grid2"><label class="field"><span>Chapter / project</span><select id="t-p"><option value="">None</option>${D.projects.filter(p => !p.isPhase).map(p => `<option value="${p.id}" ${p.id === g.parent ? 'selected' : ''}>${esc(pathOf(p.id))}</option>`).join('')}</select></label>
             <label class="field"><span>Counted in</span><select id="t-u">${['pages', 'words', 'hours', 'sessions', 'items'].map(u => `<option ${u === g.unit ? 'selected' : ''}>${u}</option>`).join('')}</select></label></div>
             <div class="grid2"><label class="field"><span>Total to do</span><input type="number" inputmode="decimal" id="t-n" value="${g.total}"></label><label class="field"><span>Each working day</span><input type="number" inputmode="decimal" id="t-d" value="${g.perDay}"></label></div>
-            <div class="grid2"><label class="field"><span>or hours a day</span><input type="number" inputmode="decimal" id="t-h" placeholder="3"></label><label class="field"><span>× amount per hour</span><input type="number" inputmode="decimal" id="t-ph" placeholder="5"></label></div>
+            <div class="grid2"><label class="field"><span>or hours a day</span><input type="number" inputmode="decimal" id="t-h" placeholder="3"></label><label class="field"><span>In one hour I do about</span><input type="number" inputmode="decimal" id="t-ph" value="${spdSetting}" placeholder="5"></label></div>
             <div class="safe-lbl" style="margin-bottom:6px">Working days</div><div class="days-chips" id="t-days">${WD.map(([n, l]) => `<button type="button" data-d="${n}" class="${days.has(n) ? 'on' : ''}">${l}</button>`).join('')}</div>
             ${id ? `<div class="pinfo">Started ${fmtK(g.start)}. Deadline fixed at ${fmtK(g.deadline0)}. It cannot be moved after the first day.</div>` : `<div class="grid2"><label class="field"><span>Start</span><input type="date" id="t-s" value="${g.start}"></label><label class="field"><span>Must finish by (optional)</span><input type="date" id="t-dl"></label></div>`}
             <div id="t-pv"></div><div class="error" id="t-e"></div>
@@ -1520,7 +1673,8 @@
                 let perDay = s.perDay;
                 if (!(perDay > 0)) { if (!dl) return err('Enter the daily amount, or a finish-by date'); perDay = Math.ceil(E.perDayFor(s, dl, D.leave, todayKey()) * 10) / 10; }
                 const f = { title, parent: +val(box, '#t-p') || null, unit: val(box, '#t-u'), total: s.total, perDay, days: [...days] };
-                if (id) add({ t: 'goal', op: 'edit', gid: id, f });
+                const ph = numv(box, '#t-ph'); if (ph > 0 && Math.abs(ph - (+spdSetting || 0)) > 0.04) f.uph = ph;
+                if (id) { add({ t: 'goal', op: 'edit', gid: id, f }); if (f.uph) add({ t: 'speed', goal: id, op: 'use', rate: f.uph }); }
                 else {
                     const p = E.planPreview({ total: s.total, perDay, days: s.days, start: s.start }, D.leave, todayKey());
                     add({ t: 'goal', op: 'add', g: Object.assign({ id: D.nextGoalId, kind: 'task', start: s.start, deadline0: dl || (p && p.finish) }, f) });
@@ -1579,7 +1733,7 @@
             ${derived ? `<label class="field"><span>Start with</span><select id="l-it">${t.items.filter(i => i.remaining > 0).map(i => `<option value="${i.id}" ${i.id === selId ? 'selected' : ''}>${esc(itemLabel(i))} (${N(i.remaining)} left)</option>`).join('')}</select></label>` : ''}
             <div class="amt-disp" id="l-amt"></div>
             ${daySegHtml(dayKeys)}
-            <div class="grid2 mt" id="l-q"></div>
+            <div class="grid2 mt" id="l-q"></div>${unitCount(unit) ? minRowHtml() : ''}
             <div class="keypad" id="l-pad"></div><div class="error" id="l-e"></div><button type="button" class="pg-edit hl-link" data-act="hist" data-id="${taskId || itemId || 0}">Log history</button>
             <div class="modal-actions"><button class="btn-secondary" data-act="close">Cancel</button><button class="btn-primary" id="l-go">Log</button></div>`, box => {
             const disp = box.querySelector('#l-amt');
@@ -1602,16 +1756,16 @@
             }, true);
             bindDays(box, v => { day = v; }, upd);
             const itSel = box.querySelector('#l-it'); if (itSel) itSel.onchange = () => { selId = +itSel.value; chips(); };
-            chips(); upd();
+            chips(); upd(); const getMin = minBind(box);
             box.querySelector('#l-go').onclick = () => {
                 const q = parseFloat(amt); if (!(q > 0)) { box.querySelector('#l-e').textContent = 'Enter an amount'; return; }
-                const made = [];
+                const made = [], mn = getMin(), mnOf = take => (mn > 0 ? { min: Math.max(1, Math.round(mn * take / q * 10) / 10) } : {});
                 if (derived) {
                     let list = t.items.filter(i => i.remaining > 1e-9), at = list.findIndex(i => i.id === (sel() || {}).id); if (at < 0) at = 0;
                     list = list.slice(at); let left = q;
-                    list.forEach((i, k) => { if (left <= 1e-9) return; const take = k === list.length - 1 ? left : Math.min(i.remaining, left); made.push(add({ t: 'log', goal: i.id, qty: take, day, late: day !== todayKey() })); left -= take; });
-                    if (!made.length) made.push(add({ t: 'log', goal: t.items[t.items.length - 1].id, qty: q, day, late: day !== todayKey() }));
-                } else made.push(add({ t: 'log', goal: taskId || itemId, qty: q, day, late: day !== todayKey() }));
+                    list.forEach((i, k) => { if (left <= 1e-9) return; const take = k === list.length - 1 ? left : Math.min(i.remaining, left); made.push(add(Object.assign({ t: 'log', goal: i.id, qty: take, day, late: day !== todayKey() }, mnOf(take)))); left -= take; });
+                    if (!made.length) made.push(add(Object.assign({ t: 'log', goal: t.items[t.items.length - 1].id, qty: q, day, late: day !== todayKey() }, mnOf(q))));
+                } else made.push(add(Object.assign({ t: 'log', goal: taskId || itemId, qty: q, day, late: day !== todayKey() }, mnOf(q))));
                 closeSheet(); render();
                 { const nn = taskId ? D.byId.get(taskId) : null; fx(nn && nn.finished ? 'fanfare' : nn && nn.left < 0.05 ? 'glad' : 'up'); }
                 let m = `+${N(q)} ${unit}. `;
@@ -1703,12 +1857,19 @@
             case 'pick': closeSheet(); setTimeout(pickSheet, 60); break;
             case 'begin': closeSheet(); setTimeout(() => beginPiece(id), 60); break;
             case 'newdaily': newDailySheet(); break;
-            case 'next': { const q = P().byId.get(id); if (D.cfg && D.cfg.order !== 'custom') add({ t: 'cfg', c: { order: 'custom' } }); add({ t: 'next', goal: id }); closeSheet(); render(); toast('Next: ' + (q ? pTitle(q) : 'chosen piece')); break; }
+            case 'next': { const q = P().byId.get(id); if (D.cfg && D.cfg.order !== 'custom') add({ t: 'cfg', c: { order: 'custom' } }); add({ t: 'next', goal: id }); closeSheet(); render(); toast('Next: ' + (q ? pTitle(q) : 'chosen task')); break; }
             case 'chap-add': D.cfg ? chapAddSheet() : cfgSheet(); break;
             case 'chap': chapterSheet(id); break;
             case 'grp': case 'nodeS': nodeSheet2(id); break;
             case 'pc': pieceSheet(id); break;
             case 'tick': ev.stopPropagation(); tick(id); break;
+            case 'sp-use': add({ t: 'speed', goal: +id, op: 'use', rate: +el.dataset.v }); closeSheet(); render(); setTimeout(() => (el.dataset.k === 'task' ? taskSheet : trackSheet)(+id), 60); break;
+            case 'gr-kind': grKind = el.dataset.v === 'month' ? 'month' : 'week'; grBack = 0; grTouched = false; grSel = 0; renderOutlook(); break;
+            case 'gr-back': grBack = +el.dataset.v ? 1 : 0; grTouched = true; grSel = 0; renderOutlook(); break;
+            case 'gr-task': grSel = grSel === +id ? 0 : +id; renderOutlook(); break;
+            case 'sp-keep': add({ t: 'speed', goal: +id, op: 'keep' }); closeSheet(); render(); setTimeout(() => (el.dataset.k === 'task' ? taskSheet : trackSheet)(+id), 60); break;
+            case 'sp-undo': add({ t: 'speed', goal: +id, op: 'pin', rate: +el.dataset.v }); closeSheet(); render(); toast('Back to ' + N(+el.dataset.v) + ' an hour. The app will not change it until you let it.'); setTimeout(() => (el.dataset.k === 'task' ? taskSheet : trackSheet)(+id), 60); break;
+            case 'sp-auto': add({ t: 'speed', goal: +id, op: 'auto' }); closeSheet(); render(); setTimeout(() => (el.dataset.k === 'task' ? taskSheet : trackSheet)(+id), 60); break;
             case 'piece-add': pieceAddSheet(id); break;
             case 'sec-add2': sectionAddSheet(id); break;
             case 'bulk-grp': { const a = P().agg.get(id); closeSheet(); if (a) bulkSheet(a.pieces.map(p => p.id), (D.goals.get(id) || {}).title || ''); break; }
@@ -1734,7 +1895,7 @@
             case 'sugg': {
                 const s = (IN && IN.suggestions || []).find(x => x.grp === el.dataset.g); if (!s) break;
                 const made = s.pieces.map(x => add({ t: 'goal', op: 'edit', gid: x.id, f: { pdays: x.to } })); render();
-                toast(plural(made.length, 'piece') + ' updated', () => { made.forEach(e => add({ t: 'void', target: e.id })); render(); fx('down'); }); break;
+                toast(plural(made.length, 'task') + ' updated', () => { made.forEach(e => add({ t: 'void', target: e.id })); render(); fx('down'); }); break;
             }
             case 'deleted': deletedSheet(); break;
             case 'goto': screen = el.dataset.s; render(); window.scrollTo(0, 0); break;
@@ -1809,7 +1970,8 @@
         if (hiddenAt && Date.now() - hiddenAt > 5 * 60000) render();
         hiddenAt = 0;
     });
-    setInterval(() => { if (!document.hidden && !$('sheet-bg').classList.contains('show') && !$('lock').classList.contains('show')) quiet = true; try { render(); } finally { quiet = false; document.body.classList.toggle('still', prefs.animOn === false || reduced()); } }, 60000);
+    // Refresh only when you look at the app: when it comes back to the front, or at the next full hour while it is in view. No timer ticks.
+    GFresh.init({ busy: () => document.hidden || $('sheet-bg').classList.contains('show') || $('lock').classList.contains('show'), render: () => { quiet = true; try { render(); } finally { quiet = false; document.body.classList.toggle('still', prefs.animOn === false || reduced()); } } });
 
     async function init() {
         initStore();

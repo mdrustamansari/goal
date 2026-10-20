@@ -2,7 +2,7 @@
    Pure functions. Everything is worked out on this phone from the event log; nothing is sent anywhere. */
 (function (root) {
     'use strict';
-    const MIN_SAMPLES = 3;           // a learned pace needs at least this many finished pieces of the same kind
+    const MIN_SAMPLES = 3;           // a learned pace needs at least this many finished tasks of the same kind
     const GROUPS = ['reading', 'drafting', 'editing'];
 
     function analyse(events, D, E) {
@@ -11,7 +11,7 @@
         const live = events.filter(e => e.t !== 'void' && !voided.has(e.id));
         const dayOf = e => dn(e.day || E.localKey(e.ts));
 
-        // ---- which days had real work (a log with a quantity, or a piece ticked done on that day)
+        // ---- which days had real work (a log with a quantity, or a task ticked done on that day)
         const act = new Map();                       // dayN -> number of entries
         const qtyBy = new Map();                     // goalId -> Map(dayN -> qty)
         live.forEach(e => {
@@ -43,7 +43,7 @@
         if (enough) { strong = rate.indexOf(Math.max.apply(null, rate)); weak = rate.indexOf(Math.min.apply(null, rate)); if (rate[strong] - rate[weak] < 0.2) strong = weak = null; }
         const days28 = []; for (let n = todayN - 27; n <= todayN; n++) days28.push({ n, on: isAct(n), rest: isRest(n) });
 
-        // ---- how long you really take, by kind of piece (newer pieces count more)
+        // ---- how long you really take, by kind of task (newer tasks count more)
         const learned = {};
         GROUPS.forEach(g => {
             const ds = D.pieces.list.filter(p => p.done && p.took !== null && p.grp === g && !p.mirror).sort((a, b) => a.finN - b.finN).slice(-8);
@@ -51,7 +51,7 @@
             let a = 0, b = 0; ds.forEach((p, i) => { const w = i + 1; a += w * p.took; b += w * p.days; });
             learned[g] = { n: ds.length, ratio: Math.min(3, Math.max(0.5, a / b)) };
         });
-        // ---- suggestions: only for pieces that have not started and have no hard date. You decide; nothing changes by itself.
+        // ---- suggestions: only for tasks that have not started and have no hard date. You decide; nothing changes by itself.
         const suggestions = [];
         GROUPS.forEach(g => {
             const L = learned[g]; if (L.ratio === null || (L.ratio > 0.85 && L.ratio < 1.15)) return;

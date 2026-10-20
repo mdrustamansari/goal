@@ -50,7 +50,7 @@
     document.addEventListener('touchcancel', () => { clearTimeout(lp); reset(true); }, { passive: true });
 
     /* ---- Swipe left or right anywhere (except on rows, sliders, inputs and sideways-scrolling strips) to change tab ---- */
-    let tx = 0, ty = 0, tt = 0, tOK = false;
+    let tx = 0, ty = 0, tt = 0, tOK = false, tsT = 0;
     const noTab = t => {
         if (!t || !t.closest) return true;
         if (t.closest('input,select,textarea,[type=range],#sheet,.lock.show,.wiz,[data-no-tabswipe]')) return true;
@@ -74,12 +74,12 @@
         const tabs = [].slice.call(document.querySelectorAll('.nav-item'));
         const i = tabs.findIndex(n => n.classList.contains('active')), j = i + (dx < 0 ? 1 : -1);
         if (i < 0 || j < 0 || j >= tabs.length) return;
-        buzz('turn'); tabs[j].click();
-        if (reduced()) return;
-        requestAnimationFrame(() => {
-            const a = document.querySelector('.nav-item.active'), sc = a && document.getElementById('s-' + a.dataset.s);
-            if (sc && sc.animate) sc.animate([{ transform: 'translateX(' + (dx < 0 ? 28 : -28) + 'px)', opacity: .35 }, { transform: 'none', opacity: 1 }], { duration: 240, easing: 'cubic-bezier(.2,.8,.25,1)' });
-        });
+        buzz('turn');
+        // Slide the new screen in with a transform only. An opacity animation (or a second animation on top of the
+        // screen's own fade) switches the frosted glass off for a moment, which looked like jitter.
+        const H = document.documentElement;
+        if (!reduced()) { H.dataset.tsw = dx < 0 ? 'l' : 'r'; clearTimeout(tsT); tsT = setTimeout(() => { delete H.dataset.tsw; }, 320); }
+        tabs[j].click();
     }, { passive: true });
     // Stop the phone's long-press text menu on these rows.
     const st = document.createElement('style'); st.textContent = '.ledger-row:has(.ico-btn), .hl-row { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: pan-y; } .ledger-row:has(.ico-btn) input, .hl-row input { -webkit-user-select: text; user-select: text; }';

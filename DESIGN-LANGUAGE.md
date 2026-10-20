@@ -72,7 +72,8 @@ The progress on the ten humane-design aspects lives in HUMANE-TRACKER.md. Read i
 - Entry: one thing you recorded (a spend in Budget, a log in Goal). Never "transaction" or "record".
 - Add: put something new in. Log: write progress in Goal only.
 - Edit: change an entry. Delete: remove it (it waits 30 days in Recently deleted). Undo: take back the last action.
-- Piece: one part of a goal in Goal. Task: a custom piece you made yourself.
+- Task: one thing you plan and log work on in Goal (reading, writing, editing, proofreading). Never "piece".
+- Speed: how much you do in one hour ("5 pages an hour"). Daily pace is a different thing: the amount you plan each day.
 - Pool: the month's money in Budget. Never "wallet" or "fund".
 - Companion: the soft character. Banner: the strip at the top.
 - Button order in a sheet: Cancel on the left, the main action on the right.
@@ -83,8 +84,37 @@ The progress on the ten humane-design aspects lives in HUMANE-TRACKER.md. Read i
 - Frosted (default): the original frosted glass. Never changed.
 - Liquid (opt-in, Settings, Glass style): clear glass learned from the macOS-style window screenshot. Parts: light rim on the top-left that fades, dark rim along the bottom, a faint inner glow, a soft tinted shadow, large smooth corners, flat translucent pills for the selected item.
 - Liquid has no refraction (bending). It was tried and dropped: the browser feature is not reliable on phones.
-- Liquid settings: Frost (default 7 px), Tint (22%, Paper pages get +16%), Rim light (70%, white part inside the hairline, dark part outside it), Shadow (60%), Top shine (60%, a soft white glow just inside the top edge), Diagonal highlight (off). An adaptive hairline (dark on light themes, light on dark themes, stronger when the glass is clearer) runs round every glass object. Buttons use a denser fill instead of blur, to keep the phone cool.
+- Liquid settings: Frost (default 7 px), Tint (22%, Paper pages get +16%), Light rim brightness (100%) and blur (1 px) for the white edge just inside the hairline, Dark rim darkness (60%) and blur (3 px) for the dark edge just outside it, Shadow (60%), Top shine (60%, a soft white glow just inside the top edge), Diagonal highlight (off). An adaptive hairline (dark on light themes, light on dark themes, stronger when the glass is clearer) runs round every glass object. Buttons use a denser fill instead of blur, to keep the phone cool.
 - Never set position on .nav-bar in Liquid: it is fixed, and must stay the same size in both styles. Sheets always keep a strong tint and at least 14 px frost.
 - Rule: every interface change is audited with Liquid on as well as Frosted, on all 10 themes (buttons and text contrast).
 - Messages after an action (toast with Undo, Companion bubble, question card) use the chosen glass style.
 - Gestures: swipe a row left (delete, asks first) or right (edit); press and hold a row to edit; swipe anywhere else to change tab (not from the 24 px screen edges, not on sliders, inputs or sideways-scrolling strips).
+
+## 12 Rise and fall marker
+- One marker everywhere: a small triangle, ▲ for a rise and ▼ for a fall, always followed by the amount ("▲ ₹3", "▼ ₹180"). The app already uses it ("▼ ₹40 below your average"). Never mix in arrows (↑ ↓).
+- Colour for spending: ▲ red, ▼ green. For saving or goals the colours are swapped. The triangle carries the meaning, so colour is never the only signal.
+- Neutral or "no change": a flat dash "–".
+
+## 13 Budget report (v2.34)
+- Lives at the top of Insights: Week/Month switch, This/Last switch, total with a day ring, donut, paired bars, day strip (calendar for months), habits, one small note.
+- Running periods use the same days of the last period; closed periods use full against full. A brand-new period with no entries shows the last one in full.
+- Habits: category + note words + price per person + rhythm. "sure" = 3 or more clues, "likely" = 2, never fewer than 3 entries. A number plus N in a note ("2N") means persons; price is judged per person.
+- Calendar cells show spend as a dot, never a coloured fill, so the day number keeps full contrast.
+- All class names start with rp-; rise and fall always use the .rf triangle marker.
+
+## 14 Speed (Goal v5.36)
+- One hour of work is the common unit across tasks, so pages, words and subsections can be added up as hours. The conversion is the person's own speed, never a guess.
+- Clues: timed sittings, usual (untimed) sittings, the person's own setting. Words on screen: **confident** and **still learning**.
+- Confident: the app adopts the speed quietly, keeps a history line ("Adapted about N days ago: a to b") with Undo. Still learning: nothing changes; show what was noticed and ask (Keep or Use). Undo pins the old speed until "Let the app adapt it".
+- Deadlines are never moved by the app. Only speed, estimates and suggested amounts adapt.
+- Speed changes use a neutral triangle (colour is not good or bad), because faster is not always better.
+- Tab swipe does not slide the screen (see section 15). Never animate a whole screen of frosted glass: opacity switches the glass off, and a transform makes every card re-blur on every frame.
+
+## 15 Looking, not ticking
+- Screens refresh only when you look at them: when the app comes back to the front, or at the next full hour while it is in view (greetings, "today" figures). There is no minute timer. While the app is hidden there are no timers at all (GFresh in fresh.js; the Companion's colour and avoid timers stop too).
+- If a sheet or the lock screen is open when a refresh is due, it waits until you close it.
+- No browser swipe-back or pull-to-refresh: html and body use overscroll-behavior: none, so our own swipes never fight with the browser's.
+- Tab swipe changes the screen without sliding it: moving a whole screen of frosted glass re-blurs every card on every frame.
+
+## 16. Goal work report (v5.37)
+Same shape as the Budget report. Hero: "About N hours", one comparison line with the ▲/▼ triangle (more work green, less red), plan-kept ring. Donut of hours by task (tap to isolate), paired bars (solid = now, faint = before) with natural quantities beneath ("3.1 h · 18 pages · 112 of 246 overall"), a days-worked strip or month calendar (dashed = to come, soft = rest day), "How you work" habits with confident / still learning badges, finished tasks named (repeats grouped ×N), work left at current speed as a week range, one calm note. Speed markers use the same triangle but stay neutral. Hours from entered minutes, else amount ÷ speed (marked "estimated"); entries with neither are left out and said so. Code: report.js (pure, tests/report.test.js).

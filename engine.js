@@ -25,7 +25,7 @@
             thesis: g.thesis !== false, cat: g.cat || 'Other', due: g.due || null, notes: g.notes || '',
             createdAt: g.createdAt || 0,
             pdays: Math.max(0, num(g.pdays, 0)), fixedEnd: g.fixedEnd || null, mirror: g.mirror || null,
-            grp: g.grp || null, role: g.role || null, qty: Math.max(0, num(g.qty, 0)), qunit: g.qunit || 'pages', qpace: Math.max(0, num(g.qpace, 0)), chap: !!g.chap, budget: Math.max(0, num(g.budget, 0)), wt: Math.max(0, num(g.wt, 0)), custom: !!g.custom
+            grp: g.grp || null, role: g.role || null, qty: Math.max(0, num(g.qty, 0)), qunit: g.qunit || 'pages', qpace: Math.max(0, num(g.qpace, 0)), uph: Math.max(0, num(g.uph, 0)), chap: !!g.chap, budget: Math.max(0, num(g.budget, 0)), wt: Math.max(0, num(g.wt, 0)), custom: !!g.custom
         };
     }
 

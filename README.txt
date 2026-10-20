@@ -200,3 +200,9 @@ Liquid fixes (Goal v5.33 / Budget v2.31) - The bottom tab bar stays fixed again 
 Bundle G (Goal v5.34 / Budget v2.32) - Saved and Undo messages now use glass (Frosted or Liquid, to match your Glass style); swipe left or right anywhere (not on rows, sliders or sideways strips, and not from the screen edges) to change tab.
 
 v5.35 fix: Liquid rim light — white part inside the hairline, dark part outside it.
+
+v5.36 New: the word Task replaces Piece everywhere. Speed: say how much you do in one hour, and optionally add how long a sitting took when you log. The app learns your speed from three clues; when they agree (confident) it uses the new speed quietly and keeps a history with Undo; when it is not sure (still learning) it only asks. Fixed: tab swipe no longer jitters. Danger text buttons have a hairline.
+
+v5.36 Fixed: tab swipe jitter (the browser back-swipe was fighting with ours). Liquid: separate Light rim and Dark rim sliders (brightness and blur), crisper white inner rim. Screens refresh only when you look at them; no minute timer, and no timers while the app is hidden.
+
+v5.37 New: Work report in Outlook (Week or Month, this or last). About how many hours you worked, compared with the same days before while the period runs, and full against full once it closes. Plan-kept ring (rest and leave days are never counted as missed), a donut of hours by task, paired bars with the same triangle marker, days you worked, how you work (days, times, sitting length, speed: confident or still learning), finished tasks named, and work left at your speed as a range of weeks. Hours come from the minutes you enter; without minutes they are estimated from your speed and marked so. Deadlines are never moved.
