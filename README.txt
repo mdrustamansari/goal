@@ -214,3 +214,5 @@ v5.39 Changed: every button is now a full pill, the same shape as the Budget bac
 v5.40 New: Liquid glass body tone (Settings, Glass style, Body tone, default 15%): the body of each glass object is slightly darker on light themes and slightly lighter on dark themes, so the bright rim and shine read as real gloss. Set it to 0 to switch it off.
 
 v5.41 Changed: three kinds of button, all pills of one height (40 px). Primary (filled, bold text), Glass (tinted glass for actions that belong to the task, normal text) and Outline (hollow glass, for things not part of the task, such as Add and Choose another task). "More" buttons are underlined links. New: Settings, Button glass, with Accent tint and Black tint sliders for the glass buttons (default 9% and 0%).
+
+v5.42 Changed: Liquid glass cards now take the same light accent tint as the glass buttons (default 9%), instead of a black or white layer. The Body tone slider is replaced by Settings, Glass tint (Accent tint and Black tint), which covers buttons and Liquid cards. If you do not see a new version, close the app completely and open it twice: the app saves itself for offline use and updates on the second open.

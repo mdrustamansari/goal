@@ -133,3 +133,6 @@ Distraction and focus. All pills, one height (40 px), only the primary has bold 
 3. OUTLINE: hollow glass, hairline only, no fill, shine or shadow. Something you may start that is not part of the task (Add, Select a task, Choose another task), and the unselected choice in a segmented control.
 4. LINK: underlined text, no button. Reveals more or goes somewhere else (13 more).
 Rule of thumb: a link goes somewhere, an outline starts something, glass continues the task, primary completes it. Files: buttons.css, btnlook.js.
+
+## 20. Glass tint (Goal v5.42; replaces the Liquid body tone in 18)
+Glass buttons and Liquid cards share one tint: the theme's accent (darker on light themes, lighter on dark ones), 9% by default, plus optional black (0% by default, 10% at most). No flat black or white layer. Sliders: Settings, Glass tint (btnlook.js).

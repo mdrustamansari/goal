@@ -18,7 +18,7 @@
     const row = (k, label, v) => `<div class="bg-row"><span>${label}</span><input type="range" data-bk="${k}" min="0" max="${k === 'btnBlack' ? 10 : 20}" value="${v}" aria-label="${label}"><b class="bg-val" id="bk-${k}-v">${v}%</b></div>`;
     function settingsHTML() {
         const p = P();
-        return `<div class="card" data-sec="set:button-glass"><h3>Button glass</h3><p class="hint">The tint of the glass buttons that belong to what you are doing. The accent tint colours them gently; the black tint dims them.</p>${row('btnAccent', 'Accent tint', p.btnAccent)}${row('btnBlack', 'Black tint', p.btnBlack)}<button type="button" class="btn-line" data-bkreset="1">Reset button glass</button></div>`;
+        return `<div class="card" data-sec="set:glass-tint"><h3>Glass tint</h3><p class="hint">The tint of glass buttons and, in Liquid style, of the cards. The accent tint colours the glass gently; the black tint dims it.</p>${row('btnAccent', 'Accent tint', p.btnAccent)}${row('btnBlack', 'Black tint', p.btnBlack)}<button type="button" class="btn-line" data-bkreset="1">Reset glass tint</button></div>`;
     }
     const set = (k, v) => { if (cfg) cfg.set(k, v); apply(); };
     document.addEventListener('input', e => { const t = e.target; if (!t || !t.dataset || !t.dataset.bk || t.type !== 'range') return; const v = +t.value; set(t.dataset.bk, v); const o = document.getElementById('bk-' + t.dataset.bk + '-v'); if (o) o.textContent = v + '%'; });
