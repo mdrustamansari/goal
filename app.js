@@ -1184,6 +1184,7 @@
             <div class="sw-row"><div><div>Work order</div><div class="set-meta">Chapter by chapter (reading and drafting), or all reading then all drafting. All editing and proofreading always comes last.</div></div><select class="set-select" data-cfgorder>${[['chapter', 'Chapter by chapter'], ['phase', 'Phase by phase'], ['custom', 'Custom: I choose the next task']].map(([v, l]) => `<option value="${v}" ${((D.cfg && D.cfg.order) || 'chapter') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div></div>`;
         h += lookCard();
         if (window.GLiquid) h += GLiquid.settingsHTML();
+        h += `<div class="card" data-sec="set:look-file"><h3>My look settings</h3><p class="hint">Keep your refined choices safe: themes, accents, glass, rim sliders, fonts, paper, sounds and the Companion. Restore them any time, so you never set them up again. Your goals, entries and PIN are not in this file.</p><div class="grid2"><button type="button" class="btn-line" data-act="look-save">Save my look settings</button><button type="button" class="btn-line" data-act="look-load">Restore my look settings</button></div></div>`;
         h += foldCard(`<div class="card"><h3>Security</h3><p class="hint">The PIN keeps people out of the app. Backups are encrypted with their own password.</p>${pin ? sw('autoLock', 'Lock when I leave the app') : ''}<button class="btn-line" data-act="pin-set">${pin ? 'Change PIN' : 'Set a PIN'}</button>${pin ? '<button class="btn-line" data-act="pin-off">Remove PIN</button>' : ''}</div>`, 'set-sec', false);
         h += foldCard(`<div class="card"><h3>Backup</h3><p class="hint">${prefs.lastBackup ? 'Last backup ' + fmtDT(prefs.lastBackup) : 'Not backed up yet.'} Share opens your phone's share sheet: choose Google Drive or Proton Drive.</p><button class="btn-line btn-accent" data-act="backup" data-m="share">Back up now (share)</button><button class="btn-line" data-act="backup" data-m="download">Save to Downloads</button><button class="btn-line" data-act="backup" data-m="plain">Share unencrypted copy</button><button class="btn-line" data-act="restore">Restore from a file</button>${sw('rememberPass', 'Remember backup password', 'Stored on this phone only.')}<button class="btn-line" data-act="erase" style="color:var(--warning)">Erase everything</button></div>`, 'set-bak', true);
         let adv = '';
@@ -1912,6 +1913,13 @@
             case 'pin-off': if (await confirmSheet({ title: 'Remove PIN?', ok: 'Remove' })) { try { localStorage.removeItem(K_PIN); } catch (e) {} render(); } break;
             case 'backup': backupSheet(el.dataset.m); break;
             case 'restore': $('file-restore').click(); break;
+            case 'look-save': {
+                const skip = ['pass', 'rememberPass', 'lastBackup', 'remindSnooze', 'open', 'acc', 'defDays', 'posAsk', 'pickAsked', 'lastLight', 'lastDark'], pr = {};
+                Object.keys(prefs).forEach(k => { if (skip.indexOf(k) < 0) pr[k] = prefs[k]; });
+                const rd = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
+                downloadText(JSON.stringify({ app: 'goal-manager', kind: 'look-settings', v: 1, at: Date.now(), prefs: pr, companion: rd('gc_prefs'), feel: rd('gf_prefs2') }, null, 1), 'goal-look-settings-' + todayKey() + '.json');
+                toast('Look settings saved'); break; }
+            case 'look-load': $('file-look').click(); break;
             case 'erase': if (await confirmSheet({ title: 'Erase everything?', sub: 'All goals, logs and settings on this phone are deleted. Back up first if unsure.', ok: 'Erase', danger: true })) {
                 [K_EV, K_PREF, K_PIN].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
                 prefs = PREF_DEFAULT(); setEvents([]); screen = 'today'; render(); toast('Erased'); } break;
@@ -1951,6 +1959,16 @@
     }, true);
     try { const mq = matchMedia('(prefers-color-scheme: dark)'); (mq.addEventListener ? mq.addEventListener('change', () => followNow()) : mq.addListener(() => followNow())); } catch (e) {}
     $('file-bg').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) processWallpaper(f); };
+    $('file-look').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+        const r = new FileReader(); r.onload = async () => {
+            let o = null; try { o = JSON.parse(String(r.result)); } catch (x) {}
+            if (!o || o.kind !== 'look-settings' || !o.prefs) { toast('That is not a look settings file'); return; }
+            if (!(await confirmSheet({ title: 'Restore look settings?', sub: 'Your themes, glass, fonts, sounds and Companion choices are replaced by the ones in this file. Goals and entries stay as they are.', ok: 'Restore' }))) return;
+            const skip = ['pass', 'rememberPass', 'lastBackup', 'remindSnooze', 'open', 'acc', 'defDays', 'posAsk', 'pickAsked', 'lastLight', 'lastDark'];
+            Object.keys(o.prefs).forEach(k => { if (skip.indexOf(k) < 0) prefs[k] = o.prefs[k]; });
+            try { if (o.companion) localStorage.setItem('gc_prefs', JSON.stringify(o.companion)); if (o.feel) localStorage.setItem('gf_prefs2', JSON.stringify(o.feel)); } catch (x) {}
+            persist(); toast('Look settings restored'); setTimeout(() => location.reload(), 700);
+        }; r.readAsText(f); };
     $('file-restore').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) restoreFile(f); };
 
     /* ---------- Opening moments ---------- */

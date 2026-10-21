@@ -1,0 +1,40 @@
+/* One button language (Goal v5.38).  Two states: pale glass, and filled accent.  Same shape everywhere.
+   Top shine: white, 65%, no blur, inside the top edge.  Bottom shadow: dark, 3 px blur, outside the hairline.
+   Loaded after flagship.css, so it settles every older rule. */
+html { --b-sh: rgba(255, 255, 255, .65); --b-dk: rgba(20, 35, 70, .30); --b-r: 999px; --b-rs: 999px; }
+html[data-scheme="dark"] { --b-dk: rgba(0, 0, 0, .55); }
+html { --b-bg: var(--btn-bg, var(--input-bg)); }
+html[data-scheme="light"] { --b-bg: color-mix(in srgb, var(--btn-bg, var(--input-bg)) 90%, #8f9fc0); }
+html[data-scheme="dark"] { --b-bg: var(--btn-bg, rgba(255, 255, 255, .07)); }
+
+html body :is(.btn-line, .btn-secondary, .btn-primary, .btn-accent, .btn-danger, .btn-extra, .grid2 button, .keypad button, .wz-btn, .wz-chip, .seg button, .mini-btn, .tp-chip, .more-btn, .days-chips button, .undo-btn, .pg-edit, .btn-soft, .ico-btn):not(.link-btn) {
+    border: 1px solid var(--btn-line, rgba(40, 60, 110, .26)) !important;
+    border-radius: var(--b-r) !important;
+    background: var(--b-bg) !important; background-image: none !important;
+    color: var(--text-main);
+    box-shadow: inset 0 2px 0 0 var(--b-sh), 0 2px 3px 0 var(--b-dk) !important;
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+    opacity: 1 !important; text-shadow: none;
+    transition: transform .12s ease, box-shadow .12s ease;
+}
+/* the big ones */
+html body :is(.btn-line, .btn-secondary, .btn-primary, .btn-accent, .btn-danger, .btn-extra, .wz-btn) { min-height: 46px; }
+html body :is(.seg button) { min-height: 40px; border-radius: 999px !important; }
+/* the small ones */
+html body :is(.mini-btn, .tp-chip, .more-btn, .days-chips button, .undo-btn, .pg-edit, .btn-soft, .wz-chip) { border-radius: var(--b-rs) !important; min-height: 34px; }
+html body .ico-btn { border-radius: var(--b-rs) !important; }
+/* the filled state: primary, accent and anything switched on */
+html body :is(.btn-primary, .btn-accent, .seg button.on, .mini-btn.on, .mini-btn.btn-accent, .days-chips button.on, .b-act button.on, .tp-chip.on, .wz-chip.on) {
+    background: linear-gradient(135deg, var(--blue-a), var(--blue-b)) !important;
+    border-color: color-mix(in srgb, var(--blue-b) 70%, #000) !important;
+    color: var(--on-accent) !important; text-shadow: var(--on-shadow);
+    box-shadow: inset 0 2px 0 0 var(--b-sh), 0 2px 3px 0 color-mix(in srgb, var(--blue-b) 55%, rgba(0, 0, 0, .5)) !important;
+}
+/* danger keeps the same shape, only the words turn red */
+html body :is(.btn-danger, .danger) { color: #b3261e !important; }
+html[data-scheme="dark"] body :is(.btn-danger, .danger) { color: #ff8f86 !important; }
+/* a button inside a segmented control sits flat in its tray, so the tray is not doubled up */
+html body .seg { background: var(--track); }
+html body :is(.btn-line, .btn-secondary, .btn-primary, .btn-accent, .btn-danger, .btn-extra, .grid2 button, .keypad button, .seg button, .mini-btn, .wz-btn, .wz-chip, .tp-chip, .ico-btn):active { transform: translateY(1px); box-shadow: inset 0 1px 0 0 var(--b-sh), 0 1px 2px 0 var(--b-dk) !important; }
+html.lite body :is(.btn-line, .btn-secondary, .btn-primary, .btn-accent, .mini-btn) { transition: none; }
+@media (prefers-reduced-motion: reduce) { html body :is(.btn-line, .mini-btn, .seg button) { transition: none; } }

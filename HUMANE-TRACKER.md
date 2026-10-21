@@ -108,3 +108,7 @@ The same gesture or word means the same thing everywhere.
 - 2026-10-20: Goal v5.36 / Budget v2.35 - tab-swipe jitter fixed (browser back-swipe and pull-to-refresh switched off, no slide), separate Light and Dark rim sliders (brightness and blur), no timed refresh (GFresh), Companion timers stop when hidden (5a).
 
 - 2026-10-20 (Goal v5.37): Work report in Outlook (hours of work, plan kept, where hours went, same-days comparison, days worked, how you work, finished tasks named, work left at your speed as a range). Rest and leave days never counted as missed. Estimated hours are marked. Deadlines never moved. Pace markers neutral; amount-of-work markers green/red.
+
+- 2026-10-21 (Goal v5.38): Unified buttons (buttons.css, Goal only for now; Budget to follow once confirmed). Tab-swipe blink fixed (data-tsw stays until the next tap on a tab; swipe.js shared, copied to Goal only). Pre-paint theme script in index.html. Look-settings file (save/restore).
+
+- 2026-10-21 (Goal v5.39 / Budget v2.36): buttons are full pills in both apps; buttons.css, swipe fix, pre-paint theme and look-settings file now in both.

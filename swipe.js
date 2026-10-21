@@ -78,9 +78,11 @@
         // Slide the new screen in with a transform only. An opacity animation (or a second animation on top of the
         // screen's own fade) switches the frosted glass off for a moment, which looked like jitter.
         const H = document.documentElement;
-        if (!reduced()) { H.dataset.tsw = dx < 0 ? 'l' : 'r'; clearTimeout(tsT); tsT = setTimeout(() => { delete H.dataset.tsw; }, 320); }
+        if (!reduced()) { H.dataset.tsw = dx < 0 ? 'l' : 'r'; }   // stays on until the next tap on a tab: taking it away at once would start the screen's fade again, which was the blink
         tabs[j].click();
     }, { passive: true });
+    // a tap on a tab brings the soft fade back (it is cleared before the screen changes, so nothing restarts)
+    document.addEventListener('click', e => { if (e.target.closest && e.target.closest('.nav-item') && e.isTrusted) delete document.documentElement.dataset.tsw; }, true);
     // Stop the phone's long-press text menu on these rows.
     const st = document.createElement('style'); st.textContent = '.ledger-row:has(.ico-btn), .hl-row { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: pan-y; } .ledger-row:has(.ico-btn) input, .hl-row input { -webkit-user-select: text; user-select: text; }';
     document.head.appendChild(st);
