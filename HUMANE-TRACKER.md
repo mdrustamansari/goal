@@ -114,3 +114,5 @@ The same gesture or word means the same thing everywhere.
 - 2026-10-21 (Goal v5.39 / Budget v2.36): buttons are full pills in both apps; buttons.css, swipe fix, pre-paint theme and look-settings file now in both.
 
 - 2026-10-21 (Goal v5.40 / Budget v2.37): Liquid body tone (Goal only; do not run sync.sh until Budget adopts it). Budget: applyTheme skipped when nothing about the look changed (tab-switch blink hardening; blink not reproducible in the sandbox).
+
+- 2026-10-21 (Goal v5.41): button hierarchy (primary / glass / outline / link), one height, bold only on primary, Button glass tint sliders. Budget waits for approval; Budget's "sure" chip already reads "confident" (v2.37 source, unreleased).

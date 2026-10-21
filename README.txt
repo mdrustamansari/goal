@@ -212,3 +212,5 @@ v5.38 New: one button language. Every button now has the same shape and two stat
 v5.39 Changed: every button is now a full pill, the same shape as the Budget backup buttons; effects unchanged.
 
 v5.40 New: Liquid glass body tone (Settings, Glass style, Body tone, default 15%): the body of each glass object is slightly darker on light themes and slightly lighter on dark themes, so the bright rim and shine read as real gloss. Set it to 0 to switch it off.
+
+v5.41 Changed: three kinds of button, all pills of one height (40 px). Primary (filled, bold text), Glass (tinted glass for actions that belong to the task, normal text) and Outline (hollow glass, for things not part of the task, such as Add and Choose another task). "More" buttons are underlined links. New: Settings, Button glass, with Accent tint and Black tint sliders for the glass buttons (default 9% and 0%).

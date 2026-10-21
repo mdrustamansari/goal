@@ -76,7 +76,7 @@
         root.classList.toggle('pm', !!prefs.privacy);
         root.style.setProperty('--glass-blur', prefs.glassBlur + 'px');
         applyBackground();
-        try { GLook.apply(prefs, { hasBg: root.classList.contains('has-bg'), lite: !!prefs.lite }); } catch (e) {} if (window.GLiquid) GLiquid.apply();
+        try { GLook.apply(prefs, { hasBg: root.classList.contains('has-bg'), lite: !!prefs.lite }); } catch (e) {} if (window.GLiquid) GLiquid.apply(); if (window.GBtnLook) GBtnLook.apply();
     }
     // "Follow my phone": only when the phone changes (or on switching it on, or at start) do we go to the last light or last dark theme used
     function phoneDark() { try { return !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches); } catch (e) { return false; } }
@@ -432,7 +432,7 @@
             else oc = `Your buffer is intact: ${Math.round(T.planned)} days set aside for ${purpose}.`;
         } else oc = `Your plan sets aside ${Math.round(T.planned)} days of the fifth year for ${purpose}.`;
         h += `<div class="card" data-sec="life:what-the-buffer-is-for"><h3>What the buffer is for</h3><p style="font-family:var(--font-serif);font-size:1.15rem;line-height:1.4">${oc}</p><button class="btn-line" data-act="cfg">Edit what my fifth year is for</button></div>`;
-        h += `<div class="list-header"><span>Life goals</span><button class="mini-btn" data-act="life-add">Add</button></div>`;
+        h += `<div class="list-header"><span>Life goals</span><button class="mini-btn btn-quiet" data-act="life-add">Add</button></div>`;
         D.life.forEach(l => {
             h += `<div class="card"><div class="row"><h3 style="margin:0">${esc(l.title)}</h3><span class="chip">${esc(l.cat)}</span></div>
                 ${l.notes ? `<p class="tight" style="margin-top:6px">${esc(l.notes)}</p>` : ''}
@@ -1184,6 +1184,7 @@
             <div class="sw-row"><div><div>Work order</div><div class="set-meta">Chapter by chapter (reading and drafting), or all reading then all drafting. All editing and proofreading always comes last.</div></div><select class="set-select" data-cfgorder>${[['chapter', 'Chapter by chapter'], ['phase', 'Phase by phase'], ['custom', 'Custom: I choose the next task']].map(([v, l]) => `<option value="${v}" ${((D.cfg && D.cfg.order) || 'chapter') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div></div>`;
         h += lookCard();
         if (window.GLiquid) h += GLiquid.settingsHTML();
+        if (window.GBtnLook) h += GBtnLook.settingsHTML();
         h += `<div class="card" data-sec="set:look-file"><h3>My look settings</h3><p class="hint">Keep your refined choices safe: themes, accents, glass, rim sliders, fonts, paper, sounds and the Companion. Restore them any time, so you never set them up again. Your goals, entries and PIN are not in this file.</p><div class="grid2"><button type="button" class="btn-line" data-act="look-save">Save my look settings</button><button type="button" class="btn-line" data-act="look-load">Restore my look settings</button></div></div>`;
         h += foldCard(`<div class="card"><h3>Security</h3><p class="hint">The PIN keeps people out of the app. Backups are encrypted with their own password.</p>${pin ? sw('autoLock', 'Lock when I leave the app') : ''}<button class="btn-line" data-act="pin-set">${pin ? 'Change PIN' : 'Set a PIN'}</button>${pin ? '<button class="btn-line" data-act="pin-off">Remove PIN</button>' : ''}</div>`, 'set-sec', false);
         h += foldCard(`<div class="card"><h3>Backup</h3><p class="hint">${prefs.lastBackup ? 'Last backup ' + fmtDT(prefs.lastBackup) : 'Not backed up yet.'} Share opens your phone's share sheet: choose Google Drive or Proton Drive.</p><button class="btn-line btn-accent" data-act="backup" data-m="share">Back up now (share)</button><button class="btn-line" data-act="backup" data-m="download">Save to Downloads</button><button class="btn-line" data-act="backup" data-m="plain">Share unencrypted copy</button><button class="btn-line" data-act="restore">Restore from a file</button>${sw('rememberPass', 'Remember backup password', 'Stored on this phone only.')}<button class="btn-line" data-act="erase" style="color:var(--warning)">Erase everything</button></div>`, 'set-bak', true);
@@ -1997,6 +1998,7 @@
         if (D && D.cfg && D.cfg.startMode !== 'pick' && !prefs.pickAsked) { prefs.pickAsked = true; add({ t: 'cfg', c: { startMode: 'pick' } }); refresh(); }
         applyTheme();
         if (pinOn() && hasCrypto()) showLock();
+        if (window.GBtnLook) GBtnLook.config({ prefs: () => prefs, set: (k, v) => { prefs[k] = v; persist(); }, render: () => { if (D) render(); } });
         if (window.GLiquid) GLiquid.config({ prefs: () => prefs, set: (k, v) => { prefs[k] = v; persist(); }, render: () => { if (D) render(); } });
         if (window.GWizard) GWizard.config({ app: 'goal', brand: "Rustam's Goal Manager", prefs: () => prefs, set: (k, v) => { prefs[k] = v; persist(); }, apply: () => { applyTheme(); followNow(); }, render: () => { if (D) render(); }, hasData: () => events.length > 0,
           tour: [["Tap to learn", "Tap any graphic or number. The Companion explains it in simple words."], ["Log pages fast", "Tap + on a task, tap the last page you finished, then tap Log. The app always asks for the last page."], ["Fix a mistake", "Open Log history. Tap the pen to change an entry or the bin to delete it. You can always Undo."], ["The top banner", "It shows your last entry, and now and then a tip. Tap your last entry to see the history."], ["More", "Sections you rarely open fold under More. They come back when you open them."], ["Keep a copy", "Settings, then Backup, saves a copy of your data. You can run setup again or replay this tour in Settings."]],
