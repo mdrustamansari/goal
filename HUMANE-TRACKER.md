@@ -112,3 +112,5 @@ The same gesture or word means the same thing everywhere.
 - 2026-10-21 (Goal v5.38): Unified buttons (buttons.css, Goal only for now; Budget to follow once confirmed). Tab-swipe blink fixed (data-tsw stays until the next tap on a tab; swipe.js shared, copied to Goal only). Pre-paint theme script in index.html. Look-settings file (save/restore).
 
 - 2026-10-21 (Goal v5.39 / Budget v2.36): buttons are full pills in both apps; buttons.css, swipe fix, pre-paint theme and look-settings file now in both.
+
+- 2026-10-21 (Goal v5.40 / Budget v2.37): Liquid body tone (Goal only; do not run sync.sh until Budget adopts it). Budget: applyTheme skipped when nothing about the look changed (tab-switch blink hardening; blink not reproducible in the sandbox).

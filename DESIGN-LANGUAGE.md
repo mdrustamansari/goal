@@ -122,3 +122,6 @@ Same shape as the Budget report. Hero: "About N hours", one comparison line with
 ## 17. One button language (Goal v5.38)
 Two states, one shape. Pale glass (default) and filled accent (primary, selected, "on"). Large buttons 44-46 px, full pill; small ones 34 px, full pill (radius 999px); icon buttons square. Top shine: white 65%, 2 px, no blur, inside the top edge. Bottom shadow: dark, 2 px down, 3 px blur, outside the hairline. Light themes dim the inside slightly so the shine shows. Danger keeps the same shape; only the words turn red. No backdrop blur on buttons (they sit inside frosted cards, where it would show nothing and cost power). Pressed: 1 px down, shadow tightens. Files: goals/buttons.css.
 Look settings can be exported and restored as a file (themes, glass, rim, fonts, paper, sounds, Companion; never goals, entries or PIN).
+
+## 18. Liquid body tone (Goal v5.40, trial; Budget and later apps wait for approval)
+A flat tone over the body of each Liquid glass object: dark navy on light themes (slider "Body tone", default 15%), white at 60% of that on dark themes. The rim light and top shine stay as they were, so they read against the body. Files: flagship.css (end), liquid.js (lqBody).

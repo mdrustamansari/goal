@@ -210,3 +210,5 @@ v5.37 New: Work report in Outlook (Week or Month, this or last). About how many 
 v5.38 New: one button language. Every button now has the same shape and two states (pale glass, filled accent), a crisp white top shine (65%, no blur) and a soft dark bottom shadow (3 px blur). Look settings can be saved to a file and restored (Settings, My look settings): themes, glass, rim sliders, fonts, paper, sounds and the Companion. The first frame now matches your theme and your phone's light or dark mode. Fixed: the blink after a tab swipe (the screen fade started again 0.3 s later).
 
 v5.39 Changed: every button is now a full pill, the same shape as the Budget backup buttons; effects unchanged.
+
+v5.40 New: Liquid glass body tone (Settings, Glass style, Body tone, default 15%): the body of each glass object is slightly darker on light themes and slightly lighter on dark themes, so the bright rim and shine read as real gloss. Set it to 0 to switch it off.
