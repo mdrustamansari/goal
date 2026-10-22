@@ -57,6 +57,12 @@ html.lite body :is(.btn-line, .btn-secondary, .btn-primary, .btn-accent, .mini-b
 html body :is(.gc-ask button, .gf-pop button) { box-sizing: border-box; height: var(--b-h); min-height: var(--b-h); padding: 0 16px; border-radius: 999px; font-size: 1rem; }
 html body .si-back { height: auto; min-height: 40px; }
 
-/* small buttons: narrower than 60 px, set by btnlook.js */
-html body .b-sm:not(.link-btn) { height: 28px !important; min-height: 28px !important; padding-left: 10px; padding-right: 10px; font-size: .9rem; }
-html body .ico-btn.b-sm { width: 28px; }
+/* outline pills are not links: no underline. */
+html body :is(.btn-soft, .btn-quiet) { text-decoration: none !important; }
+
+
+/* SIZE BY ROLE. Standard (40 px): the main action of a card or sheet, and the Week/Month style switches. Compact (28 px): small helpers inside a row or header. */
+html body :is(.pdone, .mini-btn, .tp-chip, .days-chips button, .undo-btn, .pg-edit, .ico-btn, .b-act button, .gc-ask button, .gf-pop button, .wz-chip) {
+    height: 28px !important; min-height: 28px !important; padding-left: 12px; padding-right: 12px; font-size: .9rem;
+}
+html body .ico-btn { width: 28px; padding: 0; }

@@ -123,3 +123,5 @@ The same gesture or word means the same thing everywhere.
 - 2026-10-22 (Budget v2.38): Goal v5.41–v5.44 design adopted in Budget (buttons, Glass tint, Liquid accent tint and bipolar Tint, backup fix, restructured Settings). Standing rule: fix one app first, then repeat in the others; Budget is now level with Goal.
 
 - 2026-10-22 (Goal v5.45 / Budget v2.39): buttons narrower than 60 px are 28 px tall (btnlook.js sets class b-sm); all others stay 40 px.
+- 2026-10-22 (Goal v5.46 / Budget v2.40): outline pills have no underline; info chips (pace, kept) are 30 px; small buttons 28 px.
+- 2026-10-22 (Goal v5.47 / Budget v2.41): button size by role, not width. Standard 40 px: main actions and Week/Month style switches. Compact 28 px: Done, chips, mini buttons, icon buttons, banner and pop-up buttons.

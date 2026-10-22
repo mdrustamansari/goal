@@ -24,19 +24,5 @@
     document.addEventListener('input', e => { const t = e.target; if (!t || !t.dataset || !t.dataset.bk || t.type !== 'range') return; const v = +t.value; set(t.dataset.bk, v); const o = document.getElementById('bk-' + t.dataset.bk + '-v'); if (o) o.textContent = v + '%'; });
     document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-bkreset]'); if (!b || !cfg) return; Object.keys(D).forEach(k => cfg.set(k, D[k])); apply(); cfg.render(); });
 
-    /* Small buttons (narrower than 60 px) are shorter: 28 px instead of 40. */
-    const SEL = '.btn-line, .btn-secondary, .btn-primary, .btn-accent, .btn-danger, .btn-extra, .grid2 button, .wz-btn, .wz-chip, .seg button, .mini-btn, .days-chips button, .undo-btn, .pg-edit, .btn-soft, .btn-quiet, .ico-btn, .tp-chip, .b-act button, .gc-ask button, .gf-pop button';
-    let sq = 0;
-    function sizeSmall() {
-        sq = 0;
-        document.querySelectorAll(SEL).forEach(b => {
-            if (b.classList.contains('link-btn')) return;
-            const w = b.getBoundingClientRect().width; if (!w) return;
-            const small = w < 60; if (small !== b.classList.contains('b-sm')) b.classList.toggle('b-sm', small);
-        });
-    }
-    const queue = () => { if (!sq) sq = requestAnimationFrame(sizeSmall); };
-    try { new MutationObserver(queue).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] }); } catch (e) {}
-    window.addEventListener('load', queue); queue();
     root.GBtnLook = { config: c => { cfg = c; apply(); }, apply, settingsHTML, defaults: D };
 })(window);
