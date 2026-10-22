@@ -34,7 +34,7 @@
         (o.events || []).forEach(e => {
             if (e.t !== 'log' || voided.has(e.id) || !(e.qty > 0)) return;
             const sub = S ? S.subjectOf(goals, e.goal) : e.goal, key = sub === null || sub === undefined ? e.goal : sub, s = sp.get(key), x = hoursOf(e, s && s.eff);
-            out.push({ key, qty: e.qty, h: x.h, est: x.est, none: !!x.none, at: when(e), ts: e.ts, day: dnOf(when(e)), min: e.min > 0 });
+            out.push({ key, qty: e.qty, h: x.h, est: x.est, none: !!x.none, at: when(e), ts: e.ts, day: dnOf(when(e)), min: e.min > 0, sh: typeof e.st === 'number' && e.st >= 0 ? Math.floor(e.st / 60) : null });
         });
         return out;
     }
@@ -78,7 +78,7 @@
         by.forEach((ls, key) => {
             const g = o.goals.get(key), s = sp.get(key); if (!g) return;
             // one sitting = all entries of that task on one day
-            const days = new Map(); ls.forEach(l => { const d = days.get(l.day) || { day: l.day, h: 0, qty: 0, hrs: [], at: l.at }; d.h += l.h; d.qty += l.qty; if (l.ts && Math.abs(l.ts - l.at) < DAY) d.hrs.push(new Date(l.ts).getHours()); days.set(l.day, d); });
+            const days = new Map(); ls.forEach(l => { const d = days.get(l.day) || { day: l.day, h: 0, qty: 0, hrs: [], at: l.at }; d.h += l.h; d.qty += l.qty; if (l.sh !== null && l.sh !== undefined) d.hrs.push(l.sh); else if (l.ts && Math.abs(l.ts - l.at) < DAY) d.hrs.push(new Date(l.ts).getHours()); days.set(l.day, d); });
             const sit = [...days.values()], n = sit.length;
             const share = [0, 0, 0, 0, 0, 0, 0]; sit.forEach(d => { share[(new Date(d.at).getDay() + 6) % 7]++; });
             const weeks = Math.max(1, Math.min(8, Math.ceil((mid(now) - Math.min.apply(null, sit.map(d => d.at))) / (7 * DAY)) || 1));

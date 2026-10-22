@@ -770,3 +770,13 @@ html[data-scheme="dark"] .rp-chip.ok { color: #4fd896; border-color: #4fd896; } 
 .si-erase { text-align: center; margin: 24px 0 30px; } .si-erase .danger { color: var(--warning); }
 .si-prev { text-align: center; } .si-prevbtns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; } .si-prevbtns button { flex: 1 1 0; min-width: 0; }
 .si-l { white-space: nowrap; } .si-v { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; } .si-prev .hint { margin-top: 10px; }
+
+/* start-time clock on the log sheet */
+.st-row { margin-top: 10px; } .st-box { margin-top: 8px; padding: 10px 12px; border-radius: 18px; border: 1px solid color-mix(in srgb, var(--text-main) 14%, transparent); background: color-mix(in srgb, var(--text-main) 4%, transparent); } .st-box[hidden] { display: none !important; }
+.st-clock { display: flex; align-items: baseline; gap: 6px; justify-content: center; } .st-clock span { font-size: 40px; font-weight: 300; letter-spacing: -.02em; font-variant-numeric: tabular-nums; } .st-clock small { font-size: 16px; opacity: .7; }
+.st-pick { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 8px 0; } .st-pick .seg { margin: 0; } .st-box .hint { text-align: center; } .st-box .link-btn { display: block; margin: 4px auto 0; }
+.pl-ask { text-align: center; } .pl-ask .pl-q { margin: 4px 0 12px; font-size: 20px; font-weight: 500; } .pl-ask .wz-chips { justify-content: center; }
+.pl-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; } .pl-r { text-align: right; font-size: 14px; } .pl-line .link-btn { display: block; margin: 4px auto 0; }
+.pl-ask .hint { margin-top: 12px; }
+.del-row { display: flex; justify-content: flex-end; margin-top: 10px; }
+.modal-actions { align-items: center; } .modal-actions .ico-del { margin-left: auto; order: 9; }

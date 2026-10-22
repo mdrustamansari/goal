@@ -26,7 +26,7 @@
     const PREF_DEFAULT = () => ({
         theme: 'auto', bgBlur: 0, glassBlur: 20,
         introOn: true, greetOn: true, lineOn: true, smartOn: true, animOn: true, lossOn: true, gainOn: true,
-        remindOn: true, remindHour: 21, remindSnooze: null, lastBackup: null,
+        remindOn: true, planAsk: true, remindHour: 21, remindSnooze: null, lastBackup: null,
         lite: false, privacy: false, ageOn: false, autoLock: true, rememberPass: false, pass: '',
         look: 'flagship', accent: 'sapphire', glow: false, flFont: 'system', follow: true, lastLight: null, lastDark: null, p: {}, acc: [], defDays: {}, open: [], orbMode: 'header', learnOn: true
     });
@@ -676,7 +676,7 @@
             ${trackBlock(trackOf(id))}
             ${p.done ? '' : `<div class="grid2" style="margin-top:8px">${trackOf(id) ? `<button class="btn-line" data-act="tset" data-id="${trackOf(id).id}">Change daily pace</button>` : `<button class="btn-line" data-act="tset" data-id="${id}">Set a daily pace</button>`}<button class="btn-line" data-act="split" data-id="${id}">Split into sub-sections</button></div>${(D.cfg && D.cfg.order === 'custom') ? `<button class="btn-line" data-act="next" data-id="${id}" style="margin-top:8px">Do this next</button>` : ''}`}
             <div class="grid2" style="margin-top:8px">${p.done ? `<button class="btn-line" data-act="tick" data-id="${id}">Mark not done</button>` : `<button class="btn-line btn-accent" data-act="tick" data-id="${id}">${p.locked ? 'Why locked?' : 'Mark done'}</button>`}${p.began && !p.hasWork && !p.done && P().pickMode ? '<button class="btn-line" id="pc-stop">Stop working on this</button>' : ''}${canStartEarlier ? `<button class="btn-line btn-accent" id="pc-st">${P().pickMode ? 'Start this task' : 'Start now'}</button>` : '<span></span>'}</div>
-            <button class="btn-extra" id="pc-del" style="margin-top:8px">Delete task</button>`, box => {
+            <div class="del-row">${icoBtn('del', 'id="pc-del"', 'task')}</div>`, box => {
             box.querySelector('#pc-go').onclick = () => {
                 const days = Math.round(numv(box, '#pc-d')); if (!(days >= 1)) { box.querySelector('#pc-e').textContent = 'Allot at least one day'; return; }
                 const f = { pdays: days }; const t = box.querySelector('#pc-t'); if (t && t.value.trim()) f.title = t.value.trim();
@@ -702,7 +702,7 @@
             ${P().tracks.find(x => x.id === id) ? trackBlock(P().tracks.find(x => x.id === id)) : ''}
             ${g.role === 'analysis' ? `<button class="btn-line" data-act="themes-add" data-id="${chapOf(id).id}">Add themes</button>` : ''}
             ${ids.length ? `<button class="btn-line" id="n-bulk">Mark everything here as done</button>` : ''}
-            <div class="modal-actions"><button class="btn-secondary" data-act="close">Close</button><button class="btn-secondary" id="n-ren">Rename</button>${isGrp ? '' : '<button class="btn-extra" id="n-del">Delete</button>'}</div>`, box => {
+            <div class="modal-actions"><button class="btn-secondary" data-act="close">Close</button><button class="btn-secondary" id="n-ren">Rename</button>${isGrp ? '' : icoBtn('del', 'id="n-del"', 'entry')}</div>`, box => {
             const bd = box.querySelector('#n-b'); if (bd) bd.onchange = () => { add({ t: 'goal', op: 'edit', gid: id, f: { budget: Math.max(0, Math.round(+bd.value || 0)) } }); render(); nodeSheet2(id); };
             const sh = box.querySelector('#n-share'); if (sh) sh.onclick = () => { shareBudget(id); closeSheet(); render(); toast('Budget shared across the tasks'); };
             const bk = box.querySelector('#n-bulk'); if (bk) bk.onclick = () => { closeSheet(); bulkSheet(ids, g.title); };
@@ -735,7 +735,7 @@
             <div class="set-title" style="margin-top:12px">Already finished some of it?</div>
             ${kids.map(k => `<button class="btn-line" data-act="bulk-grp" data-id="${k.id}">Mark ${esc(k.title)} as done</button>`).join('')}
             ${descendants(id, g => g.role === 'analysis').length ? `<button class="btn-line btn-accent" data-act="themes-add" data-id="${id}">Add themes to the analysis</button>` : ''}
-            <div class="modal-actions"><button class="btn-secondary" data-act="close">Close</button><button class="btn-secondary" id="c-ren">Rename</button><button class="btn-extra" id="c-del">Delete chapter</button></div>`, box => {
+            <div class="modal-actions"><button class="btn-secondary" data-act="close">Close</button><button class="btn-secondary" id="c-ren">Rename</button>${icoBtn('del', 'id="c-del"', 'chapter')}</div>`, box => {
             box.querySelector('#c-ren').onclick = async () => { const v = await promptSheet('Rename chapter', c.title); if (v) { add({ t: 'goal', op: 'edit', gid: id, f: { title: v } }); closeSheet(); render(); } };
             box.querySelector('#c-del').onclick = async () => { if (await confirmSheet({ title: 'Delete "' + c.title + '"?', sub: 'All its reading, drafting and editing tasks are removed.', ok: 'Delete', danger: true })) { add({ t: 'goal', op: 'del', gid: id }); closeSheet(); render(); } };
         });
@@ -950,6 +950,24 @@
                 const txt = L.unit === 'pages' ? `You last stopped at page <b>${N(L.page)}</b>, ${whenWords(L.ts)}.` : `You last stopped at <b>${N(L.page)}</b> ${esc(L.unit)}, ${whenWords(L.ts)}.`;
         return GBanner.html({ last: { html: txt, tell: `Your last entry was ${N(L.qty)} ${L.unit}. Tap Log history to see all of them.`, act: 'hist' }, tips: prefs.lineOn, next });
     }
+    /* ---- Today's plan: "How many hours will you work today?" asked once, then used to forecast ---- */
+    const hrsTxt = h => { const m = Math.round(h * 60); return m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min'; };
+    function planCard(PP) {
+        if (prefs.planAsk === false) return '';
+        const k = todayKey(), pl = prefs.planToday && prefs.planToday.k === k ? prefs.planToday : null;
+        if (pl && pl.skip) return '';
+        if (!pl) return `<div class="card pl-ask" data-sec="none"><div class="set-title">Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}</div><h3 class="pl-q">How many hours will you work today?</h3><div class="wz-chips">${[1, 2, 3, 4, 5, 6, 8].map(n => `<button type="button" class="wz-chip" data-act="plan-set" data-h="${n}">${n} h</button>`).join('')}<button type="button" class="wz-chip" data-act="plan-set" data-h="0">Not today</button></div><p class="hint">A rough guess is fine. It helps the app forecast your tasks.</p><button type="button" class="link-btn" data-act="plan-skip">Ask me later</button></div>`;
+        if (pl.h === 0) return `<div class="card pl-line"><span class="muted">Today is a rest day. Your chain is safe.</span> <button type="button" class="link-btn" data-act="plan-change">Change</button></div>`;
+        let done = 0; try { const r = GReport.report(Object.assign({ kind: 'week', back: 0 }, gInputs())); const v = r.day[r.elapsed - 1]; done = v || 0; } catch (e) {}
+        const left = Math.max(0, pl.h - done), frac = Math.max(0, Math.min(1, done / pl.h));
+        let fc = '';
+        try {
+            const pj = GReport.project(gInputs()), ids = new Set(PP.active.map(p => p.id)), act = pj.items.filter(i => i.hours !== null && (ids.size === 0 || [...ids].some(id => { const t = P().tracks.find(x => x.id === i.id); return t && t.scopeIds.indexOf(id) >= 0 || i.id === id; })));
+            const tot = act.reduce((a, i) => a + i.hours, 0);
+            if (tot > 0.2) fc = `Your tasks in progress need about <b>${hrsTxt(tot)}</b> more at your speed. At ${pl.h} h a day, that is about <b>${Math.max(1, Math.ceil(tot / pl.h))} ${Math.ceil(tot / pl.h) === 1 ? 'day' : 'days'}</b>.`;
+        } catch (e) {}
+        return `<div class="card pl-line" data-sec="none"><div class="pl-top"><div class="pl-n"><span class="si-big">${pl.h}<small> h planned</small></span></div><div class="pl-r"><div><b>${hrsTxt(done)}</b> done</div><div class="muted">${left > 0.02 ? hrsTxt(left) + ' left' : 'Plan met. Well done.'}</div></div></div><div class="slipbar"><i class="grow" style="width:${Math.round(frac * 100)}%"></i></div>${fc ? `<p class="hint">${fc}</p>` : ''}<button type="button" class="link-btn" data-act="plan-change">Change</button></div>`;
+    }
     function renderToday() {
         const el = $('s-today'); let h = '';
         const PP = P();
@@ -960,7 +978,7 @@
             if (!hasPlan) {
                 h += `<div class="card"><h3>Next step</h3><p class="hint">Your timeline is set: ${dN(J.daysToTarget)} to the year-${J.target} target. Build your thesis outline in Plan and tick what you have already finished.</p><button class="btn-line btn-accent" data-act="goto" data-s="plan">Open Plan</button></div>`;
             } else {
-                h += tornStrip() + todayPanel(PP, T, J);
+                h += tornStrip() + planCard(PP) + todayPanel(PP, T, J);
             }
         }
         if (window.GWizard) h += GWizard.laterHTML();
@@ -1231,7 +1249,7 @@
         } else if (setPage === 'feel') { h += sHead('Sound and feel') + (window.GFeel ? GFeel.settingsHTML() : '');
         } else if (setPage === 'comp') { h += sHead('Companion') + (window.GCompanion ? GCompanion.settingsHTML() : '');
         } else if (setPage === 'home') {
-            h += sHead('Home screens') + `<div class="card"><h3>Experience</h3><div class="wz-chips" style="margin:4px 0 10px"><button type="button" class="wz-chip" data-wrun="setup">Run setup again</button><button type="button" class="wz-chip" data-wrun="tour">Replay the tour</button></div>${sw('introOn', 'Opening screen')}${sw('greetOn', 'Greeting by name')}${sw('lineOn', 'Tips in the top banner', 'Proverbs and tips slide in now and then.')}${sw('smartOn', 'Smart sections', 'Sections you rarely open fold under More. The app learns for two weeks first.')}${sw('animOn', 'Slow task glide')}${sw('lossOn', 'Show the cost of delay', 'Days lost from the buffer on Today.')}${sw('gainOn', 'Show the reward of early work', 'Days of freedom banked on Today.')}${sw('ageOn', 'Show my age on the Life tab', 'Needs your birth date in the timeline.')}${sw('remindOn', 'Evening and backup reminders', 'Banners in the app. A web app cannot ring while closed.')}</div>`;
+            h += sHead('Home screens') + `<div class="card"><h3>Experience</h3><div class="wz-chips" style="margin:4px 0 10px"><button type="button" class="wz-chip" data-wrun="setup">Run setup again</button><button type="button" class="wz-chip" data-wrun="tour">Replay the tour</button></div>${sw('introOn', 'Opening screen')}${sw('greetOn', 'Greeting by name')}${sw('lineOn', 'Tips in the top banner', 'Proverbs and tips slide in now and then.')}${sw('smartOn', 'Smart sections', 'Sections you rarely open fold under More. The app learns for two weeks first.')}${sw('animOn', 'Slow task glide')}${sw('lossOn', 'Show the cost of delay', 'Days lost from the buffer on Today.')}${sw('gainOn', 'Show the reward of early work', 'Days of freedom banked on Today.')}${sw('planAsk', 'Ask my hours each day', 'The first time you open the app each day: how many hours will you work?')}${sw('ageOn', 'Show my age on the Life tab', 'Needs your birth date in the timeline.')}${sw('remindOn', 'Evening and backup reminders', 'Banners in the app. A web app cannot ring while closed.')}</div>`;
         } else if (setPage === 'remind') {
             h += sHead('Reminders') + `<div class="card"><div class="si-hero"><span class="si-big">${prefs.remindHour > 12 ? prefs.remindHour - 12 : prefs.remindHour}<small> ${prefs.remindHour >= 12 ? 'pm' : 'am'}</small></span><span class="si-small">Evening reminder, if work is still waiting.</span></div>${sw('remindOn', 'Evening and backup reminders', 'Banners in the app. A web app cannot ring while closed. The backup reminder comes after 10 pm.')}</div>`;
         } else if (setPage === 'time') {
@@ -1526,7 +1544,7 @@
             bindDays(box, v => { day = v; }, upd); upd(); const getMin = minBind(box);
             box.querySelector('#l-go').onclick = () => {
                 const v = parseFloat(amt); if (!(v > 0)) { box.querySelector('#l-e').textContent = 'Enter an amount'; return; }
-                const mn = getMin(), ev = add(Object.assign({ t: 'log', goal: id, qty: v, day, late: day !== todayKey() }, mn > 0 ? { min: mn } : {})); closeSheet(); render();
+                const mn = getMin(day), stm = getMin.st(), ev = add(Object.assign({ t: 'log', goal: id, qty: v, day, late: day !== todayKey() }, mn > 0 ? { min: mn } : {}, stm !== null && stm !== undefined ? { st: stm } : {})); closeSheet(); render();
                 const n = P().tracks.find(x => x.id === id);
                 { const g = Math.max(n.pace || 0, n.need || 0), dq = IN ? IN.qtyOn(id, D.todayN) : 0; fx(n.finished ? 'fanfare' : (g > 0 && dq >= g - 0.05) ? (dq - v >= g - 0.05 ? 'bonus' : 'goalmet') : 'reward'); }
                 toast(`+${N(v)} ${t.unit}. ` + (n.finished ? 'Finished: the tasks are ticked done.' : `${N(n.remaining)} to go${n.need > 0 && n.deadline !== null ? ', ' + N(n.need) + ' a day to make ' + fmtDNshort(n.deadline) : ''}.`), () => { add({ t: 'void', target: ev.id }); render(); fx('down'); });
@@ -1561,9 +1579,32 @@
 
     /* ---------- speed: how much you do in one hour, learned from your logs (see speed.js) ---------- */
     const spd = () => D.__sp || (D.__sp = window.Speed ? Speed.build(D.events, D.goals, Date.now()) : new Map());
-    const minRowHtml = () => `<div class="min-row"><div class="set-title">How long did it take? <span class="muted">Optional</span></div><div class="min-chips" id="l-min">${[[30, '30 min'], [60, '1 hour'], [90, '1½ hours'], [120, '2 hours']].map(([v, l]) => `<button type="button" class="mini-btn" data-m="${v}" aria-pressed="false">${l}</button>`).join('')}<button type="button" class="mini-btn" data-m="other" aria-pressed="false">Other</button></div><label class="field" id="l-min-o" hidden><span>Minutes</span><input type="number" inputmode="numeric" id="l-min-v" placeholder="45"></label></div>`;
+    const minRowHtml = () => `<div class="min-row"><div class="set-title">How long did it take? <span class="muted">Optional</span></div><div class="min-chips" id="l-min">${[[30, '30 min'], [60, '1 hour'], [90, '1½ hours'], [120, '2 hours']].map(([v, l]) => `<button type="button" class="mini-btn" data-m="${v}" aria-pressed="false">${l}</button>`).join('')}<button type="button" class="mini-btn" data-m="other" aria-pressed="false">Other</button></div><label class="field" id="l-min-o" hidden><span>Minutes</span><input type="number" inputmode="numeric" id="l-min-v" placeholder="45"></label>${startRowHtml()}</div>`;
+    /* "When did you start?": a digital clock (12 hour, am/pm). Today's sitting length is then exact: now minus the start. */
+    const startRowHtml = () => `<div class="st-row"><button type="button" class="mini-btn" id="st-open" aria-expanded="false">Set start time</button><div class="st-box" id="st-box" hidden><div class="st-clock" aria-live="polite"><span id="st-read">4:10</span><small id="st-ap">pm</small></div><div class="st-pick"><select class="set-select" id="st-h" aria-label="Hour">${[12,1,2,3,4,5,6,7,8,9,10,11].map(h => `<option value="${h}">${h}</option>`).join('')}</select><b>:</b><select class="set-select" id="st-m" aria-label="Minutes">${Array.from({ length: 12 }, (_, i) => `<option value="${i * 5}">${String(i * 5).padStart(2, '0')}</option>`).join('')}</select><div class="seg" id="st-seg"><button type="button" data-ap="am">am</button><button type="button" data-ap="pm">pm</button></div></div><div class="hint" id="st-note"></div><button type="button" class="link-btn" id="st-clear">Clear start time</button></div></div>`;
+    function startBind(box) {
+        const open = box.querySelector('#st-open'), bx = box.querySelector('#st-box'); if (!open) return { get: () => null };
+        const H = box.querySelector('#st-h'), M = box.querySelector('#st-m'), seg = box.querySelector('#st-seg'), note = box.querySelector('#st-note');
+        let on = false, ap = 'pm';
+        const mins = () => ((+H.value % 12) + (ap === 'pm' ? 12 : 0)) * 60 + (+M.value);
+        const nowMin = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
+        const paint = () => {
+            box.querySelector('#st-read').textContent = H.value + ':' + String(M.value).padStart(2, '0'); box.querySelector('#st-ap').textContent = ap;
+            seg.querySelectorAll('button').forEach(b => { const q = b.dataset.ap === ap; b.classList.toggle('on', q); b.setAttribute('aria-pressed', q ? 'true' : 'false'); });
+            const d = nowMin() - mins(); note.textContent = d > 0 && d <= 600 ? 'That is ' + (d >= 60 ? Math.floor(d / 60) + ' h ' + (d % 60 ? d % 60 + ' min' : '') : d + ' min') + ' so far.' : 'The start must be earlier than now. For another day, choose the minutes above.';
+            open.textContent = on ? 'Started at ' + H.value + ':' + String(M.value).padStart(2, '0') + ' ' + ap : 'Set start time';
+        };
+        open.onclick = () => {
+            if (!on) { on = true; const d = new Date(Date.now() - 30 * 6e4); let h = d.getHours(); ap = h >= 12 ? 'pm' : 'am'; H.value = String(h % 12 || 12); M.value = String(Math.floor(d.getMinutes() / 5) * 5); }
+            bx.hidden = !bx.hidden; open.setAttribute('aria-expanded', bx.hidden ? 'false' : 'true'); paint();
+        };
+        H.onchange = M.onchange = paint;
+        seg.onclick = e => { const b = e.target.closest('[data-ap]'); if (!b) return; ap = b.dataset.ap; paint(); };
+        box.querySelector('#st-clear').onclick = () => { on = false; bx.hidden = true; open.setAttribute('aria-expanded', 'false'); paint(); };
+        return { get: () => (on ? mins() : null), now: nowMin };
+    }
     function minBind(box) {
-        let m = 0; const row = box.querySelector('#l-min'), o = box.querySelector('#l-min-o'), inp = box.querySelector('#l-min-v'); if (!row) return () => 0;
+        let m = 0; const row = box.querySelector('#l-min'), o = box.querySelector('#l-min-o'), inp = box.querySelector('#l-min-v'); if (!row) { const z = () => 0; z.st = () => null; return z; }
         row.onclick = ev => {
             const b = ev.target.closest('[data-m]'); if (!b) return; const same = b.classList.contains('on');
             row.querySelectorAll('[data-m]').forEach(x => { x.classList.remove('on'); x.setAttribute('aria-pressed', 'false'); });
@@ -1572,7 +1613,10 @@
             if (b.dataset.m === 'other') { o.hidden = false; m = 0; if (inp) { inp.focus(); } } else { o.hidden = true; m = +b.dataset.m; }
         };
         if (inp) inp.oninput = () => { m = Math.max(0, Math.min(600, Math.round(parseFloat(inp.value) || 0))); };
-        return () => m;
+        const st = startBind(box);
+        const fn = day => { const s0 = st.get(); if (s0 !== null && (!day || day === todayKey())) { const d = st.now() - s0; if (d > 0 && d <= 600) return d; } return m; };
+        fn.st = () => st.get();
+        return fn;
     }
     const unitCount = u => (u === 'hours' || u === 'sessions') ? null : u;
     function speedCard(id, kind) {
@@ -1773,7 +1817,7 @@
             <div class="grid2 mt"><button class="btn-line btn-accent" data-act="log" data-id="${id}">Log progress</button>${t.behindQty > 0.05 ? `<button class="btn-line" data-act="replan" data-id="${id}">Re-plan backlog</button>` : `<button class="btn-line" data-act="task-edit" data-id="${id}">Edit</button>`}</div>
             ${t.behindQty > 0.05 ? `<button class="btn-line" data-act="task-edit" data-id="${id}">Edit</button>` : ''}
             ${logs.length ? `<div class="set-title" style="margin-top:14px">Recent</div>${logs.map(l => `<div class="ledger-row"><span>${fmtK(l.day || E.localKey(l.ts))}${l.late ? '<span class="lg-late">added later</span>' : ''}</span><span><b>${N(l.qty)}</b> ${esc(t.unit)} <button class="mini-btn" data-act="void" data-id="${l.id}">Undo</button></span></div>`).join('')}` : ''}
-            <div class="modal-actions"><button class="btn-secondary" data-act="close">Close</button><button class="btn-extra" data-act="task-del" data-id="${id}">Delete task</button></div>`);
+            <div class="modal-actions"><button class="btn-secondary" data-act="close">Close</button>${icoBtn('del', 'data-act="task-del" data-id="${id}"', 'task')}</div>`);
     }
     /* logging against items (a daily plan spills into the next item) */
     const itemLabel = i => { const p = D.goals.get(i.parent); return (p && p.title !== i.title ? p.title + ' · ' : '') + i.title; };
@@ -1815,7 +1859,7 @@
             chips(); upd(); const getMin = minBind(box);
             box.querySelector('#l-go').onclick = () => {
                 const q = parseFloat(amt); if (!(q > 0)) { box.querySelector('#l-e').textContent = 'Enter an amount'; return; }
-                const made = [], mn = getMin(), mnOf = take => (mn > 0 ? { min: Math.max(1, Math.round(mn * take / q * 10) / 10) } : {});
+                const made = [], mn = getMin(day), mnOf = take => (mn > 0 ? { min: Math.max(1, Math.round(mn * take / q * 10) / 10) } : {});
                 if (derived) {
                     let list = t.items.filter(i => i.remaining > 1e-9), at = list.findIndex(i => i.id === (sel() || {}).id); if (at < 0) at = 0;
                     list = list.slice(at); let left = q;
@@ -1863,7 +1907,7 @@
         sheet(`<h2>${id ? 'Edit' : 'New'} life goal</h2><label class="field"><span>Goal</span><input type="text" id="g-t" value="${esc(l.title)}" placeholder="Build a family" autofocus></label>
             <div class="grid2"><label class="field"><span>Area</span><select id="g-c">${CATS.map(c => `<option ${c === l.cat ? 'selected' : ''}>${c}</option>`).join('')}</select></label><label class="field"><span>Aim for (optional)</span><input type="date" id="g-d" value="${l.due || ''}"></label></div>
             <label class="field"><span>Why it matters</span><textarea id="g-n">${esc(l.notes)}</textarea></label><div class="error" id="g-e"></div>
-            <div class="modal-actions"><button class="btn-secondary" data-act="close">Cancel</button><button class="btn-primary" id="g-go">Save</button>${id ? '<button class="btn-extra" id="g-del">Delete this goal</button>' : ''}</div>`, box => {
+            <div class="modal-actions"><button class="btn-secondary" data-act="close">Cancel</button><button class="btn-primary" id="g-go">Save</button>${id ? icoBtn('del', 'id="g-del"', 'goal') : ''}</div>`, box => {
             box.querySelector('#g-go').onclick = () => {
                 const title = val(box, '#g-t').trim(); if (!title) { box.querySelector('#g-e').textContent = 'Give it a name'; return; }
                 const f = { title, cat: val(box, '#g-c'), due: val(box, '#g-d') || null, notes: val(box, '#g-n').trim() };
@@ -1962,6 +2006,9 @@
             case 'life-edit': lifeSheet(id); break;
             case 'ms-add': msSheet(id); break;
             case 'toast-undo': { const f = $('toast')._undo; $('toast').classList.remove('show'); if (f) f(); break; }
+            case 'plan-set': { const hh = +el.dataset.h; prefs.planToday = { k: todayKey(), h: hh }; prefs.planLog = (prefs.planLog || []).filter(x => x.k !== todayKey()).concat([{ k: todayKey(), h: hh }]).slice(-90); persist(); render(); break; }
+            case 'plan-skip': prefs.planToday = { k: todayKey(), h: null, skip: 1 }; persist(); render(); break;
+            case 'plan-change': prefs.planToday = null; persist(); render(); break;
             case 'b-later': prefs.remindSnooze = Date.now() + 3600e3; persist(); renderBanner(); break;
             case 'b-now': backupSheet('share'); break;
             case 'pick-bg': $('file-bg').click(); break;
@@ -1971,7 +2018,7 @@
             case 'backup': backupSheet(el.dataset.m); break;
             case 'restore': $('file-restore').click(); break;
             case 'look-save': {
-                const skip = ['pass', 'rememberPass', 'lastBackup', 'remindSnooze', 'open', 'acc', 'defDays', 'posAsk', 'pickAsked', 'lastLight', 'lastDark'], pr = {};
+                const skip = ['pass', 'rememberPass', 'lastBackup', 'remindSnooze', 'open', 'acc', 'defDays', 'posAsk', 'pickAsked', 'lastLight', 'lastDark', 'planToday', 'planLog'], pr = {};
                 Object.keys(prefs).forEach(k => { if (skip.indexOf(k) < 0) pr[k] = prefs[k]; });
                 const rd = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
                 downloadText(JSON.stringify({ app: 'goal-manager', kind: 'look-settings', v: 1, at: Date.now(), prefs: pr, companion: rd('gc_prefs'), feel: rd('gf_prefs2') }, null, 1), 'goal-look-settings-' + todayKey() + '.json');
@@ -2021,7 +2068,7 @@
             let o = null; try { o = JSON.parse(String(r.result)); } catch (x) {}
             if (!o || o.kind !== 'look-settings' || !o.prefs) { toast('That is not a look settings file'); return; }
             if (!(await confirmSheet({ title: 'Restore look settings?', sub: 'Your themes, glass, fonts, sounds and Companion choices are replaced by the ones in this file. Goals and entries stay as they are.', ok: 'Restore' }))) return;
-            const skip = ['pass', 'rememberPass', 'lastBackup', 'remindSnooze', 'open', 'acc', 'defDays', 'posAsk', 'pickAsked', 'lastLight', 'lastDark'];
+            const skip = ['pass', 'rememberPass', 'lastBackup', 'remindSnooze', 'open', 'acc', 'defDays', 'posAsk', 'pickAsked', 'lastLight', 'lastDark', 'planToday', 'planLog'];
             Object.keys(o.prefs).forEach(k => { if (skip.indexOf(k) < 0) prefs[k] = o.prefs[k]; });
             try { if (o.companion) localStorage.setItem('gc_prefs', JSON.stringify(o.companion)); if (o.feel) localStorage.setItem('gf_prefs2', JSON.stringify(o.feel)); } catch (x) {}
             persist(); toast('Look settings restored'); setTimeout(() => location.reload(), 700);

@@ -65,4 +65,6 @@ html body :is(.btn-soft, .btn-quiet) { text-decoration: none !important; }
 html body :is(.pdone, .mini-btn, .tp-chip, .days-chips button, .undo-btn, .pg-edit, .ico-btn, .b-act button, .gc-ask button, .gf-pop button, .wz-chip) {
     height: 28px !important; min-height: 28px !important; padding-left: 12px; padding-right: 12px; font-size: .9rem;
 }
-html body .ico-btn { width: 28px; padding: 0; }
+html body button.ico-btn { width: 28px; padding: 0 !important; }
+html body button.ico-btn svg { width: 16px; height: 16px; flex: none; }
+html body button.ico-del { color: #d23b34 !important; } html[data-scheme="dark"] body button.ico-del { color: #ff8f88 !important; }
