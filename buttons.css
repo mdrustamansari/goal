@@ -33,7 +33,7 @@ html body :is(.btn-primary, .btn-accent, .seg button.on, .mini-btn.on, .mini-btn
 }
 /* inside a segmented control the unselected choice sits flat in its tray */
 html body .seg { background: var(--track); border-radius: 999px; }
-html body .seg button:not(.on) { background: transparent !important; border: 1px solid var(--b-ln) !important; box-shadow: none !important; color: var(--text-main); }
+html body .seg button:not(.on) { color: var(--text-main); border: 1px solid var(--b-ln) !important; background: linear-gradient(rgba(var(--b-accrgb), var(--b-acc)), rgba(var(--b-accrgb), var(--b-acc))), linear-gradient(rgba(0, 0, 0, var(--b-blk)), rgba(0, 0, 0, var(--b-blk))), var(--b-base) !important; box-shadow: inset 0 2px 0 0 var(--b-sh), 0 2px 3px 0 var(--b-dk) !important; }
 /* OUTLINE: hollow glass, for what is not part of the task */
 html body :is(.btn-soft, .btn-quiet) {
     background: transparent !important; color: var(--b-ink) !important; border: 1px solid var(--b-ln) !important; box-shadow: none !important;

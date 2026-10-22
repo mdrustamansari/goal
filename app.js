@@ -294,12 +294,17 @@
         }
         return { ok: false, why };
     }
+    // The phone sometimes reports "closed" even when the file was saved (for example after sending it to Drive), so ask once instead of guessing.
+    function toastAsk(msg, label, fn) {
+        const t = $('toast'); t.innerHTML = `<span>${esc(msg)}</span><button class="mini-btn" data-act="toast-undo">${esc(label)}</button>`;
+        t.classList.add('act', 'show'); t._undo = fn; clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 12000);
+    }
     async function runBackup(mode, pass) {
         if (mode !== 'plain' && !hasCrypto()) { toast('Encryption needs the https page'); return; }
         const text = await buildBackupText(mode === 'plain' ? '' : pass);
         if (mode === 'download') { downloadText(text, backupBase() + '.json'); markBackedUp(); toast('Saved to your downloads'); return; }
         const r = await shareText(text, backupBase());
-        if (r.cancelled) return;
+        if (r.cancelled) { toastAsk('Share closed. If you saved the backup, tap here.', 'I saved it', markBackedUp); return; }
         if (r.ok) { markBackedUp(); toast('Backup shared'); return; }
         downloadText(text, backupBase() + '.json'); markBackedUp();
         toast(`Share sheet could not open (${r.why}). Saved to Downloads; upload it from your Files app.`);
