@@ -136,3 +136,10 @@ Rule of thumb: a link goes somewhere, an outline starts something, glass continu
 
 ## 20. Glass tint (Goal v5.42; replaces the Liquid body tone in 18)
 Glass buttons and Liquid cards share one tint: the theme's accent (darker on light themes, lighter on dark ones), 9% by default, plus optional black (0% by default, 10% at most). No flat black or white layer. Sliders: Settings, Glass tint (btnlook.js).
+
+## 21. Settings (Goal v5.44)
+- Top page shows state before it asks for choices: two tiles with one big number or picture and small words beside it (Backup: days since the last copy; Look: theme swatches), then three groups of rows. Each row: coloured icon tile, label, current value, chevron. Rows need no explanation.
+- A page opens from a row and returns with "‹ Settings". Tapping the Settings tab again goes back to the top.
+- Hero first: a ring or a big number says the state; the action follows (Back up now = primary, Save to Downloads = glass). Rare or risky things are links; "Erase everything…" stands alone, in red, at the end.
+- Nothing is repeated on a page without a reason; switches live with the thing they change.
+- Row, tile and link edges are exempt from the button audit: rows sit inside a bordered group, links are underlined text.

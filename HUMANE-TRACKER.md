@@ -116,3 +116,10 @@ The same gesture or word means the same thing everywhere.
 - 2026-10-21 (Goal v5.40 / Budget v2.37): Liquid body tone (Goal only; do not run sync.sh until Budget adopts it). Budget: applyTheme skipped when nothing about the look changed (tab-switch blink hardening; blink not reproducible in the sandbox).
 
 - 2026-10-21 (Goal v5.41): button hierarchy (primary / glass / outline / link), one height, bold only on primary, Button glass tint sliders. Budget waits for approval; Budget's "sure" chip already reads "confident" (v2.37 source, unreleased).
+
+- 2026-10-22 (Goal v5.42 and v5.43): Liquid cards take the accent tint; Liquid Tint is bipolar (left black 1–10%, centre none, right white 1–10%); backup reminder clears after a share that closes with AbortError (tap "I saved it").
+- 2026-10-22 (Goal v5.44): Settings restructured. Top page: two glance tiles (Backup in days, Look swatches) and three groups of icon rows with values. One page per group: Appearance, Sound and feel, Companion, Home screens, Reminders, Timeline, Privacy and security, Backup and data. Erase sits alone at the foot of Backup. All buttons, pop-ups and pace chips are 40 px. Budget waits for approval.
+
+- 2026-10-22 (Budget v2.38): Goal v5.41–v5.44 design adopted in Budget (buttons, Glass tint, Liquid accent tint and bipolar Tint, backup fix, restructured Settings). Standing rule: fix one app first, then repeat in the others; Budget is now level with Goal.
+
+- 2026-10-22 (Goal v5.45 / Budget v2.39): buttons narrower than 60 px are 28 px tall (btnlook.js sets class b-sm); all others stay 40 px.

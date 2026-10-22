@@ -748,3 +748,25 @@ html[data-scheme="dark"] .rp-chip.ok { color: #4fd896; border-color: #4fd896; } 
 .rp-mo-g b.lv { background: var(--track); font-weight: 400; opacity: .75; }
 .rp-pj { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; } .rp-pj + .rp-pj { border-top: 1px solid var(--track); } .rp-pjb { flex: 1; min-width: 0; }
 .rp-fin { font-size: 1rem; line-height: 1.5; }
+
+/* ---- Settings: top page and group pages (v5.44) ---- */
+.si-title { font-size: 22px; font-weight: 700; margin: 6px 2px 12px; letter-spacing: -.01em; } .si-title.big { font-size: 34px; margin: 4px 2px 16px; }
+.si-back { display: inline-flex; min-height: 40px; align-items: center; gap: 2px; background: none; border: 0; padding: 6px 4px 6px 0; color: var(--accent, var(--blue-a)); font: inherit; font-size: 16px; cursor: pointer; } .si-back svg { width: 20px; height: 20px; }
+.si-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+.si-tile2 { text-align: left; display: flex; flex-direction: column; gap: 4px; padding: 14px 14px 12px; min-height: 142px; border-radius: 22px; font: inherit; color: var(--text-main); cursor: pointer; border: 1px solid color-mix(in srgb, var(--text-main) 24%, transparent); background: var(--glass-bg, rgba(255,255,255,.18)); -webkit-backdrop-filter: blur(var(--glass-blur, 14px)); backdrop-filter: blur(var(--glass-blur, 14px)); }
+.si-cap { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; opacity: .7; }
+.si-big { font-size: 40px; font-weight: 700; line-height: 1.05; letter-spacing: -.02em; } .si-big small { font-size: 15px; font-weight: 500; opacity: .75; letter-spacing: 0; } .si-big.warn { color: var(--warning); }
+.si-small { font-size: 14px; opacity: .85; } .si-foot { margin-top: auto; font-size: 12px; opacity: .65; }
+.si-dots { display: flex; gap: 6px; margin: 8px 0 6px; } .si-dots i { width: 26px; height: 26px; border-radius: 50%; display: block; box-shadow: inset 0 0 0 1px rgba(255,255,255,.55), 0 1px 3px rgba(0,0,0,.2); }
+.si-group { border-radius: 22px; margin-bottom: 16px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--text-main) 24%, transparent); background: var(--glass-bg, rgba(255,255,255,.18)); -webkit-backdrop-filter: blur(var(--glass-blur, 14px)); backdrop-filter: blur(var(--glass-blur, 14px)); }
+.si-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 8px 14px; background: none; border: 0; border-top: 1px solid var(--hairline, rgba(128,128,128,.22)); font: inherit; font-size: 16px; color: var(--text-main); text-align: left; cursor: pointer; } .si-group .si-row:first-child { border-top: 0; }
+.si-l { flex: 1; } .si-v { font-size: 14px; opacity: .65; } .si-ch { width: 16px; height: 16px; opacity: .4; flex: none; }
+.si-tile { width: 32px; height: 32px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; color: #fff; background: var(--c); flex: none; box-shadow: inset 0 1px 0 rgba(255,255,255,.4); } .si-tile svg { width: 19px; height: 19px; }
+.si-foot-note { text-align: center; font-size: 12px; opacity: .55; margin: 10px 0 20px; }
+.si-hero { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.si-bk { text-align: center; } .si-bk .si-hero { align-items: center; } .si-bk .btn-line { width: 100%; margin-top: 8px; }
+.si-ring { width: 84px; height: 84px; margin: 4px auto 8px; } .si-ring svg { width: 100%; height: 100%; } .si-ring .rt { stroke: rgba(128,128,128,.22); } .si-ring .ra, .si-ring .rk { stroke: #34b36b; } .si-ring.warn .ra, .si-ring.warn .rk { stroke: var(--warning); }
+.si-links { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 6px 0 18px; } .si-links .link-btn { padding: 8px 12px; }
+.si-erase { text-align: center; margin: 24px 0 30px; } .si-erase .danger { color: var(--warning); }
+.si-prev { text-align: center; } .si-prevbtns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; } .si-prevbtns button { flex: 1 1 0; min-width: 0; }
+.si-l { white-space: nowrap; } .si-v { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; } .si-prev .hint { margin-top: 10px; }

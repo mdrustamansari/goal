@@ -9,8 +9,8 @@ html { --b-sh: rgba(255, 255, 255, .65); --b-dk: rgba(20, 35, 70, .30); --b-h: 4
 html[data-scheme="dark"] { --b-dk: rgba(0, 0, 0, .55); --b-ln: rgba(255, 255, 255, .30); --b-ink: #8fbaff; --b-base: rgba(255, 255, 255, .05); }
 
 /* shared shape: all kinds */
-html body :is(.btn-line, .btn-secondary, .btn-primary, .btn-accent, .btn-danger, .btn-extra, .grid2 button, .wz-btn, .wz-chip, .seg button, .mini-btn, .days-chips button, .undo-btn, .pg-edit, .btn-soft, .btn-quiet, .ico-btn):not(.link-btn) {
-    box-sizing: border-box; min-height: var(--b-h); border-radius: 999px !important; padding-top: 0; padding-bottom: 0;
+html body :is(.btn-line, .btn-secondary, .btn-primary, .btn-accent, .btn-danger, .btn-extra, .grid2 button, .wz-btn, .wz-chip, .seg button, .mini-btn, .days-chips button, .undo-btn, .pg-edit, .btn-soft, .btn-quiet, .ico-btn, .tp-chip, .b-act button):not(.link-btn) {
+    box-sizing: border-box; min-height: var(--b-h); height: var(--b-h); display: inline-flex; align-items: center; justify-content: center; border-radius: 999px !important; padding-top: 0; padding-bottom: 0;
     font-weight: 400; line-height: 1.2; text-shadow: none; opacity: 1 !important;
     -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
     transition: transform .12s ease, box-shadow .12s ease;
@@ -18,7 +18,7 @@ html body :is(.btn-line, .btn-secondary, .btn-primary, .btn-accent, .btn-danger,
 html body .ico-btn { width: var(--b-h); height: var(--b-h); }
 
 /* GLASS: part of the task. The glass is the card's own light, tinted with the accent, a touch dimmer. */
-html body :is(.btn-line, .btn-secondary, .btn-danger, .btn-extra, .grid2 button, .wz-btn, .wz-chip, .mini-btn, .days-chips button, .undo-btn, .pg-edit, .ico-btn):not(.btn-accent):not(.on):not(.btn-quiet) {
+html body :is(.btn-line, .btn-secondary, .btn-danger, .btn-extra, .grid2 button, .wz-btn, .wz-chip, .mini-btn, .days-chips button, .undo-btn, .pg-edit, .ico-btn, .tp-chip, .b-act button):not(.btn-accent):not(.on):not(.btn-quiet) {
     color: var(--text-main);
     border: 1px solid var(--b-ln) !important;
     background: linear-gradient(rgba(var(--b-accrgb), var(--b-acc)), rgba(var(--b-accrgb), var(--b-acc))), linear-gradient(rgba(0, 0, 0, var(--b-blk)), rgba(0, 0, 0, var(--b-blk))), var(--b-base) !important;
@@ -52,3 +52,11 @@ html body :is(.btn-line, .btn-secondary, .btn-primary, .btn-accent, .btn-danger,
 html body :is(.btn-line, .btn-secondary, .btn-primary, .btn-accent, .btn-danger, .mini-btn, .wz-chip, .ico-btn):not(.btn-quiet):not(.btn-soft):active { box-shadow: inset 0 1px 0 0 var(--b-sh), 0 1px 2px 0 var(--b-dk) !important; }
 html.lite body :is(.btn-line, .btn-secondary, .btn-primary, .btn-accent, .mini-btn) { transition: none; }
 @media (prefers-reduced-motion: reduce) { html body :is(.btn-line, .mini-btn, .seg button) { transition: none; } }
+
+/* small pop-ups use the same height */
+html body :is(.gc-ask button, .gf-pop button) { box-sizing: border-box; height: var(--b-h); min-height: var(--b-h); padding: 0 16px; border-radius: 999px; font-size: 1rem; }
+html body .si-back { height: auto; min-height: 40px; }
+
+/* small buttons: narrower than 60 px, set by btnlook.js */
+html body .b-sm:not(.link-btn) { height: 28px !important; min-height: 28px !important; padding-left: 10px; padding-right: 10px; font-size: .9rem; }
+html body .ico-btn.b-sm { width: 28px; }
