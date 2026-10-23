@@ -780,3 +780,16 @@ html[data-scheme="dark"] .rp-chip.ok { color: #4fd896; border-color: #4fd896; } 
 .pl-ask .hint { margin-top: 12px; }
 .del-row { display: flex; justify-content: flex-end; margin-top: 10px; }
 .modal-actions { align-items: center; } .modal-actions .ico-del { margin-left: auto; order: 9; }
+
+/* work days: icon, fraction, ring of three hour-sections (v5.51) */
+.wd-card { padding: 16px 18px 14px; } .wd-cap { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; opacity: .55; margin-bottom: 10px; }
+.wd-main { display: flex; align-items: center; gap: 12px; }
+.wd-it { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex: none; background: #4a86dc; box-shadow: inset 0 1px 0 rgba(255,255,255,.45); } .wd-it svg { width: 22px; height: 22px; }
+.wd-card.green .wd-it { background: #1f9d63; } .wd-card.red .wd-it { background: #d23b34; }
+.wd-mid { flex: 1; min-width: 0; } .wd-big { font-size: 50px; font-weight: 200; letter-spacing: -.03em; line-height: 1; white-space: nowrap; } .wd-card.green .wd-big { color: #1f9d63; } .wd-card.red .wd-big { color: #d23b34; }
+.wdn { font-variant-numeric: lining-nums; } .wd-fr { display: inline-flex; align-items: baseline; margin-left: 4px; font-size: .52em; font-weight: 300; letter-spacing: 0; } .wd-fr sup, .wd-fr sub { font-size: 1em; vertical-align: baseline; line-height: 1; } .wd-fr sup { position: relative; top: -.42em; } .wd-fr sub { position: relative; top: .3em; } .wd-fr i { font-style: normal; font-size: 1.5em; line-height: .9; margin: 0 -1px; opacity: .7; } .wd-un { font-size: 14px; opacity: .65; margin-top: 4px; }
+.wd-ring { position: relative; flex: none; display: inline-block; } .wd-ring svg { display: block; } .wd-sec { stroke: rgba(80,110,170,.22); } .wd-ring.blue .wd-sec.on { stroke: #4a86dc; } .wd-ring.green .wd-sec.on { stroke: #1f9d63; } .wd-ring.red .wd-sec.on { stroke: #d23b34; }
+.wd-lab { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; letter-spacing: .06em; line-height: 1.15; opacity: .75; } .wd-lab i { font-style: normal; }
+.wd-bd { position: absolute; right: -8px; top: -6px; font-size: 10px; background: color-mix(in srgb, var(--text-main) 8%, #fff); border: 1px solid color-mix(in srgb, var(--text-main) 18%, transparent); border-radius: 999px; padding: 0 5px; }
+.wd-sub { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; opacity: .78; margin-top: 12px; } .wd-sub b { font-weight: 400; opacity: .65; }
+.wd-card .slipbar { margin-top: 10px; } .wd-card .hint { margin-top: 8px; } .wd-card .link-btn { display: block; margin: 4px auto 0; }

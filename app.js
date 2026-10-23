@@ -950,6 +950,21 @@
                 const txt = L.unit === 'pages' ? `You last stopped at page <b>${N(L.page)}</b>, ${whenWords(L.ts)}.` : `You last stopped at <b>${N(L.page)}</b> ${esc(L.unit)}, ${whenWords(L.ts)}.`;
         return GBanner.html({ last: { html: txt, tell: `Your last entry was ${N(L.qty)} ${L.unit}. Tap Log history to see all of them.`, act: 'hist' }, tips: prefs.lineOn, next });
     }
+    /* work-day balance this week: hours worked against 3 h a work day. Today counts only once it is met (or in the evening), so a half-finished day never shows as a loss. */
+    function balanceCard() {
+        let diff = 0, any = false;
+        try {
+            const r = GReport.report(Object.assign({ kind: 'week', back: 0 }, gInputs())), hr = new Date().getHours();
+            for (let i = 0; i < r.elapsed; i++) {
+                const v = r.day[i] || 0, isToday = i === r.elapsed - 1, rest = r.leaveIdx[i] && !r.worked[i];
+                if (rest) continue; any = true;
+                if (isToday) { if (v >= WD_H || hr >= 21) diff += v - WD_H; } else diff += v - WD_H;
+            }
+        } catch (e) { return ''; }
+        if (!any || Math.abs(diff) < 0.25) return '';
+        const up = diff > 0;
+        return wdCard({ cap: 'This week · work-day balance', ic: up ? 'up' : 'down', tone: up ? 'green' : 'red', h: diff, sign: up ? '+' : '−', unit: up ? 'work days banked' : 'work days behind', sub: `${hrsTxt(Math.abs(diff))} ${up ? 'more' : 'less'} than ${WD_H} h a day. Each section is 1 work hour.` });
+    }
     /* ---- Today's plan: "How many hours will you work today?" asked once, then used to forecast ---- */
     const hrsTxt = h => { const m = Math.round(h * 60); return m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min'; };
     function planCard(PP) {
@@ -966,7 +981,7 @@
             const tot = act.reduce((a, i) => a + i.hours, 0);
             if (tot > 0.2) fc = `Your tasks in progress need about <b>${hrsTxt(tot)}</b> more at your speed. At ${pl.h} h a day, that is about <b>${Math.max(1, Math.ceil(tot / pl.h))} ${Math.ceil(tot / pl.h) === 1 ? 'day' : 'days'}</b>.`;
         } catch (e) {}
-        return `<div class="card pl-line" data-sec="none"><div class="pl-top"><div class="pl-n"><span class="si-big">${pl.h}<small> h planned</small></span></div><div class="pl-r"><div><b>${hrsTxt(done)}</b> done</div><div class="muted">${left > 0.02 ? hrsTxt(left) + ' left' : 'Plan met. Well done.'}</div></div></div><div class="slipbar"><i class="grow" style="width:${Math.round(frac * 100)}%"></i></div>${fc ? `<p class="hint">${fc}</p>` : ''}<button type="button" class="link-btn" data-act="plan-change">Change</button></div>`;
+        return wdCard({ cap: 'Today · plan', ic: 'clock', tone: 'blue', h: pl.h, unit: 'work days planned', size: 60, label: 1, sub: `${hrsTxt(done)} done · ${hrsTxt(pl.h)} planned${left > 0.02 ? '' : ' · plan met'}`, more: `<div class="slipbar"><i class="grow" style="width:${Math.round(frac * 100)}%"></i></div>${fc ? `<p class="hint">${fc}</p>` : ''}<button type="button" class="link-btn" data-act="plan-change">Change</button>` }) + balanceCard();
     }
     function renderToday() {
         const el = $('s-today'); let h = '';
@@ -1025,8 +1040,27 @@
     const gCol = t => t.grp === 'reading' ? GPAL[0] : t.grp === 'drafting' ? GPAL[1] : t.grp === 'editing' ? GPAL[2] : GPAL[3 + (Math.abs(t.id) % 5)];
     const gIco = t => t.grp === 'reading' ? '📖' : t.grp === 'drafting' ? '✍️' : t.grp === 'editing' ? '🔍' : unitIcon(t.unit);
     const gTile = (t, big) => `<span class="rp-ic${big ? ' big' : ''}" style="background:${gCol(t)}" aria-hidden="true">${gIco(t)}</span>`;
+    /* ---- Work days: one work day is 3 hours (Rustam's standard). Shown as fractions, to the nearest sixth, with the decimal beside. ---- */
+    const WD_H = 3, WD_G = ['', '⅙', '⅓', '½', '⅔', '⅚'], WD_T = ['', '1/6', '1/3', '1/2', '2/3', '5/6'];
+    const wdParts = h => { const sx = Math.round(Math.abs(h) / WD_H * 6); return { sx, w: Math.floor(sx / 6), r: sx % 6, dec: (Math.abs(h) / WD_H).toFixed(2) }; };
+    const wdText = h => { const p = wdParts(h); if (!p.sx) return '0 work days'; const t = (p.w ? p.w : '') + WD_G[p.r]; return t + (p.w === 0 && p.r > 0 ? ' work day' : (p.w === 1 && !p.r ? ' work day' : ' work days')); };
+    const wdBig = h => { const p = wdParts(h), fr = p.r ? `<span class="wd-fr"><sup>${[0, 1, 1, 1, 2, 5][p.r]}</sup><i>⁄</i><sub>${[0, 6, 3, 2, 3, 6][p.r]}</sub></span>` : ''; return `<span class="wdn">${p.w || !p.r ? p.w : ''}${fr}</span>`; };
+    const WD_ICO = { clock: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>', up: '<path d="M12 19V6M6 11l6-6 6 6"/>', down: '<path d="M12 5v13M6 13l6 6 6-6"/>', book: '<path d="M5 5h6a3 3 0 0 1 3 3v11a2 2 0 0 0-2-2H5zM19 5h-5"/>' };
+    /* a ring of three sections, one for each work hour of the part-day; full days wait in the badge */
+    function wdRing(h, tone, size, label) {
+        const p = wdParts(h), fill = p.r / 2, sw = size > 48 ? 6 : 5, gap = size > 48 ? 24 : 26, r = size / 2 - sw / 2 - 1, c = size / 2; let o = '';
+        for (let k = 0; k < 3; k++) {
+            const a0 = (-90 + k * 120 + gap / 2) * Math.PI / 180, a1 = (-90 + (k + 1) * 120 - gap / 2) * Math.PI / 180, f = Math.max(0, Math.min(1, fill - k));
+            o += `<path d="M${(c + r * Math.cos(a0)).toFixed(1)} ${(c + r * Math.sin(a0)).toFixed(1)} A${r} ${r} 0 0 1 ${(c + r * Math.cos(a1)).toFixed(1)} ${(c + r * Math.sin(a1)).toFixed(1)}" fill="none" class="wd-sec${f > 0 ? ' on' : ''}" ${f > 0 && f < 1 ? 'style="opacity:.55"' : ''} stroke-width="${sw}" stroke-linecap="round"/>`;
+        }
+        return `<span class="wd-ring ${tone}" style="width:${size}px;height:${size}px" role="img" aria-label="${esc(wdText(h))}"><svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">${o}</svg>${label ? '<span class="wd-lab"><i>WORK</i><i>HOUR</i></span>' : ''}${p.w ? `<span class="wd-bd">×${p.w}</span>` : ''}</span>`;
+    }
+    function wdCard(o) {
+        const p = wdParts(o.h);
+        return `<div class="card wd-card ${o.tone}" data-sec="none"><div class="wd-cap">${o.cap}</div><div class="wd-main"><span class="wd-it"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${WD_ICO[o.ic]}</svg></span><div class="wd-mid"><div class="wd-big">${o.sign || ''}${wdBig(o.h)}</div><div class="wd-un">${o.unit}</div></div>${wdRing(o.h, o.tone, o.size || 40, o.label)}</div><div class="wd-sub"><span>${o.sub}</span><b>${p.dec}</b></div>${o.more || ''}</div>`;
+    }
     const fh = h => h < 0.95 ? `${Math.max(1, Math.round(h * 60 / 5) * 5)} min` : `${N(h)} h`;
-    const fhW = h => { if (h < 0.95) return `${plural(Math.max(1, Math.round(h * 60 / 5) * 5), 'minute')}`; const v = h >= 10 ? Math.round(h) : Math.round(h * 2) / 2; return `${N(v)} ${v === 1 ? 'hour' : 'hours'}`; };
+    const fhW = h => { if (h < 0.95) return `${plural(Math.max(1, Math.round(h * 60 / 5) * 5), 'minute')}`; const v = h >= 10 ? Math.round(h) : Math.round(h * 2) / 2; return `${N(v)} ${v === 1 ? 'hour' : 'hours'}${h >= 1.5 ? ' (' + wdText(h) + ')' : ''}`; };
     // more work is good (green), less is red; the triangle is always the same one
     const gm = (d, text) => d === 0 ? `<span class="rf neutral">– ${text || 'same'}</span>` : `<span class="rf ${d > 0 ? 'wu' : 'wd'}"><i aria-hidden="true">${d > 0 ? '▲' : '▼'}</i> ${text}</span>`;
     const gMove = (d, text) => d === 0 ? `<span class="rf neutral">– ${text || 'steady'}</span>` : `<span class="rf neutral"><i aria-hidden="true">${d > 0 ? '▲' : '▼'}</i> ${text}</span>`;

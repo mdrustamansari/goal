@@ -143,3 +143,8 @@ Glass buttons and Liquid cards share one tint: the theme's accent (darker on lig
 - Hero first: a ring or a big number says the state; the action follows (Back up now = primary, Save to Downloads = glass). Rare or risky things are links; "Erase everything…" stands alone, in red, at the end.
 - Nothing is repeated on a page without a reason; switches live with the thing they change.
 - Row, tile and link edges are exempt from the button audit: rows sit inside a bordered group, links are underlined text.
+
+## 22. Work days (Goal v5.51)
+- One work day is 3 hours. Show effort as a fraction (nearest sixth) in large thin type, with the decimal small and grey beside it.
+- Card: coloured icon tile on the left, fraction, small unit text; on the right a ring of three battery-like sections, one per work hour of the part-day, with a ×N badge for full days. The first card on a screen carries the tiny "WORK HOUR" label (60 px ring); others use the 40 px ring.
+- Colours in every app: blue = plan, progress or work left; green = gain (banked, saved); red = loss (behind, overspent). Arrows: up = gain, down = loss.
