@@ -148,3 +148,6 @@ Glass buttons and Liquid cards share one tint: the theme's accent (darker on lig
 - One work day is 3 hours. Show effort as a fraction (nearest sixth) in large thin type, with the decimal small and grey beside it.
 - Card: coloured icon tile on the left, fraction, small unit text; on the right a ring of three battery-like sections, one per work hour of the part-day, with a ×N badge for full days. The first card on a screen carries the tiny "WORK HOUR" label (60 px ring); others use the 40 px ring.
 - Colours in every app: blue = plan, progress or work left; green = gain (banked, saved); red = loss (behind, overspent). Arrows: up = gain, down = loss.
+
+## 22. Light inside the glass button (Goal v5.52 / Budget v2.43)
+Glass and primary buttons: top shine white 65% (no blur), inner glow at the bottom edge white 40% with 9 px blur (light refracted into the glass), dark shadow 3 px outside the hairline. Outline pills and links have none of these.

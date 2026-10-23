@@ -4,7 +4,7 @@
      OUTLINE  hollow glass, hairline only, nothing else: something you may start that is not part of the task.
      LINK     underlined text, no button: reveals more or goes somewhere else.
    Top shine: white 65%, no blur, inside the top edge.  Bottom shadow: dark, 3 px blur, outside the hairline. */
-html { --b-sh: rgba(255, 255, 255, .65); --b-dk: rgba(20, 35, 70, .30); --b-h: 40px; --b-accrgb: 48, 86, 170; --b-acc: .09; --b-blk: 0;
+html { --b-sh: rgba(255, 255, 255, .65); --b-dk: rgba(20, 35, 70, .30); --b-h: 40px; --b-gl: rgba(255, 255, 255, .40); --b-accrgb: 48, 86, 170; --b-acc: .09; --b-blk: 0;
        --b-ln: rgba(40, 70, 140, .30); --b-ink: #2a58b0; --b-base: rgba(255, 255, 255, .58); }
 html[data-scheme="dark"] { --b-dk: rgba(0, 0, 0, .55); --b-ln: rgba(255, 255, 255, .30); --b-ink: #8fbaff; --b-base: rgba(255, 255, 255, .05); }
 
@@ -22,14 +22,14 @@ html body :is(.btn-line, .btn-secondary, .btn-danger, .btn-extra, .grid2 button,
     color: var(--text-main);
     border: 1px solid var(--b-ln) !important;
     background: linear-gradient(rgba(var(--b-accrgb), var(--b-acc)), rgba(var(--b-accrgb), var(--b-acc))), linear-gradient(rgba(0, 0, 0, var(--b-blk)), rgba(0, 0, 0, var(--b-blk))), var(--b-base) !important;
-    box-shadow: inset 0 2px 0 0 var(--b-sh), 0 2px 3px 0 var(--b-dk) !important;
+    box-shadow: inset 0 2px 0 0 var(--b-sh), inset 0 -2px 9px 0 var(--b-gl), 0 2px 3px 0 var(--b-dk) !important;
 }
 /* PRIMARY: filled, bold */
 html body :is(.btn-primary, .btn-accent, .seg button.on, .mini-btn.on, .mini-btn.btn-accent, .days-chips button.on, .b-act button.on, .wz-chip.on) {
     background: linear-gradient(135deg, var(--blue-a), var(--blue-b)) !important;
     border: 1px solid color-mix(in srgb, var(--blue-b) 70%, #000) !important;
     color: var(--on-accent) !important; font-weight: 700; text-shadow: var(--on-shadow);
-    box-shadow: inset 0 2px 0 0 var(--b-sh), 0 2px 3px 0 color-mix(in srgb, var(--blue-b) 55%, rgba(0, 0, 0, .5)) !important;
+    box-shadow: inset 0 2px 0 0 var(--b-sh), inset 0 -2px 9px 0 var(--b-gl), 0 2px 3px 0 color-mix(in srgb, var(--blue-b) 55%, rgba(0, 0, 0, .5)) !important;
 }
 /* inside a segmented control the unselected choice sits flat in its tray */
 html body .seg { background: var(--track); border-radius: 999px; }
@@ -49,7 +49,7 @@ html body :is(.btn-danger, .danger):not(.btn-accent) { color: #b3261e !important
 html[data-scheme="dark"] body :is(.btn-danger, .danger):not(.btn-accent) { color: #ff8f86 !important; }
 /* pressed */
 html body :is(.btn-line, .btn-secondary, .btn-primary, .btn-accent, .btn-danger, .btn-extra, .grid2 button, .seg button, .mini-btn, .wz-btn, .wz-chip, .ico-btn):active { transform: translateY(1px); }
-html body :is(.btn-line, .btn-secondary, .btn-primary, .btn-accent, .btn-danger, .mini-btn, .wz-chip, .ico-btn):not(.btn-quiet):not(.btn-soft):active { box-shadow: inset 0 1px 0 0 var(--b-sh), 0 1px 2px 0 var(--b-dk) !important; }
+html body :is(.btn-line, .btn-secondary, .btn-primary, .btn-accent, .btn-danger, .mini-btn, .wz-chip, .ico-btn):not(.btn-quiet):not(.btn-soft):active { box-shadow: inset 0 1px 0 0 var(--b-sh), inset 0 -1px 5px 0 var(--b-gl), 0 1px 2px 0 var(--b-dk) !important; }
 html.lite body :is(.btn-line, .btn-secondary, .btn-primary, .btn-accent, .mini-btn) { transition: none; }
 @media (prefers-reduced-motion: reduce) { html body :is(.btn-line, .mini-btn, .seg button) { transition: none; } }
 
