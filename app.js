@@ -1512,7 +1512,7 @@
         const isPg = /^(pages|steps|sections)$/.test(t.unit), base = Math.floor(t.done + 1e-9), pgLast = Math.min(t.total, base + 30);
         sheet(`<h2>${esc(D.goals.get(id).title)}</h2><div class="hint">${esc(pathOf(id))}</div>
             <div class="amt-disp" id="l-amt"></div>${isPg ? `<div class="pg-wrap"><div class="pg-cap"><span>Tap the last ${unitWord(t.unit, 1)} you finished</span><button class="pg-edit" type="button" id="pg-edit">Last finished: <b>${N(base)}</b> · change</button></div><div class="pg-row" id="pg-row"></div><div class="pg-ind" id="pg-ind"><i></i></div><div class="pg-sw" id="pg-sw"></div></div>` : ''}${daySegHtml(dayKeys)}
-            <div class="grid2 mt" id="l-q"></div>${unitCount(t.unit) ? minRowHtml() : ''}<div class="keypad" id="l-pad"></div><div class="error" id="l-e"></div><button type="button" class="pg-edit hl-link" data-act="hist" data-id="${id}">Log history</button>
+            <div class="grid2 mt" id="l-q"></div>${unitCount(t.unit) ? minRowHtml() : `<div class="min-row">${startRowHtml()}</div>`}<div class="keypad" id="l-pad"></div><div class="error" id="l-e"></div><button type="button" class="pg-edit hl-link" data-act="hist" data-id="${id}">Log history</button>
             <div class="modal-actions"><button class="btn-secondary" data-act="close">Cancel</button><button class="btn-primary" id="l-go">Log</button></div>`, box => {
             const disp = box.querySelector('#l-amt'), pgRow = box.querySelector('#pg-row');
             const selOf = () => { const q = parseFloat(amt); return q > 0 && Math.abs(q - Math.round(q)) < 1e-9 ? base + Math.round(q) : 0; };
@@ -1604,7 +1604,7 @@
         return { get: () => (on ? mins() : null), now: nowMin };
     }
     function minBind(box) {
-        let m = 0; const row = box.querySelector('#l-min'), o = box.querySelector('#l-min-o'), inp = box.querySelector('#l-min-v'); if (!row) { const z = () => 0; z.st = () => null; return z; }
+        let m = 0; const row = box.querySelector('#l-min'), o = box.querySelector('#l-min-o'), inp = box.querySelector('#l-min-v'); if (!row) { const st0 = startBind(box), z = day => { const s0 = st0.get(); if (s0 !== null && (!day || day === todayKey())) { const d = st0.now() - s0; if (d > 0 && d <= 600) return d; } return 0; }; z.st = () => st0.get(); return z; }
         row.onclick = ev => {
             const b = ev.target.closest('[data-m]'); if (!b) return; const same = b.classList.contains('on');
             row.querySelectorAll('[data-m]').forEach(x => { x.classList.remove('on'); x.setAttribute('aria-pressed', 'false'); });
@@ -1833,7 +1833,7 @@
             ${derived ? `<label class="field"><span>Start with</span><select id="l-it">${t.items.filter(i => i.remaining > 0).map(i => `<option value="${i.id}" ${i.id === selId ? 'selected' : ''}>${esc(itemLabel(i))} (${N(i.remaining)} left)</option>`).join('')}</select></label>` : ''}
             <div class="amt-disp" id="l-amt"></div>
             ${daySegHtml(dayKeys)}
-            <div class="grid2 mt" id="l-q"></div>${unitCount(unit) ? minRowHtml() : ''}
+            <div class="grid2 mt" id="l-q"></div>${unitCount(unit) ? minRowHtml() : `<div class="min-row">${startRowHtml()}</div>`}
             <div class="keypad" id="l-pad"></div><div class="error" id="l-e"></div><button type="button" class="pg-edit hl-link" data-act="hist" data-id="${taskId || itemId || 0}">Log history</button>
             <div class="modal-actions"><button class="btn-secondary" data-act="close">Cancel</button><button class="btn-primary" id="l-go">Log</button></div>`, box => {
             const disp = box.querySelector('#l-amt');
