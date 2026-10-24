@@ -9,7 +9,7 @@ html { --b-sh: rgba(255, 255, 255, .65); --b-dk: rgba(20, 35, 70, .30); --b-h: 4
 html[data-scheme="dark"] { --b-dk: rgba(0, 0, 0, .55); --b-ln: rgba(255, 255, 255, .30); --b-ink: #8fbaff; --b-base: rgba(255, 255, 255, .05); }
 
 /* shared shape: all kinds */
-html body :is(.btn-line, .btn-secondary, .btn-primary, .btn-accent, .btn-danger, .btn-extra, .grid2 button, .wz-btn, .wz-chip, .seg button, .mini-btn, .days-chips button, .undo-btn, .pg-edit, .btn-soft, .btn-quiet, .ico-btn, .tp-chip, .b-act button):not(.link-btn) {
+html body :is(.btn-line, .btn-secondary, .btn-primary, .btn-accent, .btn-danger, .btn-extra, .grid2 button, .wz-btn, .wz-chip, .seg button, .mini-btn, .days-chips button, .undo-btn, .pg-edit, .btn-soft, .btn-quiet, .ico-btn, .tp-chip, .b-act button, .keypad button, .qa-btn, .gc-ask button, .gf-pop button):not(.link-btn) {
     box-sizing: border-box; min-height: var(--b-h); height: var(--b-h); display: inline-flex; align-items: center; justify-content: center; border-radius: 999px !important; padding-top: 0; padding-bottom: 0;
     font-weight: 400; line-height: 1.2; text-shadow: none; opacity: 1 !important;
     -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
@@ -18,7 +18,7 @@ html body :is(.btn-line, .btn-secondary, .btn-primary, .btn-accent, .btn-danger,
 html body .ico-btn { width: var(--b-h); height: var(--b-h); }
 
 /* GLASS: part of the task. The glass is the card's own light, tinted with the accent, a touch dimmer. */
-html body :is(.btn-line, .btn-secondary, .btn-danger, .btn-extra, .grid2 button, .wz-btn, .wz-chip, .mini-btn, .days-chips button, .undo-btn, .pg-edit, .ico-btn, .tp-chip, .b-act button):not(.btn-accent):not(.on):not(.btn-quiet) {
+html body :is(.btn-line, .btn-secondary, .btn-danger, .btn-extra, .grid2 button, .wz-btn, .wz-chip, .mini-btn, .days-chips button, .undo-btn, .pg-edit, .ico-btn, .tp-chip, .b-act button, .keypad button, .qa-btn, .gc-ask button, .gf-pop button):not(.btn-accent):not(.on):not(.btn-quiet) {
     color: var(--text-main);
     border: 1px solid var(--b-ln) !important;
     background: linear-gradient(rgba(var(--b-accrgb), var(--b-acc)), rgba(var(--b-accrgb), var(--b-acc))), linear-gradient(rgba(0, 0, 0, var(--b-blk)), rgba(0, 0, 0, var(--b-blk))), var(--b-base) !important;
@@ -33,7 +33,7 @@ html body :is(.btn-primary, .btn-accent, .seg button.on, .mini-btn.on, .mini-btn
 }
 /* inside a segmented control the unselected choice sits flat in its tray */
 html body .seg { background: var(--track); border-radius: 999px; }
-html body .seg button:not(.on) { color: var(--text-main); border: 1px solid var(--b-ln) !important; background: linear-gradient(rgba(var(--b-accrgb), var(--b-acc)), rgba(var(--b-accrgb), var(--b-acc))), linear-gradient(rgba(0, 0, 0, var(--b-blk)), rgba(0, 0, 0, var(--b-blk))), var(--b-base) !important; box-shadow: inset 0 2px 0 0 var(--b-sh), 0 2px 3px 0 var(--b-dk) !important; }
+html body .seg button:not(.on) { color: var(--text-main); border: 1px solid var(--b-ln) !important; background: linear-gradient(rgba(var(--b-accrgb), var(--b-acc)), rgba(var(--b-accrgb), var(--b-acc))), linear-gradient(rgba(0, 0, 0, var(--b-blk)), rgba(0, 0, 0, var(--b-blk))), var(--b-base) !important; box-shadow: inset 0 2px 0 0 var(--b-sh), inset 0 -2px 9px 0 var(--b-gl), 0 2px 3px 0 var(--b-dk) !important; }
 /* OUTLINE: hollow glass, for what is not part of the task */
 html body :is(.btn-soft, .btn-quiet) {
     background: transparent !important; color: var(--b-ink) !important; border: 1px solid var(--b-ln) !important; box-shadow: none !important;
@@ -68,3 +68,6 @@ html body :is(.pdone, .mini-btn, .tp-chip, .days-chips button, .undo-btn, .pg-ed
 html body button.ico-btn { width: 28px; padding: 0 !important; }
 html body button.ico-btn svg { width: 16px; height: 16px; flex: none; }
 html body button.ico-del { color: #d23b34 !important; } html[data-scheme="dark"] body button.ico-del { color: #ff8f88 !important; }
+
+/* number keys (sheet keypad and PIN screen): same glass, taller keys */
+html body div.keypad button:not(.link-btn) { height: 52px; min-height: 52px; font-size: 1.5rem; padding: 0; }

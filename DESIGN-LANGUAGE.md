@@ -151,3 +151,10 @@ Glass buttons and Liquid cards share one tint: the theme's accent (darker on lig
 
 ## 22. Light inside the glass button (Goal v5.52 / Budget v2.43)
 Glass and primary buttons: top shine white 65% (no blur), inner glow at the bottom edge white 40% with 9 px blur (light refracted into the glass), dark shadow 3 px outside the hairline. Outline pills and links have none of these.
+
+## 23. Where the button system lives (read this before touching any button)
+The single source of truth is `shared/buttons.css` (shape, kinds, sizes, glow) and `shared/btnlook.js` (Glass tint sliders). `shared/sync.sh` copies them, with the other shared files, into every app (`bash shared/sync.sh`, with the app folders beside `shared/`). Never edit an app's copy: edit `shared/` and sync.
+- Kinds: primary (filled, bold), glass (task-related, accent tint 9%, white top shine 65% no blur, white bottom glow 40% / 9 px, dark shadow 3 px outside), outline (hollow, hairline only, no underline; for things not part of the task), link (underlined text, no button).
+- Shape: full pill (999 px). Height by role: 40 px standard (main actions, Week/Month style switches), 28 px compact (Done, chips, mini and icon buttons, pop-up buttons), 52 px number keys.
+- Specificity trap: the shared shape rule ends with `:not(.link-btn)`, so any override of height must also end with `:not(.link-btn)` and use an element or class selector, never an ID.
+- Every new button gets one of the kinds above through a class; check it with the glow scan (`gl2.js`) and the audit.
