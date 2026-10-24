@@ -150,7 +150,7 @@
     /* ---- Time-boxed pieces: every piece has allotted days; the clock chains from one piece to the next ---- */
     const GRP_RANK = { reading: 0, drafting: 1, editing: 2 };
     function buildPieces(X) {
-        const { leave: leaveSet, goals, kidsOf, pstartMap, dl0Map, rebases, cfg, jrf, todayN, now, done, picks } = X, adjM = X.adj || new Map(), beginMap = X.beginMap || new Map(), pickMode = !!(cfg && cfg.startMode === 'pick');
+        const { leave: leaveSet, goals, kidsOf, unfinTs, logs: allLogs, pstartMap, dl0Map, rebases, cfg, jrf, todayN, now, done, picks } = X, adjM = X.adj || new Map(), beginMap = X.beginMap || new Map(), pickMode = !!(cfg && cfg.startMode === 'pick');
         const finMap = new Map(X.finMap);
         const all = [...goals.values()].filter(g => g.kind === 'piece' && (!g.mirror || goals.has(g.mirror)) && g.pdays > 0);
         // daily paces: a quantity (pages, steps) logged each day that finishes the pieces under it
@@ -162,7 +162,9 @@
             let cum = 0, reachedN = null; days.forEach(n => { cum += (m.get(n) || 0) + am.filter(a => a[0] === n).reduce((x, a) => x + a[1], 0); if (reachedN === null && cum >= g.qty - 1e-9) reachedN = n; });
             const lastLogN = m.size ? Math.max.apply(null, [...m.keys()]) : null, lastPos = am.length ? am[am.length - 1] : null;
             const scope = all.filter(p => under(g.id, p.id));
-            if (reachedN !== null) scope.forEach(p => { if (!finMap.has(p.id)) finMap.set(p.id, { day: keyOf(reachedN), ts: now, id: null, auto: true }); });
+            const lastLogTs = Math.max.apply(null, [0].concat((allLogs || []).filter(l => under(g.id, l.goal)).map(l => l.ts || 0)));
+            // a task you reopened by hand stays open until you log more; the quantity reached does not re-finish it behind your back
+            if (reachedN !== null) scope.forEach(p => { if (!finMap.has(p.id) && !((unfinTs && unfinTs.get(p.id) || 0) > lastLogTs)) finMap.set(p.id, { day: keyOf(reachedN), ts: now, id: null, auto: true }); });
             trackList.push({ id: g.id, g, total: g.qty, unit: g.qunit, pace: g.qpace, done: Math.max(0, cum), lastLogN, posN: lastPos ? lastPos[0] : null, reachedN, scopeIds: scope.map(p => p.id), loggedToday: (m.get(todayN) || 0) > 0, last7: [...m.entries()].filter(([n]) => n > todayN - 7 && n <= todayN).reduce((s, [, q]) => s + q, 0) });
         });
         const ord = new Map(); let k = 0;
@@ -325,7 +327,7 @@
         const todayKey = localKey(now), todayN = dn(todayKey);
         let cfg = null;
         const goals = new Map();
-        const finMap = new Map(), pstartMap = new Map(), beginMap = new Map(), dl0Map = new Map(), rebases = []; let picks = [];
+        const unfinTs = new Map(), finMap = new Map(), pstartMap = new Map(), beginMap = new Map(), dl0Map = new Map(), rebases = []; let picks = [];
         const done = new Map(), replans = new Map(), leave = new Set(), leaves = [], marks = new Map(), logs = [], poses = [], adj = new Map(), logSum = new Map(), adjSum = new Map();
         let nextGoalId = 1;
         for (const e of evs) {
@@ -359,7 +361,7 @@
                 case 'leave': { const a = dn(e.from), b = dn(e.to); for (let n = a; n <= b; n++) leave.add(n); leaves.push(e); break; }
                 case 'replan': { if (!replans.has(e.goal)) replans.set(e.goal, []); replans.get(e.goal).push({ dayN: dn(e.day || todayKey), spread: Math.max(1, e.spread || 7) }); break; }
                 case 'fin': finMap.set(e.goal, { day: e.day || null, ts: e.ts, id: e.id }); break;
-                case 'unfin': finMap.delete(e.goal); break;
+                case 'unfin': finMap.delete(e.goal); unfinTs.set(e.goal, e.ts || 0); break;
                 case 'pstart': pstartMap.set(e.goal, e.day); break;
                 case 'begin': beginMap.set(e.goal, e.day || localKey(e.ts)); break;
                 case 'unbegin': beginMap.delete(e.goal); break;
@@ -463,7 +465,7 @@
             }
         } }
 
-        const pieces = buildPieces({ leave, goals, kidsOf, finMap, pstartMap, beginMap, dl0Map, rebases, cfg: c, jrf, todayN, now, done, picks, adj });
+        const pieces = buildPieces({ leave, goals, kidsOf, finMap, unfinTs, logs, pstartMap, beginMap, dl0Map, rebases, cfg: c, jrf, todayN, now, done, picks, adj });
         if (pieces.list.length && jrf) thesis = pieces.thesis;
         return { now, todayKey, todayN, pieces, events: evs, cfg: c, jrf, thesis, goals, tasks, byId, projects, pById, items, uncovered, kidsOf, life, leaves: leaves.filter(l => !voided.has(l.id)), leave, logs, poses, nextGoalId, streak, marks };
     }
