@@ -33,7 +33,7 @@
         const out = [];
         (o.events || []).forEach(e => {
             if (e.t !== 'log' || voided.has(e.id) || !(e.qty > 0)) return;
-            const sub = S ? S.subjectOf(goals, e.goal) : e.goal, key = sub === null || sub === undefined ? e.goal : sub, s = sp.get(key), kg = goals.get(key) || goals.get(e.goal), x = kg && kg.qunit === 'hours' ? { h: Math.min(600, e.qty), est: false } : hoursOf(e, s && s.eff);
+            const sub = S ? S.subjectOf(goals, e.goal) : e.goal, key = sub === null || sub === undefined ? e.goal : sub, s = sp.get(key), kg = goals.get(key) || goals.get(e.goal), og = goals.get(e.goal), x = (og && og.qunit === 'hours') || (kg && kg.qunit === 'hours') ? { h: Math.min(600, e.qty), est: false } : hoursOf(e, s && s.eff);
             out.push({ key, qty: e.qty, h: x.h, est: x.est, none: !!x.none, at: when(e), ts: e.ts, day: dnOf(when(e)), min: e.min > 0, sh: typeof e.st === 'number' && e.st >= 0 ? Math.floor(e.st / 60) : null });
         });
         return out;
@@ -112,6 +112,6 @@
         return { items: res, totalHours: any ? totalHrs : null, perWeek: hw };
     }
 
-    root.GReport = { report, habits, project, bounds, hoursOf, weekStart };
+    root.GReport = { report, habits, project, bounds, hoursOf, weekStart, prep };
     if (typeof module !== 'undefined' && module.exports) module.exports = root.GReport;
 })(typeof window !== 'undefined' ? window : globalThis);

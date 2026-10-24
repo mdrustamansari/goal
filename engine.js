@@ -270,11 +270,26 @@
             const pf = projFinal !== null ? projFinal : (doneList.length ? doneList[doneList.length - 1].finN : todayN);
             const bf = baseFinal !== null ? baseFinal : pf;
             const forgiven = rebases.reduce((s, r) => s + r.forgiven, 0);
-            thesis = { slip: pf - bf, planned: jrf.endN - bf, buffer: jrf.endN - pf, lost: Math.max(0, pf - bf), gained: Math.max(0, bf - pf), projN: pf, baseN: bf, toTarget: pf - jrf.targetN, forecastN: forecastFinal !== null ? forecastFinal : pf, forecastToTarget: (forecastFinal !== null ? forecastFinal : pf) - jrf.targetN, ratio, paced: nT, pct: totalDays ? workDays / totalDays : 0, pctDone: totalDays ? doneDays / totalDays : 0, workDays, forgiven, projects: [], openDays: totalDays - workDays, daysToTarget: jrf.targetN - todayN };
+            // The year-4 target is for reading and drafting. Editing, proofreading and finalising live in the fifth year.
+            const FIN = cfg && num(cfg.finDays, -1) >= 0 ? num(cfg.finDays, 60) : 60;
+            const wOpen = open.filter(p => p.grp !== 'editing'), eOpen = open.filter(p => p.grp === 'editing');
+            const wDone = list.filter(p => p.done && p.grp !== 'editing' && p.finN != null);
+            const pfW = wOpen.length ? Math.max.apply(null, wOpen.map(p => p.projN)) : (wDone.length ? Math.max.apply(null, wDone.map(p => p.finN)) : todayN);
+            const editDays = eOpen.reduce((a, p) => a + p.days, 0), fifthDays = jrf.endN - jrf.targetN;
+            const bfW = wOpen.length ? Math.max.apply(null, wOpen.map(p => p.dl0 !== null ? p.dl0 : p.projN)) : pfW;
+            const fifth = { days: fifthDays, edit: editDays, fin: FIN, free: fifthDays - editDays - FIN, writeN: pfW, baseWriteN: bfW, editN: pf - pfW };
+            thesis = { slip: pf - bf, planned: jrf.endN - bf - FIN, buffer: jrf.endN - pf - FIN, fifth, lost: Math.max(0, pf - bf), gained: Math.max(0, bf - pf), projN: pf, baseN: bf, toTarget: pfW - jrf.targetN, forecastN: forecastFinal !== null ? forecastFinal : pf, forecastToTarget: (forecastFinal !== null ? forecastFinal : pf) - (pf - pfW) - jrf.targetN, ratio, paced: nT, pct: totalDays ? workDays / totalDays : 0, pctDone: totalDays ? doneDays / totalDays : 0, workDays, forgiven, projects: [], openDays: totalDays - workDays, daysToTarget: jrf.targetN - todayN };
         }
         const active = pickMode ? open.filter(p => p.picked) : open.filter(p => p.start <= todayN).slice(0, 4);
         const upcoming = pickMode ? open.filter(p => !p.picked && !p.locked).slice(0, 3) : open.filter(p => p.start > todayN).slice(0, 3);
         const needLock = open.filter(p => p.dl0 === null && !p.fixed && now - (p.g.createdAt || now) >= 86400000);
+        // a task with sub-tasks takes its daily pace from them (same unit only); with none, its pace is its own
+        const trackIds = new Set(trackList.map(t => t.id));
+        const nearTrack = id => { let x = goals.get(id), n = 0; x = x && x.parent ? goals.get(x.parent) : null; while (x && n++ < 30) { if (trackIds.has(x.id)) return x.id; x = x.parent ? goals.get(x.parent) : null; } return null; };
+        const kidsT = new Map(); trackList.forEach(t => { const p = nearTrack(t.id); if (p !== null) { if (!kidsT.has(p)) kidsT.set(p, []); kidsT.get(p).push(t); } });
+        trackList.forEach(t => { const ks = (kidsT.get(t.id) || []).filter(k => k.unit === t.unit); t.kidIds = ks.map(k => k.id); const sp = ks.reduce((a, k) => a + (k.pace > 0 ? k.pace : 0), 0); t.paceOwn = t.pace; if (ks.length && sp > 0) { t.pace = sp; t.paceFrom = 'kids'; } });
+        // work logged on the sub-tasks counts for the task above them (same unit); one record, no second copy
+        trackList.forEach(t => { if (t.kidIds && t.kidIds.length) { const ks = t.kidIds.map(i => trackList.find(x => x.id === i)); t.ownDone = t.done; t.done = Math.min(t.total, t.done + ks.reduce((a, k) => a + k.done, 0)); t.loggedToday = t.loggedToday || ks.some(k => k.loggedToday); } });
         const tracks = trackList.map(t => {
             const sc = t.scopeIds.map(i => byId.get(i)).filter(Boolean), op = sc.filter(p => !p.done);
             const fx = op.filter(p => p.fixed).map(p => p.dl0), dls = op.map(p => p.dl0 !== null ? p.dl0 : p.due), deadline = fx.length ? Math.min.apply(null, fx) : (dls.length ? Math.max.apply(null, dls) : null);

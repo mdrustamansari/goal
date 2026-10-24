@@ -793,3 +793,11 @@ html[data-scheme="dark"] .rp-chip.ok { color: #4fd896; border-color: #4fd896; } 
 .wd-bd { position: absolute; right: -8px; top: -6px; font-size: 10px; background: color-mix(in srgb, var(--text-main) 8%, #fff); border: 1px solid color-mix(in srgb, var(--text-main) 18%, transparent); border-radius: 999px; padding: 0 5px; }
 .wd-sub { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; opacity: .78; margin-top: 12px; } .wd-sub b { font-weight: 400; opacity: .65; }
 .wd-card .slipbar { margin-top: 10px; } .wd-card .hint { margin-top: 8px; } .wd-card .link-btn { display: block; margin: 4px auto 0; }
+
+/* hour slots: today's logged hours tick the sub-tasks of the task, in order */
+.slots{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.slots .hint{flex-basis:100%;margin-top:2px}
+.slot{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--track);box-shadow:inset 0 0 0 1.5px var(--glass-border,rgba(255,255,255,.35));color:#fff}
+.slot.half{background:linear-gradient(90deg,var(--blue-a) var(--f),var(--track) var(--f))}
+.slot.full{background:linear-gradient(135deg,#2fb877,#1f9d63)}
+.slot svg{width:14px;height:14px}

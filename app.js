@@ -436,7 +436,14 @@
             else if (T.slip < -0.5) oc = `You have banked ${dN(-T.slip)}. That is time that can go to ${purpose}.`;
             else oc = `Your buffer is intact: ${Math.round(T.planned)} days set aside for ${purpose}.`;
         } else oc = `Your plan sets aside ${Math.round(T.planned)} days of the fifth year for ${purpose}.`;
-        h += `<div class="card" data-sec="life:what-the-buffer-is-for"><h3>What the buffer is for</h3><p style="font-family:var(--font-serif);font-size:1.15rem;line-height:1.4">${oc}</p><button class="btn-line" data-act="cfg">Edit what my fifth year is for</button></div>`;
+        const F5 = T.fifth;
+        h += `<div class="card" data-sec="life:what-the-buffer-is-for"><h3>My fifth year</h3><p style="font-family:var(--font-serif);font-size:1.15rem;line-height:1.4">${oc}</p>
+            <div class="row"><span class="muted">Fifth year</span><b class="num">${dN(F5.days)}</b></div>
+            <div class="row"><span class="muted">Editing and proofreading</span><b class="num">${dN(F5.edit)}</b></div>
+            <div class="row"><span class="muted">Finalising and submission</span><b class="num">${dN(F5.fin)}</b></div>
+            <div class="row"><span class="muted">Free for ${purpose}</span><b class="num ${F5.free < 0 ? 'bad' : ''}">${dN(F5.free)}</b></div>
+            <div class="hint mt">Editing and proofreading begin only when all reading and drafting are done.</div>
+            <button class="btn-line" data-act="fifth">Plan my fifth year</button></div>`;
         h += `<div class="list-header"><span>Life goals</span><button class="mini-btn btn-quiet" data-act="life-add">Add</button></div>`;
         D.life.forEach(l => {
             h += `<div class="card"><div class="row"><h3 style="margin:0">${esc(l.title)}</h3><span class="chip">${esc(l.cat)}</span></div>
@@ -557,12 +564,13 @@
         if (!D.cfg) { $('s-plan').innerHTML = '<div class="card"><p class="hint">Set your timeline first (Settings).</p><button class="btn-line btn-accent" data-act="cfg">Set up my timeline</button></div>'; return; }
         if (PP.list.length && T) {
             const open = PP.open.length, need = PP.list.filter(p => !p.done).reduce((s, p) => s + p.days, 0);
-            const fit = T.baseN - J.targetN;
+            const F5 = T.fifth, fit = F5.baseWriteN - J.targetN, wOpenN = PP.open.filter(p => p.grp !== 'editing').length;
             h += `<div class="card"><h3>The plan as you set it</h3>
                 <div class="row"><span class="muted">Open tasks</span><b class="num">${open} · ${dN(need)} of work</b></div>
                 <div class="row"><span class="muted">Days left to the year-${J.target} target</span><b class="num">${dN(Math.max(0, J.daysToTarget))}</b></div>
-                <div class="row"><span class="muted">Finishes (if every task takes its allotted days)</span><b class="num ${fit > 0 ? 'bad' : 'good'}">${fmtDNum(T.baseN)}</b></div>
-                <div class="hint mt">${fit > 0 ? `That is ${dN(fit)} after your target. Shorten, drop or merge tasks, or accept using ${dN(fit)} of the fifth year.` : `That is ${dN(-fit)} before your target.`}</div></div>`;
+                <div class="row"><span class="muted">Reading and drafting finish (if every task takes its allotted days)</span><b class="num ${fit > 0 ? 'bad' : 'good'}">${wOpenN ? fmtDNum(F5.baseWriteN) : 'Done'}</b></div>
+                <div class="row"><span class="muted">Editing and proofreading (year ${J.years})</span><b class="num">${dN(F5.edit)}</b></div>
+                <div class="hint mt">${wOpenN ? (fit > 0 ? `Reading and drafting end ${dN(fit)} after your target, so that much of the fifth year is used before editing can begin.` : `Reading and drafting end ${dN(-fit)} before your target.`) : 'Reading and drafting are done. Editing and proofreading are unlocked.'} After editing, ${dN(F5.fin)} are kept for finalising and submission. ${F5.free >= 0 ? `${dN(F5.free)} of the fifth year stay free.` : `The fifth year is over-full by ${dN(-F5.free)}.`}</div></div>`;
         }
         h += chainStrip() + chapterBars();
         h += `<div class="grid2" style="margin-bottom:14px"><button class="btn-line btn-accent" data-act="chap-add">Add a chapter</button><button class="btn-line" data-act="custom-add">Add a custom task</button></div>`;
@@ -652,7 +660,7 @@
     }
     function tick(id) {
         const p = P().byId.get(id); if (!p) return;
-        if (p.done) { confirmSheet({ title: 'Mark as not done?', sub: 'The finish date is removed and the clock runs again.', ok: 'Not done' }).then(ok => { if (ok) { add({ t: 'void', target: p.finId }); render(); toast('Reopened'); } }); return; }
+        if (p.done) { confirmSheet({ title: 'Mark as not done?', sub: 'The finish date is removed and the clock runs again.', ok: 'Not done' }).then(ok => { if (ok) { add({ t: 'unfin', goal: p.id }); render(); fx('down'); toast('Reopened'); } }); return; }
         if (p.locked) { lockedSheet(p); return; }
         finishSheet(id);
     }
@@ -872,7 +880,7 @@
     /* ---------- the top panel of Today: today's work, pace, week and month, and where you are heading ---------- */
     function todayPanel(PP, T, J) {
         const R = PP.rhythm, items = [], tt = (txt, tone) => `data-tell="${esc(txt)}" data-tone="${tone || ''}"`;
-        PP.active.forEach(p => { const t = trackOf(p.id); if (!t || t.finished) return; const goal = Math.max(t.pace || 0, t.need || 0); items.push({ name: pTitle(p), unit: t.unit, done: IN ? IN.qtyOn(t.id, D.todayN) : 0, goal, t, p }); });
+        PP.active.forEach(p => { const t = trackOf(p.id); if (!t || t.finished) return; const goal = Math.max(t.pace || 0, t.need || 0); items.push({ name: pTitle(p), unit: t.unit, done: IN ? qtyT(t, D.todayN) : 0, goal, t, p }); });
         D.tasks.filter(t => t.started && !t.finished && t.target > 0.05).forEach(t => items.push({ name: t.title || (t.g && t.g.title) || 'Task', unit: t.unit, done: t.doneToday, goal: t.target, t: null, p: null }));
         const goalItems = items.filter(x => x.goal > 0), hit = goalItems.filter(x => x.done >= x.goal - 0.05).length, one = goalItems.length === 1 ? goalItems[0] : null;
         const frac = goalItems.length ? goalItems.reduce((a, x) => a + Math.min(1, x.done / x.goal), 0) / goalItems.length : 0;
@@ -907,10 +915,10 @@
         let road = '';
         if (R.endN) {
             const a = D.todayN, end = R.endN, tg = R.targetN, fin = R.atSpeedN, far = Math.max(end, fin || 0), span = Math.max(30, (far - a) * 1.1), X = n => 14 + Math.max(0, Math.min(1, (n - a) / span)) * 272, y = 38;
-            const tone = fin === null ? '' : fin <= tg ? 'good' : fin <= end ? 'warn' : 'bad';
+            const F5 = T && T.fifth, finW = fin !== null && F5 ? fin - F5.editN : fin, tone = fin === null ? '' : finW <= tg ? 'good' : fin <= end - (F5 ? F5.fin : 0) ? 'warn' : 'bad';
             const flag = (n, lbl, cls) => `<g class="tp-flag ${cls}"><line x1="${X(n)}" x2="${X(n)}" y1="${y - 22}" y2="${y}"/><path d="M${X(n)} ${y - 22}l12 5-12 5z"/></g><text x="${X(n)}" y="${y + 18}" class="tp-lbl" text-anchor="middle">${lbl}</text>`;
             const dotClose = fin !== null && (Math.abs(X(fin) - X(end)) < 40 || Math.abs(X(fin) - X(tg)) < 40);
-            const tell = fin === null ? `Log some work for a week and the road will show where your speed leads.` : `At your speed you finish about ${fmtDNum(fin)}. The target is ${fmtDNum(tg)}, and the JRF ends ${fmtDNum(end)}.`;
+            const tell = fin === null ? `Log some work for a week and the road will show where your speed leads.` : `At your speed everything, including editing, ends about ${fmtDNum(fin)}. Reading and drafting are due ${fmtDNum(tg)}, and the JRF ends ${fmtDNum(end)}.`;
             road = `<div class="tp-road" ${tt(tell, tone === 'bad' ? 'bad' : tone === 'good' ? 'good' : '')}><svg viewBox="0 0 300 76" role="img" aria-label="Road to the end of the JRF"><line x1="${X(a)}" x2="${X(end)}" y1="${y}" y2="${y}" class="tp-track"/>${fin !== null && fin > end ? `<line x1="${X(end)}" x2="${X(fin)}" y1="${y}" y2="${y}" class="tp-over"/>` : ''}${fin !== null ? `<line x1="${X(a)}" x2="${X(Math.min(fin, far))}" y1="${y}" y2="${y}" class="tp-way ${tone}"/>` : ''}${tg > a ? flag(tg, mon(tg), 'tg') : ''}${flag(end, mon(end), 'en')}<circle cx="${X(a)}" cy="${y}" r="5" class="tp-now"/>${fin !== null ? `<circle cx="${X(fin)}" cy="${y}" r="7" class="tp-fin ${tone}"/><text x="${X(fin)}" y="${dotClose ? y + 32 : y - 12}" class="tp-lbl b" text-anchor="middle">${mon(fin)}</text>` : `<circle cx="${X(a) + 40}" cy="${y}" r="5" class="tp-ghost"/>`}</svg></div>`;
         }
         // ---- the buffer gauge
@@ -920,7 +928,7 @@
         return `<div class="card tp"><div class="tp-top"><div class="tp-ringwrap" ${tt(ringTell, ringTone)}>${ringSvg}</div><div class="tp-side"><div class="safe-lbl">Today</div><div class="tp-sub">${sub}</div><div class="tp-chips">${chips.slice(0, 3).join('')}</div></div></div>${strip}${tideLine()}${road}${gauge}</div>`;
     }
     // ---- today against yesterday, and where the last sitting ended
-    function dayQty(n) { let q = 0, u = ''; D.logs.forEach(l => { if ((l.day ? E.dn(l.day) : E.dn(E.localKey(l.ts))) === n) { q += l.qty; const t = trackOf(l.goal); if (t && t.unit) u = t.unit; } }); return { q, u }; }
+    function dayQty(n) { let q = 0, u = ''; D.logs.forEach(l => { if ((l.day ? E.dn(l.day) : E.dn(E.localKey(l.ts))) === n) { q += l.qty; const t = trackOf(l.goal) || P().tracks.find(x => x.id === l.goal); if (t && t.unit) u = t.unit; } }); return { q, u }; }
     function lastSitting() {
         const ls = D.logs.slice().sort((a, b) => b.ts - a.ts)[0]; if (!ls) return null;
         let at = 0; const evs = [];
@@ -973,7 +981,7 @@
         if (pl && pl.skip) return '';
         if (!pl) return `<div class="card pl-ask" data-sec="none"><div class="set-title">Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}</div><h3 class="pl-q">How many hours will you work today?</h3><div class="wz-chips">${[1, 2, 3, 4, 5, 6, 8].map(n => `<button type="button" class="wz-chip" data-act="plan-set" data-h="${n}">${n} h</button>`).join('')}<button type="button" class="wz-chip" data-act="plan-set" data-h="0">Not today</button></div><p class="hint">A rough guess is fine. It helps the app forecast your tasks.</p><button type="button" class="link-btn" data-act="plan-skip">Ask me later</button></div>`;
         if (pl.h === 0) return `<div class="card pl-line"><span class="muted">Today is a rest day. Your chain is safe.</span> <button type="button" class="link-btn" data-act="plan-change">Change</button></div>`;
-        let done = 0; try { const r = GReport.report(Object.assign({ kind: 'week', back: 0 }, gInputs())); const v = r.day[r.elapsed - 1]; done = v || 0; } catch (e) {}
+        let done = 0; try { const n0 = E.dn(todayKey()); done = GReport.prep(gInputs()).filter(l => l.day === n0).reduce((s, l) => s + l.h, 0); } catch (e) {}
         const left = Math.max(0, pl.h - done), frac = Math.max(0, Math.min(1, done / pl.h));
         let fc = '';
         try {
@@ -1019,8 +1027,8 @@
         PP.open.filter(p => p.status === 'late').sort((a, b) => b.lateDays - a.lateDays).slice(0, 3).forEach(p => r.push({ c: 'bad', h: `<b>${esc(pTitle(p))}</b> is ${dN(p.lateDays)} over its allotted time. Finish it, or decide honestly what is blocking it.` }));
         PP.tracks.filter(t => !t.finished && t.behind).slice(0, 2).forEach(t => r.push({ c: 'bad', h: `<b>${esc(D.goals.get(t.id).title)}</b>: ${N(t.done)} of ${N(t.total)} ${esc(t.unit)} done. At ${N(t.pace)} a day you finish ${fmtDNum(t.projN)}, ${dN(t.projN - t.deadline)} after ${fmtDNum(t.deadline)}. You need ${N(t.need)} a day.` }));
         if (T.toTarget > 0.5) {
-            const need = PP.open.reduce((s, p) => s + p.days, 0), per = PP.open.length ? Math.max(0, J.daysToTarget) / PP.open.length : 0;
-            r.push({ c: 'bad', h: `The plan as set runs ${dN(T.toTarget)} past your year-${J.target} target. To fit, the ${PP.open.length} open tasks would have to average ${N(per)} days each (they now average ${N(need / Math.max(1, PP.open.length))}). Shorten, merge or drop work worth about ${dN(T.toTarget)}, or accept using that much of the fifth year.` });
+            const wo = PP.open.filter(p => p.grp !== 'editing'), need = wo.reduce((s, p) => s + p.days, 0), per = wo.length ? Math.max(0, J.daysToTarget) / wo.length : 0;
+            r.push({ c: 'bad', h: `Reading and drafting, as planned, run ${dN(T.toTarget)} past your year-${J.target} target. To fit, the ${wo.length} open reading and drafting tasks would have to average ${N(per)} days each (they now average ${N(need / Math.max(1, wo.length))}). Shorten, merge or drop work worth about ${dN(T.toTarget)}, or accept using that much of the fifth year.` });
         }
         if (PP.paced >= 3 && PP.ratio > 1.1) r.push({ c: 'bad', h: `Over your last ${PP.paced} timed tasks you took ${N(PP.ratio)} times the days you allotted. At that real pace the thesis finishes ${fmtDNum(T.forecastN)}${T.forecastToTarget > 0 ? `, ${dN(T.forecastToTarget)} after the target` : ''}. Allot days you can really keep, or protect more time each day.` });
         else if (PP.paced >= 3 && PP.ratio < 0.9) r.push({ c: 'good', h: `You are finishing tasks in ${N(PP.ratio)} times your allotted days. Your estimates are generous; you could tighten them and bank more time.` });
@@ -1167,14 +1175,14 @@
         h += `<div class="card" data-sec="out:your-five-years"><h3>Your five years</h3>${timelineHtml()}
             <div class="row mt"><span class="muted">Year ${J.target} target</span><b class="num">${fmtDNum(J.targetN)}</b></div>
             <div class="row"><span class="muted">JRF ends</span><b class="num">${fmtDNum(J.endN)}</b></div>
-            ${has ? `<div class="row"><span class="muted">Plan as set finishes</span><b class="num ${T.baseN > J.targetN ? 'bad' : 'good'}">${fmtDNum(T.baseN)}</b></div>
-            <div class="row"><span class="muted">Finishes now, on allotted days</span><b class="num ${T.projN > T.baseN ? 'bad' : T.projN < T.baseN ? 'good' : ''}">${fmtDNum(T.projN)}</b></div>
+            ${has ? `<div class="row"><span class="muted">Plan as set: reading and drafting end</span><b class="num ${T.fifth.baseWriteN > J.targetN ? 'bad' : 'good'}">${fmtDNum(T.fifth.baseWriteN)}</b></div>
+            <div class="row"><span class="muted">Everything, with editing, ends (allotted days)</span><b class="num ${T.projN > T.baseN ? 'bad' : T.projN < T.baseN ? 'good' : ''}">${fmtDNum(T.projN)}</b></div>
             ${PP.paced >= 3 ? `<div class="row"><span class="muted">At your real pace (${N(PP.ratio)}×)</span><b class="num ${T.forecastN > T.projN ? 'bad' : ''}">${fmtDNum(T.forecastN)}</b></div>` : ''}` : ''}</div>`;
         h += learnedCard() + habitCard();
         if (has) {
             const net = T.slip;
             h += `<div class="card" data-sec="out:if-you-continue-like-this"><h3>If you continue like this</h3>
-                <p class="${net > 0.5 || T.toTarget > 0.5 ? 'bad' : 'good'}" style="font-size:1.15rem;font-family:var(--font-serif)">${net > 0.5 ? `Delays have already cost ${dN(net)}. The fifth-year buffer is ${Math.round(T.buffer)} days, down from ${Math.round(T.planned)}.` : net < -0.5 ? `You are ${dN(-net)} ahead of the plan. The fifth-year buffer is ${Math.round(T.buffer)} days, up from ${Math.round(T.planned)}.` : `You are on the plan. The fifth-year buffer is ${Math.round(T.buffer)} days.`}${T.toTarget > 0.5 ? ` The work ends ${dN(T.toTarget)} after the year-${J.target} target.` : ''}</p>
+                <p class="${net > 0.5 || T.toTarget > 0.5 ? 'bad' : 'good'}" style="font-size:1.15rem;font-family:var(--font-serif)">${net > 0.5 ? `Delays have already cost ${dN(net)}. The fifth-year buffer is ${Math.round(T.buffer)} days, down from ${Math.round(T.planned)}.` : net < -0.5 ? `You are ${dN(-net)} ahead of the plan. The fifth-year buffer is ${Math.round(T.buffer)} days, up from ${Math.round(T.planned)}.` : `You are on the plan. The fifth-year buffer is ${Math.round(T.buffer)} days.`}${T.toTarget > 0.5 ? ` Reading and drafting end ${dN(T.toTarget)} after the year-${J.target} target.` : ''}</p>
                 <p class="tight">Tasks follow one another on a single clock, so every day a task runs over moves all later tasks. Each day a task finishes early comes back as time.</p>`;
             [...D.goals.values()].filter(g => g.chap).sort((a, b) => a.id - b.id).forEach(c => { const a = PP.agg.get(c.id); if (!a || !a.count) return; const w = Math.min(100, Math.abs(a.slip) / 60 * 100); h += `<div class="env"><div class="top"><span>${esc(c.title)}</span><b class="${a.slip > 0.5 ? 'bad' : a.slip < -0.5 ? 'good' : ''}">${a.doneCount === a.count ? 'done' : slipText(a.slip)}</b></div><div class="slipbar"><i style="width:${a.doneCount === a.count ? 100 : w}%;background:${a.slip > 0.5 ? 'var(--warning)' : '#2da872'}"></i></div></div>`; });
             h += `</div>`;
@@ -1367,8 +1375,8 @@
             const dayNo = Math.max(1, Math.min(p.days, D.todayN - p.start + 1)), left = Math.max(0, p.due - D.todayN);
             return `<div class="focus">${mring(dayNo / p.days, `${dayNo}/${p.days}`, 'days')}<div class="focus-t"><div><b>Day ${dayNo}</b> of ${p.days} allotted</div><div class="hint">${p.status === 'late' ? `${dN(p.lateDays)} over its time` : left === 0 ? 'Due today' : `${dN(left)} left`}</div>${IN && IN.learned[p.grp] && IN.learned[p.grp].ratio ? `<div class="hint">You usually take about ${N(p.days * IN.learned[p.grp].ratio)} days for this kind of task.</div>` : ''}</div></div>`;
         }
-        const today = IN ? IN.qtyOn(t.id, D.todayN) : 0, goal = t.need || t.pace || 0;
-        const bars = []; for (let i = 6; i >= 0; i--) bars.push(IN ? IN.qtyOn(t.id, D.todayN - i) : 0);
+        const today = IN ? qtyT(t, D.todayN) : 0, goal = t.need || t.pace || 0;
+        const bars = []; for (let i = 6; i >= 0; i--) bars.push(IN ? qtyT(t, D.todayN - i) : 0);
         const mx = Math.max(goal, Math.max.apply(null, bars), 1);
         return `<div class="focus">${mring(t.pct, `<span data-count="${Math.round(t.pct * 100)}" data-ck="p${t.id}">${Math.round(t.pct * 100)}</span>%`, '')}<div class="focus-t"><div class="focus-big"><b data-count="${Math.round(t.done)}" data-ck="d${t.id}">${N(t.done)}</b> / ${N(t.total)} ${esc(t.unit)}</div><div class="hint">${N(t.remaining)} ${esc(t.unit)} to go</div></div></div>
             ${goal > 0 ? `<div class="row mt"><span class="muted">Today</span><span><b>${N(today)}</b> / ${N(goal)} ${esc(t.unit)}</span></div><div class="slipbar"><i class="grow" style="width:${Math.min(100, today / goal * 100)}%;background:linear-gradient(90deg,var(--blue-a),var(--blue-b))"></i></div>` : ''}
@@ -1444,6 +1452,32 @@
         let kb = 0; try { kb = Math.round((localStorage.getItem(K_EV) || '').length / 1024); } catch (e) {}
         return `<div class="card"><h3>Your data</h3><p class="hint">Every entry is saved on this phone only: ${events.length} entries, about ${kb} KB. The app learns from them here. Nothing is sent anywhere. Use Backup to keep a safe copy.</p><button type="button" class="btn-line" data-act="deleted">Recently deleted (${deletedList().length})</button>${sw('learnOn', 'Learn from my entries', 'Gives suggested days, habit insights and a work chain.')}</div>`;
     }
+    /* ---------- hour slots: the day's logged hours tick the sub-tasks (or the hours) of the task, in order ---------- */
+    const slotMemo = new Map();
+    const qtyT = (t, n) => IN.qtyOn(t.id, n) + (t.kidIds || []).reduce((s, k) => s + IN.qtyOn(k, n), 0);
+    function hoursOn(t, n) {
+        let L = []; try { L = GReport.prep(gInputs()); } catch (e) { return 0; }
+        const inside = k => { let x = D.goals.get(k), c = 0; while (x && c++ < 30) { if (x.id === t.id) return true; x = x.parent ? D.goals.get(x.parent) : null; } return false; };
+        return L.filter(l => l.day === n && inside(l.key)).reduce((s, l) => s + l.h, 0);
+    }
+    function slotsOf(t) {
+        if (!t || !(t.pace > 0)) return null;
+        const kids = (t.kidIds || []).map(i => P().tracks.find(x => x.id === i)).filter(Boolean).sort((x, y) => x.id - y.id);
+        let sl;
+        if (kids.length && kids.every(k => k.unit === 'hours')) sl = kids.map(k => ({ size: k.pace > 0 ? k.pace : 1, label: D.goals.get(k.id).title }));
+        else if (t.unit === 'hours') { sl = []; let left = t.pace, i = 1; while (left > 1e-9 && sl.length < 12) { const s = Math.min(1, left); sl.push({ size: s, label: 'Hour ' + i++ }); left -= s; } }
+        else return null;
+        let h = hoursOn(t, E.dn(todayKey())); const total = h;
+        sl.forEach(s => { const f = Math.max(0, Math.min(1, h / s.size)); s.f = f; h -= s.size; });
+        const full = sl.filter(s => s.f >= 0.999).length, key = t.id + '|' + todayKey(), prev = slotMemo.get(key);
+        slotMemo.set(key, full); if (prev !== undefined && full > prev) setTimeout(() => fx(full === sl.length ? 'goalmet' : 'glad'), 250);
+        return { sl, full, total };
+    }
+    function slotsHtml(t) {
+        const S = slotsOf(t); if (!S) return '';
+        const done = S.sl.reduce((a, s) => a + s.f * s.size, 0), want = S.sl.reduce((a, s) => a + s.size, 0);
+        return `<div class="slots" role="img" aria-label="${S.full} of ${S.sl.length} done">${S.sl.map(s => `<span class="slot ${s.f >= 0.999 ? 'full' : s.f > 0.02 ? 'half' : ''}" style="--f:${Math.round(s.f * 100)}%" title="${esc(s.label)}">${s.f >= 0.999 ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : ''}</span>`).join('')}<span class="hint">${S.full} of ${S.sl.length} done today · ${hrsTxt(Math.min(done, want))} of ${hrsTxt(want)}</span></div>`;
+    }
     function trackBlock(t, micro) {
         if (!t) return '';
         const bits = [];
@@ -1453,7 +1487,7 @@
             if (t.deadline !== null && t.need !== null) bits.push(t.behind ? `<div class="pwarn" style="margin-top:6px">That is ${dN(t.projN - t.deadline)} after ${fmtDNum(t.deadline)}. To make it you need ${N(t.need)} ${esc(t.unit)} a day${t.pace > 0 ? ' (you plan ' + N(t.pace) + ')' : ''}.</div>` : `<div class="hint">To finish by ${fmtDNum(t.deadline)} you need ${N(t.need)} ${esc(t.unit)} a day.</div>`);
             if (t.avg7 > 0) bits.push(`<div class="hint">Your last 7 days: ${N(t.avg7)} ${esc(t.unit)} a day.</div>`);
         }
-        return `<div class="trk" style="margin-top:10px">${micro ? '' : `<div class="row"><span><b>${N(t.done)}</b> / ${N(t.total)} ${esc(t.unit)}</span><span class="muted">${pctTxt(t.pct)}</span></div><div class="slipbar"><i style="width:${t.pct * 100}%;background:linear-gradient(90deg,var(--blue-a),var(--blue-b))"></i></div>`}${bits.join('')}${t.finished ? '' : `<button class="btn-line btn-accent" data-act="tlog" data-id="${t.id}" style="margin-top:8px">Log ${esc(t.unit)} read or done today</button>`}</div>`;
+        return `<div class="trk" style="margin-top:10px">${slotsHtml(t)}${micro ? '' : `<div class="row"><span><b>${N(t.done)}</b> / ${N(t.total)} ${esc(t.unit)}</span><span class="muted">${pctTxt(t.pct)}</span></div><div class="slipbar"><i style="width:${t.pct * 100}%;background:linear-gradient(90deg,var(--blue-a),var(--blue-b))"></i></div>`}${bits.join('')}${t.finished ? '' : `<button class="btn-line btn-accent" data-act="tlog" data-id="${t.id}" style="margin-top:8px">Log ${esc(t.unit)} read or done today</button>`}</div>`;
     }
     /* ---------- backdating: forgot to log? pick another date (never in the future, never before the JRF began) ---------- */
     const dayOn = (b, day) => b.dataset.k === day || (b.dataset.k === 'other' && ![0, 1, 2].some(k => E.keyOf(D.todayN - k) === day));
@@ -1580,7 +1614,7 @@
                 const v = parseFloat(amt); if (!(v > 0)) { box.querySelector('#l-e').textContent = 'Enter an amount'; return; }
                 const mn = getMin(day), stm = getMin.st(), ev = add(Object.assign({ t: 'log', goal: id, qty: v, day, late: day !== todayKey() }, mn > 0 ? { min: mn } : {}, stm !== null && stm !== undefined ? { st: stm } : {})); closeSheet(); render();
                 const n = P().tracks.find(x => x.id === id);
-                { const g = Math.max(n.pace || 0, n.need || 0), dq = IN ? IN.qtyOn(id, D.todayN) : 0; fx(n.finished ? 'fanfare' : (g > 0 && dq >= g - 0.05) ? (dq - v >= g - 0.05 ? 'bonus' : 'goalmet') : 'reward'); }
+                { const g = Math.max(n.pace || 0, n.need || 0), dq = IN ? qtyT(n, D.todayN) : 0; fx(n.finished ? 'fanfare' : (g > 0 && dq >= g - 0.05) ? (dq - v >= g - 0.05 ? 'bonus' : 'goalmet') : 'reward'); }
                 toast(`+${N(v)} ${t.unit}. ` + (n.finished ? 'Finished: the tasks are ticked done.' : `${N(n.remaining)} to go${n.need > 0 && n.deadline !== null ? ', ' + N(n.need) + ' a day to make ' + fmtDNshort(n.deadline) : ''}.`), () => { add({ t: 'void', target: ev.id }); render(); fx('down'); });
             };
         });
@@ -1684,7 +1718,7 @@
         const spdSetting = (() => { const s = spd().get(id); return s && s.eff ? s.eff : (g.uph || ''); })();
         sheet(`<h2>Daily pace</h2>${t ? speedCard(id, 'track') : ''}<p><b>${esc(g.title)}</b>. Log ${g.grp === 'reading' ? 'the pages you read' : 'the amount you finish'} each day. When the total is reached, ${scope.length > 1 ? 'all ' + scope.length + ' tasks inside are' : 'the task is'} ticked done on that day.</p>
             <div class="grid2"><label class="field"><span>Total</span><input type="number" inputmode="decimal" id="k-n" value="${t ? t.total : ''}" placeholder="246"></label><label class="field"><span>Counted in</span><select id="k-u">${['pages', 'steps', 'sections', 'words', 'hours'].map(u => `<option ${u === unitDef ? 'selected' : ''}>${u}</option>`).join('')}</select></label></div>
-            <div class="grid2"><label class="field"><span>My pace each day</span><input type="number" inputmode="decimal" id="k-p" value="${t && t.pace ? t.pace : ''}" placeholder="15"></label>${t ? '<div></div>' : '<label class="field"><span>Already done</span><input type="number" inputmode="decimal" id="k-d" value="0"></label>'}</div>
+            <div class="grid2">${t && t.paceFrom === 'kids' ? `<div class="field"><span>My pace each day</span><b class="num">${N(t.pace)} ${esc(t.unit)}</b><div class="hint">Added up from its sub-tasks. Change a sub-task's pace to change this.</div><input type="hidden" id="k-p" value="${t.paceOwn > 0 ? t.paceOwn : t.pace}"></div>` : `<label class="field"><span>My pace each day</span><input type="number" inputmode="decimal" id="k-p" value="${t && t.pace ? t.pace : ''}" placeholder="15"></label>`}${t ? '<div></div>' : '<label class="field"><span>Already done</span><input type="number" inputmode="decimal" id="k-d" value="0"></label>'}</div>
             ${scope.length ? '<label class="field check"><input type="checkbox" id="k-a" checked><span>Set the tasks\' allotted days from this pace (the first gets the days, the others one day each, because they finish together)</span></label>' : ''}
             ${unitCount(unitDef) ? `<label class="field"><span>In one hour I usually do about</span><input type="number" inputmode="decimal" id="k-ph" value="${spdSetting}" placeholder="5"></label><div class="hint">Optional. It lets the app turn your work into hours and learn your speed.</div>` : ''}
             <div id="k-pv"></div><div class="error" id="k-e"></div>
@@ -1749,6 +1783,22 @@
 
     /* ---------- Sheets ---------- */
     const WD = [[1, 'M'], [2, 'T'], [3, 'W'], [4, 'T'], [5, 'F'], [6, 'S'], [0, 'S']];
+    function fifthSheet() {
+        const c = D.cfg || {}, F5 = D.thesis.fifth;
+        sheet(`<h2>Plan my fifth year</h2><p>The fifth year holds editing, proofreading and finalising. Whatever is left is yours.</p>
+            <div class="row"><span class="muted">Fifth year</span><b class="num">${dN(F5.days)}</b></div>
+            <div class="row"><span class="muted">Editing and proofreading (from your plan)</span><b class="num">${dN(F5.edit)}</b></div>
+            <label class="field"><span>Days kept for finalising and submission</span><input type="number" inputmode="numeric" id="f-d" min="0" max="365" value="${F5.fin}"></label>
+            <label class="field"><span>My fifth year is for…</span><input type="text" id="f-p" maxlength="120" value="${esc(c.purpose || '')}" placeholder="rest, family, finishing well, starting a life"></label>
+            <div class="hint" id="f-pv"></div><div class="modal-actions"><button class="btn-secondary" data-act="close">Cancel</button><button class="btn-primary" id="f-go">Save</button></div>`, box => {
+            const pv = () => { const f = Math.max(0, Math.round(numv(box, '#f-d') || 0)), fr = F5.days - F5.edit - f; box.querySelector('#f-pv').textContent = fr >= 0 ? `${dN(fr)} stay free.` : `Over-full by ${dN(-fr)}.`; };
+            box.querySelector('#f-d').oninput = pv; pv();
+            box.querySelector('#f-go').onclick = () => {
+                add({ t: 'cfg', c: { finDays: Math.max(0, Math.round(numv(box, '#f-d') || 0)), purpose: val(box, '#f-p').trim() } });
+                closeSheet(); render(); toast('Fifth year saved');
+            };
+        });
+    }
     function cfgSheet() {
         const c = D.cfg || {};
         const sel = (id, from, to, v) => `<select id="${id}">${Array.from({ length: to - from + 1 }, (_, i) => from + i).map(n => `<option ${n === v ? 'selected' : ''}>${n}</option>`).join('')}</select>`;
@@ -1986,6 +2036,7 @@
             case 'set-go': setPage = el.dataset.p; render(); window.scrollTo(0, 0); break;
             case 'set-back': setPage = ''; render(); window.scrollTo(0, 0); break;
             case 'cfg': cfgSheet(); break;
+            case 'fifth': fifthSheet(); break;
             case 'tlog': trackLogSheet(id); break;
             case 'hist': closeSheet(); setTimeout(() => historySheet(id || 0), 60); break;
             case 'tset': trackSheet(id); break;
