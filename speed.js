@@ -77,7 +77,7 @@
         const bySub = new Map(), sevBy = new Map();
         events.forEach(e => {
             if (voided.has(e.id)) return;
-            if (e.t === 'log') { const s = subjectOf(goals, e.goal); if (s !== null) { if (!bySub.has(s)) bySub.set(s, []); bySub.get(s).push(e); } }
+            if (e.t === 'log' && !e.sit) { const s = subjectOf(goals, e.goal); if (s !== null) { if (!bySub.has(s)) bySub.set(s, []); bySub.get(s).push(e); } }
             else if (e.t === 'speed') { const s = subjectOf(goals, e.goal) || e.goal; if (!sevBy.has(s)) sevBy.set(s, []); sevBy.get(s).push(e); }
         });
         goals.forEach(g => { if (g.uph > 0 && !bySub.has(g.id) && subjectOf(goals, g.id) === g.id) bySub.set(g.id, []); });

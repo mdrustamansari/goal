@@ -17,6 +17,7 @@
         live.forEach(e => {
             if (e.t === 'log' && e.qty > 0) {
                 const n = dayOf(e); act.set(n, (act.get(n) || 0) + 1);
+                if (e.sit) return;
                 if (!qtyBy.has(e.goal)) qtyBy.set(e.goal, new Map());
                 const m = qtyBy.get(e.goal); m.set(n, (m.get(n) || 0) + e.qty);
             } else if (e.t === 'fin') { const n = dayOf(e); if (n <= todayN) act.set(n, (act.get(n) || 0) + 1); }

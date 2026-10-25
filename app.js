@@ -605,24 +605,44 @@
         if (over < 0) return `<div class="pinfo">Allotted ${dN(p.days)}, taking ${dN(took)}: ${dN(-over)} early. The next task can start ${dN(-over)} sooner.</div>`;
         return `<div class="pinfo">Exactly on time: ${dN(p.days)} allotted, ${dN(took)} taken.</div>`;
     }
+    /* Done: one tap finishes the task AND logs the sitting (start to now), so Today, the slots, the balance and the report all move together. */
+    function lastEndToday() {
+        const k = todayKey(); let end = -1;
+        D.logs.forEach(l => { if ((l.day || E.localKey(l.ts)) === k && typeof l.st === 'number' && l.st >= 0 && l.min > 0) end = Math.max(end, l.st + l.min); });
+        return end;
+    }
     function finishSheet(id) {
         const p = P().byId.get(id); if (!p || p.done) return;
-        const today = todayKey();
+        const today = todayKey(), nowM = new Date().getHours() * 60 + new Date().getMinutes();
+        const le = lastEndToday(), pre = le >= 0 && le < nowM ? le : Math.max(0, nowM - 60);
+        minBind.pre = pre;
         sheet(`<h2>${esc(pTitle(p))}</h2><div class="hint">${esc(pathOf(p.parent))}</div>
             <div class="row mt"><span class="muted">Clock started</span><b class="num">${fmtDNum(p.start)}</b></div><div class="row"><span class="muted">Allotted</span><b class="num">${dN(p.days)} · due ${fmtDNum(p.due)}</b></div>
-            <label class="field"><span>I finished it on</span><input type="date" id="f-d" value="${today}" max="${today}"></label><div id="f-pv"></div><div class="error" id="f-e"></div>
+            <label class="field"><span>I finished it on</span><input type="date" id="f-d" value="${today}" max="${today}"></label><div id="f-pv"></div>
+            ${minRowHtml()}<div class="hint" id="f-hrs"></div><div class="error" id="f-e"></div>
             <div class="modal-actions"><button class="btn-secondary" data-act="close">Cancel</button><button class="btn-primary" id="f-go">Mark done</button></div>
             <button class="btn-line" id="f-un" style="margin-top:8px">Done earlier, date not known</button>`, box => {
-            const upd = () => { const d = val(box, '#f-d'); box.querySelector('#f-pv').innerHTML = d ? consequence(p, d) : ''; };
-            box.querySelector('#f-d').oninput = upd; upd();
-            const commitFin = day => {
-                const ev = add({ t: 'fin', goal: id, day }); closeSheet(); render(); vibrate(20);
-                const q = P().byId.get(id); let m = 'Done. ';
-                if (day && q.over > 0) m += `${dN(q.over)} over: later work moves ${dN(q.over)}.`; else if (day && q.over < 0) m += `${dN(-q.over)} early, banked.`; else m += 'On time.';
-                toast(m, () => { add({ t: 'void', target: ev.id }); render(); fx('down'); });
+            const getMin = minBind(box), sb = getMin.sb;
+            const day = () => val(box, '#f-d') || today;
+            const overlap = (s0, e0) => { let o = 0; D.logs.forEach(l => { if ((l.day || E.localKey(l.ts)) === today && typeof l.st === 'number' && l.st >= 0 && l.min > 0) o += Math.max(0, Math.min(e0, l.st + l.min) - Math.max(s0, l.st)); }); return o; };
+            const credit = () => { const d = day(), mn = getMin(d); if (!(mn > 0)) return { mn: 0, ov: 0 }; const st = getMin.st(); let ov = 0; if (d === today && st !== null && st !== undefined) ov = overlap(st, st + mn); return { mn: Math.max(0, mn - ov), ov }; };
+            const upd = () => {
+                const d = day(); box.querySelector('#f-pv').innerHTML = d ? consequence(p, d) : ''; sb.hide(d !== today);
+                const c = credit(); box.querySelector('#f-hrs').textContent = c.mn > 0 ? `${hrsTxt(c.mn / 60)} will be logged for this task${c.ov > 0 ? `. ${c.ov} min overlap an earlier sitting and are not counted twice.` : '.'}` : 'No hours will be logged. Choose a start time or a length to log them.';
             };
-            box.querySelector('#f-go').onclick = () => { const d = val(box, '#f-d'); if (!d) { box.querySelector('#f-e').textContent = 'Choose the day you finished'; return; } if (d > today) { box.querySelector('#f-e').textContent = 'That day has not come yet'; return; } commitFin(d); };
-            box.querySelector('#f-un').onclick = () => commitFin(null);
+            box.addEventListener('click', () => setTimeout(upd, 0)); box.addEventListener('change', () => setTimeout(upd, 0)); box.querySelector('#f-d').oninput = upd;
+            sb.open(); upd();
+            const commitFin = (d, hours) => {
+                const made = []; let lg = null;
+                if (hours) { const c = credit(); if (c.mn > 0) { const st = getMin.st(); lg = add(Object.assign({ t: 'log', sit: 1, goal: id, qty: Math.round(c.mn / 60 * 100) / 100, day: d || today, late: (d || today) !== today, min: c.mn }, d === today && st !== null && st !== undefined ? { st } : {})); made.push(lg); } }
+                const ev = add(Object.assign({ t: 'fin', goal: id, day: d }, lg ? { lg: lg.id } : {})); closeSheet(); render(); vibrate(20);
+                const q = P().byId.get(id); let m = 'Done. ';
+                if (d && q.over > 0) m += `${dN(q.over)} over: later work moves ${dN(q.over)}.`; else if (d && q.over < 0) m += `${dN(-q.over)} early, banked.`; else m += 'On time.';
+                if (lg) m += ` ${hrsTxt(lg.min / 60)} logged.`;
+                toast(m, () => { add({ t: 'void', target: ev.id }); if (lg) add({ t: 'void', target: lg.id }); render(); fx('down'); });
+            };
+            box.querySelector('#f-go').onclick = () => { const d = val(box, '#f-d'); if (!d) { box.querySelector('#f-e').textContent = 'Choose the day you finished'; return; } if (d > today) { box.querySelector('#f-e').textContent = 'That day has not come yet'; return; } const st = getMin.st(); if (d === today && st !== null && st !== undefined && st > nowM) { box.querySelector('#f-e').textContent = 'The start must be earlier than now'; return; } commitFin(d, true); };
+            box.querySelector('#f-un').onclick = () => commitFin(null, false);
         });
     }
     function bulkSheet(ids, label) {
@@ -660,7 +680,7 @@
     }
     function tick(id) {
         const p = P().byId.get(id); if (!p) return;
-        if (p.done) { confirmSheet({ title: 'Mark as not done?', sub: 'The finish date is removed and the clock runs again.', ok: 'Not done' }).then(ok => { if (ok) { add({ t: 'unfin', goal: p.id }); render(); fx('down'); toast('Reopened'); } }); return; }
+        if (p.done) { confirmSheet({ title: 'Mark as not done?', sub: 'The finish date is removed, the hours logged with it are removed, and the clock runs again.', ok: 'Not done' }).then(ok => { if (ok) { const fe = D.events.find(e => e.id === p.finId); if (fe && fe.lg && D.logs.some(l => l.id === fe.lg)) add({ t: 'void', target: fe.lg }); add({ t: 'unfin', goal: p.id }); render(); fx('down'); toast('Reopened'); } }); return; }
         if (p.locked) { lockedSheet(p); return; }
         finishSheet(id);
     }
@@ -928,9 +948,9 @@
         return `<div class="card tp"><div class="tp-top"><div class="tp-ringwrap" ${tt(ringTell, ringTone)}>${ringSvg}</div><div class="tp-side"><div class="safe-lbl">Today</div><div class="tp-sub">${sub}</div><div class="tp-chips">${chips.slice(0, 3).join('')}</div></div></div>${strip}${tideLine()}${road}${gauge}</div>`;
     }
     // ---- today against yesterday, and where the last sitting ended
-    function dayQty(n) { let q = 0, u = ''; D.logs.forEach(l => { if ((l.day ? E.dn(l.day) : E.dn(E.localKey(l.ts))) === n) { q += l.qty; const t = trackOf(l.goal) || P().tracks.find(x => x.id === l.goal); if (t && t.unit) u = t.unit; } }); return { q, u }; }
+    function dayQty(n) { let q = 0, u = ''; D.logs.forEach(l => { if (!l.sit && (l.day ? E.dn(l.day) : E.dn(E.localKey(l.ts))) === n) { q += l.qty; const t = trackOf(l.goal) || P().tracks.find(x => x.id === l.goal); if (t && t.unit) u = t.unit; } }); return { q, u }; }
     function lastSitting() {
-        const ls = D.logs.slice().sort((a, b) => b.ts - a.ts)[0]; if (!ls) return null;
+        const ls = D.logs.filter(l => !l.sit).sort((a, b) => b.ts - a.ts)[0]; if (!ls) return null;
         let at = 0; const evs = [];
         D.logs.filter(l => l.goal === ls.goal).forEach(l => evs.push({ ts: l.ts, q: l.qty }));
         (D.poses || []).filter(p => p.goal === ls.goal).forEach(p => evs.push({ ts: p.ts, pg: p.page }));
@@ -1417,7 +1437,7 @@
     // when in the day you work, and how fast you go, from the time of every entry
     function dayPartLine() {
         const B = [['morning', 5, 12, 0], ['afternoon', 12, 17, 0], ['evening', 17, 22, 0], ['night', 22, 29, 0]];
-        const logs = D.logs.filter(l => l.qty > 0); if (logs.length < 6) return '';
+        const logs = D.logs.filter(l => l.qty > 0 && !l.sit); if (logs.length < 6) return '';
         logs.forEach(l => { let h = new Date(l.ts).getHours(); if (h < 5) h += 24; const b = B.find(x => h >= x[1] && h < x[2]); if (b) b[3] += l.qty; });
         const tot = B.reduce((a, b) => a + b[3], 0); if (!tot) return '';
         const top = B.slice().sort((a, b) => b[3] - a[3])[0], perSit = tot / logs.length;
@@ -1454,7 +1474,7 @@
     }
     /* ---------- hour slots: the day's logged hours tick the sub-tasks (or the hours) of the task, in order ---------- */
     const slotMemo = new Map();
-    const qtyT = (t, n) => IN.qtyOn(t.id, n) + (t.kidIds || []).reduce((s, k) => s + IN.qtyOn(k, n), 0);
+    const qtyT = (t, n) => t.unit === 'hours' ? hoursOn(t, n) : IN.qtyOn(t.id, n) + (t.kidIds || []).reduce((s, k) => s + IN.qtyOn(k, n), 0);
     function hoursOn(t, n) {
         let L = []; try { L = GReport.prep(gInputs()); } catch (e) { return 0; }
         const inside = k => { let x = D.goals.get(k), c = 0; while (x && c++ < 30) { if (x.id === t.id) return true; x = x.parent ? D.goals.get(x.parent) : null; } return false; };
@@ -1513,6 +1533,7 @@
     /* ---------- Log history: every entry by day, newest first. Edit an amount, delete a wrong entry (with Undo). Everything is recalculated. ---------- */
     const logInfo = id => { const tk = P().tracks.find(x => x.id === id), it = D.items.get(id), g = D.goals.get(id); return { title: tk || !it ? (g ? g.title : 'Removed task') : it.title, unit: tk ? tk.unit : it ? it.unit : (g && g.qunit) || 'units' }; };
     const histState = { filter: 0, days: 14 };
+    const uOf = x => x.e && x.e.sit ? 'hours' : logInfo(x.goal).unit;
     function histEntries() {
         const out = [];
         D.logs.forEach(l => { const day = l.day || E.localKey(l.ts); out.push({ k: 'log', e: l, id: l.id, goal: l.goal, day, n: E.dn ? E.dn(day) : 0, ts: l.ts }); });
@@ -1522,7 +1543,7 @@
     function histSummary() {
         const all = histEntries().filter(x => x.k === 'log'); if (!all.length) return '';
         const tk = todayKey(), td = all.filter(x => x.day === tk), by = {};
-        td.forEach(x => { const u = logInfo(x.goal).unit; by[u] = (by[u] || 0) + x.e.qty; });
+        td.forEach(x => { const u = uOf(x); by[u] = (by[u] || 0) + x.e.qty; });
         return td.length ? 'Today: ' + Object.keys(by).map(u => N(by[u]) + ' ' + u).join(', ') + ' · ' + plural(td.length, 'entry').replace(/entrys/, 'entries') : 'Last entry: ' + fmtK(all.sort((a, b) => b.ts - a.ts)[0].day);
     }
     function histCard() { const sm = histSummary(); return sm ? `<div class="card tap" data-sec="today:log-history" data-act="hist" data-tell="Everything you logged, by day. You can fix a wrong entry there."><h3>Log history</h3><div class="row"><span>${esc(sm)}</span><b>›</b></div></div>` : ''; }
@@ -1535,12 +1556,12 @@
         all.sort((a, b) => (b.n - a.n) || (b.ts - a.ts));
         const minN = D.todayN - histState.days + 1, shown = all.filter(x => x.n >= minN), older = all.length - shown.length;
         const days = []; shown.forEach(x => { let d = days[days.length - 1]; if (!d || d.day !== x.day) { d = { day: x.day, list: [] }; days.push(d); } d.list.push(x); });
-        const hd = d => { const by = {}, logs = d.list.filter(x => x.k === 'log'); logs.forEach(x => { const u = logInfo(x.goal).unit; by[u] = (by[u] || 0) + x.e.qty; });
+        const hd = d => { const by = {}, logs = d.list.filter(x => x.k === 'log'); logs.forEach(x => { const u = uOf(x); by[u] = (by[u] || 0) + x.e.qty; });
             const nm = keyDate(d.day).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).replace(',', ''); return `${nm}${logs.length ? ' · ' + Object.keys(by).map(u => N(by[u]) + ' ' + u).join(', ') + ' · ' + (logs.length === 1 ? '1 entry' : logs.length + ' entries') : ''}`; };
         const tm = ts => new Date(ts).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
         const row = x => { const inf = logInfo(x.goal);
             if (x.k === 'pos') return `<div class="hl-row hl-pos" data-hid="${x.id}"><div class="hl-main"><span class="hl-t">${tm(x.ts)}</span> <b>${esc(inf.title)}</b><div class="hint">Note: last ${unitWord(inf.unit, 1)} finished was ${N(x.e.page)}. Not counted as work.</div></div><div class="hl-b">${icoBtn('del', 'data-hact="del"', 'this note')}</div></div>`;
-            return `<div class="hl-row" data-hid="${x.id}"><div class="hl-main"><span class="hl-t">${tm(x.ts)}</span> <b>${esc(inf.title)}</b>${x.e.late ? '<span class="lg-late">added later</span>' : ''}<div class="hl-amt"><b>${N(x.e.qty)}</b> ${esc(inf.unit)}</div></div><div class="hl-b">${icoBtn('edit', 'data-hact="edit"', 'this entry')}${icoBtn('del', 'data-hact="del"', 'this entry')}</div></div>`; };
+            return `<div class="hl-row" data-hid="${x.id}"><div class="hl-main"><span class="hl-t">${tm(x.ts)}</span> <b>${esc(inf.title)}</b>${x.e.late ? '<span class="lg-late">added later</span>' : ''}<div class="hl-amt"><b>${N(x.e.qty)}</b> ${esc(uOf(x))}${x.e.sit ? ' · finished' : ''}</div></div><div class="hl-b">${icoBtn('edit', 'data-hact="edit"', 'this entry')}${icoBtn('del', 'data-hact="del"', 'this entry')}</div></div>`; };
         sheet(`<h2>Log history</h2><p class="hint">Newest first. Fix a wrong amount or delete a wrong entry. Everything is recalculated.</p>
             ${goals.length > 1 ? `<label class="field"><span>Show</span><select id="hl-f"><option value="0">All tasks</option>${goals.map(x => `<option value="${x.g}" ${x.g === histState.filter ? 'selected' : ''}>${esc(x.title)}</option>`).join('')}</select></label>` : ''}
             ${days.length ? days.map(d => `<div class="hl-day">${esc(hd(d))}</div>${d.list.map(row).join('')}`).join('') : '<div class="empty"><span class="em-ico">🌱</span><b>Nothing logged in this period</b><p>Entries you log on Today will appear here.</p></div>'}
@@ -1650,7 +1671,7 @@
     const minRowHtml = () => `<div class="min-row"><div class="set-title">How long did it take? <span class="muted">Optional</span></div><div class="min-chips" id="l-min">${[[30, '30 min'], [60, '1 hour'], [90, '1½ hours'], [120, '2 hours']].map(([v, l]) => `<button type="button" class="mini-btn" data-m="${v}" aria-pressed="false">${l}</button>`).join('')}<button type="button" class="mini-btn" data-m="other" aria-pressed="false">Other</button></div><label class="field" id="l-min-o" hidden><span>Minutes</span><input type="number" inputmode="numeric" id="l-min-v" placeholder="45"></label>${startRowHtml()}</div>`;
     /* "When did you start?": a digital clock (12 hour, am/pm). Today's sitting length is then exact: now minus the start. */
     const startRowHtml = () => `<div class="st-row"><button type="button" class="mini-btn" id="st-open" aria-expanded="false">Set start time</button><div class="st-box" id="st-box" hidden><div class="st-clock" aria-live="polite"><span id="st-read">4:10</span><small id="st-ap">pm</small></div><div class="st-pick"><select class="set-select" id="st-h" aria-label="Hour">${[12,1,2,3,4,5,6,7,8,9,10,11].map(h => `<option value="${h}">${h}</option>`).join('')}</select><b>:</b><select class="set-select" id="st-m" aria-label="Minutes">${Array.from({ length: 12 }, (_, i) => `<option value="${i * 5}">${String(i * 5).padStart(2, '0')}</option>`).join('')}</select><div class="seg" id="st-seg"><button type="button" data-ap="am">am</button><button type="button" data-ap="pm">pm</button></div></div><div class="hint" id="st-note"></div><button type="button" class="link-btn" id="st-clear">Clear start time</button></div></div>`;
-    function startBind(box) {
+    function startBind(box, pre) {
         const open = box.querySelector('#st-open'), bx = box.querySelector('#st-box'); if (!open) return { get: () => null };
         const H = box.querySelector('#st-h'), M = box.querySelector('#st-m'), seg = box.querySelector('#st-seg'), note = box.querySelector('#st-note');
         let on = false, ap = 'pm';
@@ -1663,16 +1684,16 @@
             open.textContent = on ? 'Started at ' + H.value + ':' + String(M.value).padStart(2, '0') + ' ' + ap : 'Set start time';
         };
         open.onclick = () => {
-            if (!on) { on = true; const d = new Date(Date.now() - 30 * 6e4); let h = d.getHours(); ap = h >= 12 ? 'pm' : 'am'; H.value = String(h % 12 || 12); M.value = String(Math.floor(d.getMinutes() / 5) * 5); }
+            if (!on) { on = true; const d = pre >= 0 ? new Date(new Date().setHours(Math.floor(pre / 60), pre % 60, 0, 0)) : new Date(Date.now() - 30 * 6e4); let h = d.getHours(); ap = h >= 12 ? 'pm' : 'am'; H.value = String(h % 12 || 12); M.value = String(Math.floor(d.getMinutes() / 5) * 5); }
             bx.hidden = !bx.hidden; open.setAttribute('aria-expanded', bx.hidden ? 'false' : 'true'); paint();
         };
         H.onchange = M.onchange = paint;
         seg.onclick = e => { const b = e.target.closest('[data-ap]'); if (!b) return; ap = b.dataset.ap; paint(); };
         box.querySelector('#st-clear').onclick = () => { on = false; bx.hidden = true; open.setAttribute('aria-expanded', 'false'); paint(); };
-        return { get: () => (on ? mins() : null), now: nowMin };
+        return { get: () => (on ? mins() : null), now: nowMin, open: () => { if (!on) open.onclick(); }, hide: v => { const r = box.querySelector('.st-row'); if (r) r.hidden = !!v; } };
     }
     function minBind(box) {
-        let m = 0; const row = box.querySelector('#l-min'), o = box.querySelector('#l-min-o'), inp = box.querySelector('#l-min-v'); if (!row) { const st0 = startBind(box), z = day => { const s0 = st0.get(); if (s0 !== null && (!day || day === todayKey())) { const d = st0.now() - s0; if (d > 0 && d <= 600) return d; } return 0; }; z.st = () => st0.get(); return z; }
+        let m = 0; const row = box.querySelector('#l-min'), o = box.querySelector('#l-min-o'), inp = box.querySelector('#l-min-v'); if (!row) { const st0 = startBind(box, minBind.pre), z = day => { const s0 = st0.get(); if (s0 !== null && (!day || day === todayKey())) { const d = st0.now() - s0; if (d > 0 && d <= 600) return d; } return 0; }; z.st = () => st0.get(); return z; }
         row.onclick = ev => {
             const b = ev.target.closest('[data-m]'); if (!b) return; const same = b.classList.contains('on');
             row.querySelectorAll('[data-m]').forEach(x => { x.classList.remove('on'); x.setAttribute('aria-pressed', 'false'); });
@@ -1681,9 +1702,9 @@
             if (b.dataset.m === 'other') { o.hidden = false; m = 0; if (inp) { inp.focus(); } } else { o.hidden = true; m = +b.dataset.m; }
         };
         if (inp) inp.oninput = () => { m = Math.max(0, Math.min(600, Math.round(parseFloat(inp.value) || 0))); };
-        const st = startBind(box);
+        const st = startBind(box, minBind.pre);
         const fn = day => { const s0 = st.get(); if (s0 !== null && (!day || day === todayKey())) { const d = st.now() - s0; if (d > 0 && d <= 600) return d; } return m; };
-        fn.st = () => st.get();
+        fn.st = () => st.get(); fn.sb = st;
         return fn;
     }
     const unitCount = u => (u === 'hours' || u === 'sessions') ? null : u;

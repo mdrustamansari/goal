@@ -161,3 +161,6 @@ The single source of truth is `shared/buttons.css` (shape, kinds, sizes, glow) a
 
 ## 24. Hour slots (Goal v5.55)
 A task counted in hours, or with sub-tasks counted in hours, shows a row of 24 px round slots on its Working-on card, one per sub-task (or per hour). The day's logged hours fill them in order: empty (translucent track), half (left-to-right blue fill), full (green with a white check, 3.4 px stroke). One line below says "2 of 4 done today · 2 h 30 min of 4 h". A newly completed slot plays the soft "glad" sound; the last one plays the goal-met sound. The slots and the Today plan card read the same hour record.
+
+## 25. One action, one record (Goal v5.57)
+A button that completes something also records the time it took, in the same tap, on the same record every screen reads. Done = finish day + sitting (start pre-filled from the last sitting, end = now). Anything it created is removed by its undo and by Reopen. Bulk "already done" ticks never invent hours.

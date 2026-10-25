@@ -346,6 +346,7 @@
                     else if (e.op === 'del') { const rm = id => { goals.delete(id); [...goals.values()].forEach(g => { if (g.parent === id) rm(g.id); }); }; rm(e.gid); }
                     break;
                 case 'log': {
+                    if (e.sit) { logs.push(e); break; }   // a sitting (start to finish of a task): hours only, never pages or words
                     const n = dn(e.day || localKey(e.ts));
                     if (!done.has(e.goal)) done.set(e.goal, new Map());
                     const m = done.get(e.goal); m.set(n, (m.get(n) || 0) + e.qty);
