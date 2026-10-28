@@ -164,3 +164,9 @@ A task counted in hours, or with sub-tasks counted in hours, shows a row of 24 p
 
 ## 25. One action, one record (Goal v5.57)
 A button that completes something also records the time it took, in the same tap, on the same record every screen reads. Done = finish day + sitting (start pre-filled from the last sitting, end = now). Anything it created is removed by its undo and by Reopen. Bulk "already done" ticks never invent hours.
+
+## 26. A card must change what you do (Goal v5.58)
+A card that only repeats numbers is removed or merged. Every card says what a figure means for the goal (from the engine, not a copy) and ends in one button that does the single most useful next thing. Text that sits on a round icon or chip takes its colours from the theme (text on glass, never a fixed white), so it reads in light and dark.
+
+## 27. One look per theme (Goal v5.58 / Budget v2.45)
+Glass, rim, tint, button tint, accent, letters, paper and palette belong to the theme they were set in. Choosing a theme loads that theme's saved look; a theme never customised starts from its own defaults. Nothing carries over from the last theme used.

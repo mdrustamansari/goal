@@ -32,7 +32,21 @@
     });
     let events = [], prefs = PREF_DEFAULT(), nextId = 1, D = null, screen = 'today', storageOK = true;
 
+    /* Each theme keeps its own look: glass, rim, tint, accent, letters and paper are saved per theme, and choosing a theme loads that theme's own saved look. A theme never touched starts from its defaults. */
+    const LOOK_KEYS = ['glassBlur', 'bgBlur', 'glassStyle', 'lqFrost', 'lqTint', 'lqTone', 'lqLight', 'lqLightBlur', 'lqDark', 'lqDarkBlur', 'lqShadow', 'lqShine', 'lqStreak', 'btnAccent', 'btnBlack', 'accent', 'glow', 'flFont', 'p', 'theme'];
+    function snapLook() {
+        const o = {}; LOOK_KEYS.forEach(k => { if (prefs[k] !== undefined) o[k] = JSON.parse(JSON.stringify(prefs[k])); });
+        prefs.lookSet = Object.assign({}, prefs.lookSet || {}); prefs.lookSet[prefs.look || 'flagship'] = o;
+    }
+    function setLook(l) {
+        if (l === (prefs.look || 'flagship')) return;
+        snapLook(); const s = (prefs.lookSet || {})[l], d = PREF_DEFAULT();
+        LOOK_KEYS.forEach(k => { delete prefs[k]; if (d[k] !== undefined) prefs[k] = JSON.parse(JSON.stringify(d[k])); });
+        if (s) Object.keys(s).forEach(k => { prefs[k] = JSON.parse(JSON.stringify(s[k])); });
+        prefs.look = l;
+    }
     function persist() {
+        try { snapLook(); } catch (e) {}
         storageOK = save(K_EV, events) && save(K_PREF, prefs);
         if (!storageOK) toast('Could not save: the phone storage may be full');
     }
@@ -82,7 +96,7 @@
     function phoneDark() { try { return !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches); } catch (e) { return false; } }
     function followNow() {
         if (!prefs.follow) return; GLook.remember(prefs);
-        const t = GLook.followTarget(prefs, phoneDark()); if (t !== prefs.look) { prefs.look = t; persist(); applyTheme(); if (typeof render === 'function' && D) render(); }
+        const t = GLook.followTarget(prefs, phoneDark()); if (t !== prefs.look) { setLook(t); persist(); applyTheme(); if (typeof render === 'function' && D) render(); }
     }
     const hex2rgb = h => { h = h.trim().replace('#', ''); if (h.length === 3) h = h.split('').map(x => x + x).join(''); const n = parseInt(h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
     const mixRGB = (x, y, t) => x.map((v, i) => Math.round(v + (y[i] - v) * t));
@@ -979,19 +993,24 @@
         return GBanner.html({ last: { html: txt, tell: `Your last entry was ${N(L.qty)} ${L.unit}. Tap Log history to see all of them.`, act: 'hist' }, tips: prefs.lineOn, next });
     }
     /* work-day balance this week: hours worked against 3 h a work day. Today counts only once it is met (or in the evening), so a half-finished day never shows as a loss. */
-    function balanceCard() {
-        let diff = 0, any = false;
+    function weekInfo() {
+        let diff = 0, any = false, worked = 0, days = 0;
         try {
             const r = GReport.report(Object.assign({ kind: 'week', back: 0 }, gInputs())), hr = new Date().getHours();
             for (let i = 0; i < r.elapsed; i++) {
                 const v = r.day[i] || 0, isToday = i === r.elapsed - 1, rest = r.leaveIdx[i] && !r.worked[i];
-                if (rest) continue; any = true;
-                if (isToday) { if (v >= WD_H || hr >= 21) diff += v - WD_H; } else diff += v - WD_H;
+                if (rest) continue; any = true; worked += v;
+                if (isToday) { if (v >= WD_H || hr >= 21) { diff += v - WD_H; days++; } } else { diff += v - WD_H; days++; }
             }
-        } catch (e) { return ''; }
-        if (!any || Math.abs(diff) < 0.25) return '';
-        const up = diff > 0;
-        return wdCard({ cap: 'This week · work-day balance', ic: up ? 'up' : 'down', tone: up ? 'green' : 'red', h: diff, sign: up ? '+' : '−', unit: up ? 'work days banked' : 'work days behind', sub: `${hrsTxt(Math.abs(diff))} ${up ? 'more' : 'less'} than ${WD_H} h a day. Each section is 1 work hour.` });
+        } catch (e) { return null; }
+        return any ? { diff, worked, days } : null;
+    }
+    /* what the target really asks of one day, from the engine: the plan days still open before the year-N target, spread over the days left, at 3 hours a plan day */
+    function needHours() {
+        const J = D.jrf; if (!J) return null;
+        const rem = P().open.filter(p => p.grp !== 'editing').reduce((s, p) => s + p.days * (1 - (p.work || 0)), 0);
+        if (!(rem > 0)) return { rem: 0, hours: 0 };
+        return { rem, hours: rem / Math.max(1, J.daysToTarget) * WD_H };
     }
     /* ---- Today's plan: "How many hours will you work today?" asked once, then used to forecast ---- */
     const hrsTxt = h => { const m = Math.round(h * 60); return m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min'; };
@@ -1002,14 +1021,23 @@
         if (!pl) return `<div class="card pl-ask" data-sec="none"><div class="set-title">Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}</div><h3 class="pl-q">How many hours will you work today?</h3><div class="wz-chips">${[1, 2, 3, 4, 5, 6, 8].map(n => `<button type="button" class="wz-chip" data-act="plan-set" data-h="${n}">${n} h</button>`).join('')}<button type="button" class="wz-chip" data-act="plan-set" data-h="0">Not today</button></div><p class="hint">A rough guess is fine. It helps the app forecast your tasks.</p><button type="button" class="link-btn" data-act="plan-skip">Ask me later</button></div>`;
         if (pl.h === 0) return `<div class="card pl-line"><span class="muted">Today is a rest day. Your chain is safe.</span> <button type="button" class="link-btn" data-act="plan-change">Change</button></div>`;
         let done = 0; try { const n0 = E.dn(todayKey()); done = GReport.prep(gInputs()).filter(l => l.day === n0).reduce((s, l) => s + l.h, 0); } catch (e) {}
-        const left = Math.max(0, pl.h - done), frac = Math.max(0, Math.min(1, done / pl.h));
-        let fc = '';
-        try {
-            const pj = GReport.project(gInputs()), ids = new Set(PP.active.map(p => p.id)), act = pj.items.filter(i => i.hours !== null && (ids.size === 0 || [...ids].some(id => { const t = P().tracks.find(x => x.id === i.id); return t && t.scopeIds.indexOf(id) >= 0 || i.id === id; })));
-            const tot = act.reduce((a, i) => a + i.hours, 0);
-            if (tot > 0.2) fc = `Your tasks in progress need about <b>${hrsTxt(tot)}</b> more at your speed. At ${pl.h} h a day, that is about <b>${Math.max(1, Math.ceil(tot / pl.h))} ${Math.ceil(tot / pl.h) === 1 ? 'day' : 'days'}</b>.`;
-        } catch (e) {}
-        return wdCard({ cap: 'Today · plan', ic: 'clock', tone: 'blue', h: pl.h, unit: 'work days planned', size: 60, label: 1, sub: `${hrsTxt(done)} done · ${hrsTxt(pl.h)} planned${left > 0.02 ? '' : ' · plan met'}`, more: `<div class="slipbar"><i class="grow" style="width:${Math.round(frac * 100)}%"></i></div>${fc ? `<p class="hint">${fc}</p>` : ''}<button type="button" class="link-btn" data-act="plan-change">Change</button>` }) + balanceCard();
+        const left = Math.max(0, pl.h - done), nd = needHours(), wk = weekInfo(), T = D.thesis, R = PP.rhythm, J = D.jrf;
+        const act = PP.active[0] || null, tk = act ? trackOf(act.id) : null, slots = tk ? slotsOf(tk) : null;
+        // the one next step, chosen from the engine's own state
+        let btn;
+        if (nd && nd.hours > pl.h + 0.25 && left > 0.02 && nd.hours <= 8) { const hh = Math.ceil(nd.hours * 2) / 2; btn = { t: `Plan ${hrsTxt(hh)} today`, a: `data-act="plan-set" data-h="${hh}"` }; }
+        else if (nd && nd.hours > 8) btn = { t: 'The target is out of reach. Open Plan', a: 'data-act="goto" data-s="plan"' };
+        else if (act && slots && slots.full === slots.sl.length) btn = { t: `Finish ${pTitle(act)}`, a: `data-act="tick" data-id="${act.id}"` };
+        else if (act && left > 0.02) btn = tk ? { t: `Log work · ${pTitle(act)}`, a: `data-act="tlog" data-id="${tk.id}"` } : { t: `Finish ${pTitle(act)}`, a: `data-act="tick" data-id="${act.id}"` };
+        else if (act) btn = tk ? { t: 'Plan met. Bank an extra hour', a: `data-act="tlog" data-id="${tk.id}"` } : { t: `Finish ${pTitle(act)}`, a: `data-act="tick" data-id="${act.id}"` };
+        else if (PP.upcoming[0]) btn = { t: `Start ${pTitle(PP.upcoming[0])}`, a: `data-act="begin" data-id="${PP.upcoming[0].id}"` };
+        else btn = { t: 'Choose a task', a: 'data-act="pick"' };
+        const rows = [];
+        if (nd && nd.rem > 0) rows.push(`<div class="wd-row ${nd.hours > pl.h + 0.25 ? 'warn' : 'ok'}">The year-${J.target} target needs about <b>${hrsTxt(nd.hours)}</b> a day. You planned ${hrsTxt(pl.h)}.</div>`);
+        if (wk) rows.push(`<div class="wd-row">This week: <b>${hrsTxt(wk.worked)}</b> worked. ${Math.abs(wk.diff) < 0.25 ? `Level with ${WD_H} h a day.` : `${wdText(Math.abs(wk.diff))} ${wk.diff > 0 ? 'ahead of' : 'behind'} ${WD_H} h a day.`}</div>`);
+        if (R && R.speed >= 0.03 && nd && nd.rem > 0) { const fw = D.todayN + Math.ceil(nd.rem / R.speed) - 1; rows.push(`<div class="wd-row ${fw <= J.targetN ? 'ok' : 'warn'}">At your last ${R.basisDays} days' pace, reading and drafting end <b>${fmtDNum(fw)}</b>. The target is ${fmtDNum(J.targetN)}.</div>`); }
+        const tone = left > 0.02 ? 'blue' : 'green';
+        return wdCard({ cap: 'Today · plan', ic: left > 0.02 ? 'clock' : 'up', tone, h: done, big: hrsTxt(done), unit: `of ${hrsTxt(pl.h)} planned${left > 0.02 ? '' : ' · plan met'}`, size: 60, label: 1, sub: `${wdText(done)} done today`, more: `${rows.join('')}<button type="button" class="btn-line btn-accent wd-go" ${btn.a}>${esc(btn.t)}</button><button type="button" class="link-btn" data-act="plan-change">Change today's hours</button>` });
     }
     function renderToday() {
         const el = $('s-today'); let h = '';
@@ -1076,16 +1104,16 @@
     const WD_ICO = { clock: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>', up: '<path d="M12 19V6M6 11l6-6 6 6"/>', down: '<path d="M12 5v13M6 13l6 6 6-6"/>', book: '<path d="M5 5h6a3 3 0 0 1 3 3v11a2 2 0 0 0-2-2H5zM19 5h-5"/>' };
     /* a ring of three sections, one for each work hour of the part-day; full days wait in the badge */
     function wdRing(h, tone, size, label) {
-        const p = wdParts(h), fill = p.r / 2, sw = size > 48 ? 6 : 5, gap = size > 48 ? 24 : 26, r = size / 2 - sw / 2 - 1, c = size / 2; let o = '';
+        const p = wdParts(h), fill = (p.r === 0 && p.w > 0) ? 3 : p.r / 2, sw = size > 48 ? 6 : 5, gap = size > 48 ? 24 : 26, r = size / 2 - sw / 2 - 1, c = size / 2; let o = '';
         for (let k = 0; k < 3; k++) {
             const a0 = (-90 + k * 120 + gap / 2) * Math.PI / 180, a1 = (-90 + (k + 1) * 120 - gap / 2) * Math.PI / 180, f = Math.max(0, Math.min(1, fill - k));
             o += `<path d="M${(c + r * Math.cos(a0)).toFixed(1)} ${(c + r * Math.sin(a0)).toFixed(1)} A${r} ${r} 0 0 1 ${(c + r * Math.cos(a1)).toFixed(1)} ${(c + r * Math.sin(a1)).toFixed(1)}" fill="none" class="wd-sec${f > 0 ? ' on' : ''}" ${f > 0 && f < 1 ? 'style="opacity:.55"' : ''} stroke-width="${sw}" stroke-linecap="round"/>`;
         }
-        return `<span class="wd-ring ${tone}" style="width:${size}px;height:${size}px" role="img" aria-label="${esc(wdText(h))}"><svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">${o}</svg>${label ? '<span class="wd-lab"><i>WORK</i><i>HOUR</i></span>' : ''}${p.w ? `<span class="wd-bd">×${p.w}</span>` : ''}</span>`;
+        return `<span class="wd-ring ${tone}" style="width:${size}px;height:${size}px" role="img" aria-label="${esc(wdText(h))}"><svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">${o}</svg>${label ? '<span class="wd-lab"><i>WORK</i><i>HOUR</i></span>' : ''}${p.w > 1 ? `<span class="wd-bd">×${p.w}</span>` : ''}</span>`;
     }
     function wdCard(o) {
         const p = wdParts(o.h);
-        return `<div class="card wd-card ${o.tone}" data-sec="none"><div class="wd-cap">${o.cap}</div><div class="wd-main"><span class="wd-it"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${WD_ICO[o.ic]}</svg></span><div class="wd-mid"><div class="wd-big">${o.sign || ''}${wdBig(o.h)}</div><div class="wd-un">${o.unit}</div></div>${wdRing(o.h, o.tone, o.size || 40, o.label)}</div><div class="wd-sub"><span>${o.sub}</span><b>${p.dec}</b></div>${o.more || ''}</div>`;
+        return `<div class="card wd-card ${o.tone}" data-sec="none"><div class="wd-cap">${o.cap}</div><div class="wd-main"><span class="wd-it"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${WD_ICO[o.ic]}</svg></span><div class="wd-mid"><div class="wd-big">${o.big !== undefined ? o.big : (o.sign || '') + wdBig(o.h)}</div><div class="wd-un">${o.unit}</div></div>${wdRing(o.h, o.tone, o.size || 40, o.label)}</div><div class="wd-sub"><span>${o.sub}</span><b>${p.dec}</b></div>${o.more || ''}</div>`;
     }
     const fh = h => h < 0.95 ? `${Math.max(1, Math.round(h * 60 / 5) * 5)} min` : `${N(h)} h`;
     const fhW = h => { if (h < 0.95) return `${plural(Math.max(1, Math.round(h * 60 / 5) * 5), 'minute')}`; const v = h >= 10 ? Math.round(h) : Math.round(h * 2) / 2; return `${N(v)} ${v === 1 ? 'hour' : 'hours'}${h >= 1.5 ? ' (' + wdText(h) + ')' : ''}`; };
@@ -2088,7 +2116,7 @@
             case 'rebase': rebaseSheet(); break;
             case 'toggle': { ev.stopPropagation(); const o = prefs.open || []; prefs.open = o.indexOf(id) >= 0 ? o.filter(x => x !== id) : o.concat([id]); persist(); renderPlan(); break; }
             case 'accent': prefs.accent = el.dataset.v === 'gold' ? 'gold' : 'sapphire'; persist(); render(); break;
-            case 'look': prefs.look = el.dataset.v; GLook.remember(prefs); persist(); render(); break;
+            case 'look': setLook(el.dataset.v); GLook.remember(prefs); persist(); render(); break;
             case 'pr-set': prefs.p = Object.assign({}, prefs.p, { [el.dataset.k]: el.dataset.v }); persist(); render(); break;
             case 'task-add': D.cfg ? taskSheet(0, +el.dataset.parent || 0) : cfgSheet(); break;
             case 'task': taskDetail(id); break;
