@@ -170,3 +170,6 @@ A card that only repeats numbers is removed or merged. Every card says what a fi
 
 ## 27. One look per theme (Goal v5.58 / Budget v2.45)
 Glass, rim, tint, button tint, accent, letters, paper and palette belong to the theme they were set in. Choosing a theme loads that theme's saved look; a theme never customised starts from its own defaults. Nothing carries over from the last theme used.
+
+## 28. Move, order, and show-don't-tell (Goal v5.59)
+Any item can be moved by a "Move to…" sheet or by dragging its grip; both write the same event and show a preview first. Adding offers "same for similar chapters". Today's card uses bars and a timeline instead of sentences. Text next to a ring is clipped with a soft fade and slides when too long.

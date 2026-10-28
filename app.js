@@ -6,7 +6,12 @@
     const DAY = E.DAY;
     const $ = id => document.getElementById(id);
     // a screen is only rebuilt when what it shows has really changed: no needless repaint (and no re-blur of the glass) on the quiet minute refresh
-    function put(el, h) { if (el.__h === h && el.firstChild) return false; el.__h = h; el.innerHTML = h; if (window.GSections) GSections.apply(el); return true; }
+    function put(el, h) { if (el.__h === h && el.firstChild) return false; el.__h = h; el.innerHTML = h; if (window.GSections) GSections.apply(el); wdFit(el); return true; }
+    /* a line too long for its space never touches the ring: it fades and slides, then rests */
+    function wdFit(el) {
+        try { el.querySelectorAll('.wd-mid').forEach(m => { m.querySelectorAll('.wd-big,.wd-un').forEach(t => { t.classList.remove('slide'); const over = t.scrollWidth - m.clientWidth; if (over > 2) { t.classList.add('slide'); t.style.setProperty('--dx', (-over - 4) + 'px'); } }); }); } catch (e) {}
+    }
+    window.addEventListener('resize', () => { try { wdFit(document); } catch (e) {} });
     const fmt = n => Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
     const fmt2 = n => Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 });
     const money = n => (n < 0 ? '-' : '') + '₹' + fmt(Math.abs(Math.round(n)));
@@ -557,13 +562,14 @@
             <div class="row"><span class="muted">Against the clock</span><b class="num ${tone}">${vs}</b></div>
             ${p.workExp !== null ? `<div class="hint">The clock expects ${pctTxt(p.workExp)} by today (the small mark on the bar).</div>` : ''}`;
     }
+    const gripHtml = () => '<span class="grip" role="button" aria-label="Drag to move" title="Drag to move"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>';
     function pieceRow(p, depth) {
-        return `<div class="ol-row ol-item pr ${p.done ? 'is-done' : ''}" data-act="pc" data-id="${p.id}" style="padding-left:${depth * 14}px"><button class="tick ${p.done ? 'on' : ''}" data-act="tick" data-id="${p.id}" aria-label="${p.done ? 'Done' : 'Mark done'}">${p.done ? '✓' : p.locked ? '🔒' : ''}</button><span class="ol-title">${esc(pTitle(p))}</span>${pieceWorkBar(p, 'pw')}<span class="ol-sub">${p.days} d</span><span class="ol-sub">${pieceRight(p)}</span></div>`;
+        return `<div class="ol-row ol-item pr ${p.done ? 'is-done' : ''}" data-act="pc" data-id="${p.id}" style="padding-left:${depth * 14}px"><button class="tick ${p.done ? 'on' : ''}" data-act="tick" data-id="${p.id}" aria-label="${p.done ? 'Done' : 'Mark done'}">${p.done ? '✓' : p.locked ? '🔒' : ''}</button><span class="ol-title">${esc(pTitle(p))}</span>${pieceWorkBar(p, 'pw')}<span class="ol-sub">${p.days} d</span><span class="ol-sub">${pieceRight(p)}</span>${movable(p.id) ? gripHtml() : ''}</div>`;
     }
     function nodeRow(g, depth) {
         const a = P().agg.get(g.id), open = (prefs.open || []).indexOf(g.id) >= 0, has = (D.kidsOf.get(g.id) || []).length > 0;
         const late = a && a.slip > 0.5 ? `<span class="chip bad">${dN(a.slip)} late</span>` : '';
-        return `<div class="ol-row nr" data-act="nodeS" data-id="${g.id}" style="padding-left:${depth * 14}px"><button class="ol-chev" data-act="toggle" data-id="${g.id}" aria-label="Open or close">${has ? (open ? '▾' : '▸') : ''}</button><span class="ol-title">${esc(g.title)}</span>${late}<span class="ol-sub">${a ? a.doneCount + '/' + a.count : ''}</span><div class="ol-bar"><i style="width:${(a ? a.pct : 0) * 100}%"></i></div></div>` + (open ? treeHtml(g.id, depth + 1) : '');
+        return `<div class="ol-row nr" data-act="nodeS" data-id="${g.id}" style="padding-left:${depth * 14}px"><button class="ol-chev" data-act="toggle" data-id="${g.id}" aria-label="Open or close">${has ? (open ? '▾' : '▸') : ''}</button><span class="ol-title">${esc(g.title)}</span>${late}<span class="ol-sub">${a ? a.doneCount + '/' + a.count : ''}</span><div class="ol-bar"><i style="width:${(a ? a.pct : 0) * 100}%"></i></div>${movable(g.id) ? gripHtml() : ''}</div>` + (open ? treeHtml(g.id, depth + 1) : '');
     }
     function treeHtml(parentId, depth) {
         return (D.kidsOf.get(parentId) || []).map(c => {
@@ -609,7 +615,7 @@
         if (customs.length) h += `<div class="card" data-sec="plan:custom-tasks"><h3>Custom tasks</h3>${customs.map(p => pieceRow(p, 0)).join('')}</div>`;
         if (D.tasks.length) h += `<div class="card" data-sec="plan:earlier-daily-tasks"><h3>Earlier tasks</h3><p class="tight">Quantity-based tasks from before. They still count in their own pace.</p>${D.tasks.map(t => `<div class="ol-row ol-plan" data-act="task" data-id="${t.id}"><span class="ol-chev">📅</span><span class="ol-title">${esc(t.g.title)} · ${N(t.done)}/${N(t.total)} ${esc(t.unit)}</span>${statusChip(t)}</div>`).join('')}</div>`;
         h += `<button class="btn-line" data-act="defaults">Default days for each kind of task</button>`;
-        put($('s-plan'), h);
+        put($('s-plan'), h); dragInit();
     }
 
     /* ---------- finishing, undoing, bulk ticks ---------- */
@@ -718,6 +724,7 @@
             ${trackBlock(trackOf(id))}
             ${p.done ? '' : `<div class="grid2" style="margin-top:8px">${trackOf(id) ? `<button class="btn-line" data-act="tset" data-id="${trackOf(id).id}">Change daily pace</button>` : `<button class="btn-line" data-act="tset" data-id="${id}">Set a daily pace</button>`}<button class="btn-line" data-act="split" data-id="${id}">Split into sub-sections</button></div>${(D.cfg && D.cfg.order === 'custom') ? `<button class="btn-line" data-act="next" data-id="${id}" style="margin-top:8px">Do this next</button>` : ''}`}
             <div class="grid2" style="margin-top:8px">${p.done ? `<button class="btn-line" data-act="tick" data-id="${id}">Mark not done</button>` : `<button class="btn-line btn-accent" data-act="tick" data-id="${id}">${p.locked ? 'Why locked?' : 'Mark done'}</button>`}${p.began && !p.hasWork && !p.done && P().pickMode ? '<button class="btn-line" id="pc-stop">Stop working on this</button>' : ''}${canStartEarlier ? `<button class="btn-line btn-accent" id="pc-st">${P().pickMode ? 'Start this task' : 'Start now'}</button>` : '<span></span>'}</div>
+            ${movable(id) ? `<button class="btn-line" data-act="move" data-id="${id}" style="margin-top:8px">Move to…</button>` : ''}
             <div class="del-row">${icoBtn('del', 'id="pc-del"', 'task')}</div>`, box => {
             box.querySelector('#pc-go').onclick = () => {
                 const days = Math.round(numv(box, '#pc-d')); if (!(days >= 1)) { box.querySelector('#pc-e').textContent = 'Allot at least one day'; return; }
@@ -741,6 +748,7 @@
                 ${g.budget ? '<button class="btn-line" id="n-share">Share the budget across the tasks</button>' : ''}` : ''}
             <div class="grid2 mt"><button class="btn-line btn-accent" data-act="piece-add" data-id="${id}">Add a task</button><button class="btn-line" data-act="sec-add2" data-id="${id}">Add a section</button></div>
             <button class="btn-line" data-act="tset" data-id="${id}">${P().tracks.find(x => x.id === id) ? 'Change the daily pace' : 'Set a daily pace (pages or steps)'}</button>
+            ${movable(id) ? `<button class="btn-line" data-act="move" data-id="${id}">Move to…</button>` : ''}
             ${P().tracks.find(x => x.id === id) ? trackBlock(P().tracks.find(x => x.id === id)) : ''}
             ${g.role === 'analysis' ? `<button class="btn-line" data-act="themes-add" data-id="${chapOf(id).id}">Add themes</button>` : ''}
             ${ids.length ? `<button class="btn-line" id="n-bulk">Mark everything here as done</button>` : ''}
@@ -782,6 +790,150 @@
             box.querySelector('#c-del').onclick = async () => { if (await confirmSheet({ title: 'Delete "' + c.title + '"?', sub: 'All its reading, drafting and editing tasks are removed.', ok: 'Delete', danger: true })) { add({ t: 'goal', op: 'del', gid: id }); closeSheet(); render(); } };
         });
     }
+
+    /* ---------- moving tasks and sub-tasks: hours, ticks and dates follow the task; both places recompute ---------- */
+    const grpOfG = id => { let x = D.goals.get(id), n = 0; while (x && n++ < 30) { if (x.grp) return x.grp; x = x.parent ? D.goals.get(x.parent) : null; } return null; };
+    const isUnder = (id, anc) => { let x = D.goals.get(id), n = 0; while (x && n++ < 30) { if (x.id === anc) return true; x = x.parent ? D.goals.get(x.parent) : null; } return false; };
+    const movable = id => { const g = D.goals.get(id); return !!g && !g.chap && !g.grp && !g.isPhase && !g.mirror && (g.kind === 'piece' || g.kind === 'project'); };
+    function moveTargets(id) {
+        const g = D.goals.get(id), fam = grpOfG(id), out = [];
+        D.goals.forEach(t => {
+            if (t.kind !== 'project' || t.chap || t.isPhase || t.id === id || isUnder(t.id, id) || t.id === g.parent) return;
+            if (grpOfG(t.id) !== fam || !fam) return;
+            let bad = false, x = t, n = 0; while (x && n++ < 30) { if (x.isPhase) bad = true; x = x.parent ? D.goals.get(x.parent) : null; } if (bad) return;
+            out.push(t);
+        });
+        return out.sort((x, y) => pathOf(x.id).localeCompare(pathOf(y.id)));
+    }
+    function trackAbove(Dx, pid) { let x = Dx.goals.get(pid), n = 0; while (x && n++ < 30) { const t = Dx.pieces.tracks.find(k => k.id === x.id); if (t) return t; x = x.parent ? Dx.goals.get(x.parent) : null; } return null; }
+    function loggedHours(id) {
+        let h = 0; D.logs.forEach(l => { if (!isUnder(l.goal, id)) return; if (l.min > 0) h += l.min / 60; else { const g = D.goals.get(l.goal); if (g && g.qunit === 'hours') h += l.qty; } }); return h;
+    }
+    function moveSummary(id, target) {
+        const p0 = P().byId.get(id), g = D.goals.get(id), old = g.parent;
+        const ev = { t: 'goal', op: 'edit', gid: id, f: { parent: target }, id: -1, ts: Date.now() };
+        let D2; try { D2 = E.derive(events.concat([ev]), Date.now()); } catch (e) { return null; }
+        const rows = [], seen = new Set();
+        [old, target].forEach(pid => {
+            const t0 = trackAbove(D, pid), t1 = t0 ? D2.pieces.tracks.find(k => k.id === t0.id) : null; if (!t0 || !t1 || seen.has(t0.id)) return; seen.add(t0.id);
+            rows.push(`<div class="mv-row"><span>${esc(D.goals.get(t0.id).title)}</span><b>${N(t0.done)} → ${N(t1.done)} of ${N(t1.total)} ${esc(t1.unit)}${t0.pace !== t1.pace ? ` · pace ${N(t0.pace)} → ${N(t1.pace)}` : ''}</b></div>`);
+        });
+        const w0 = D.thesis && D.thesis.fifth ? D.thesis.fifth.writeN : null, w1 = D2.thesis && D2.thesis.fifth ? D2.thesis.fifth.writeN : null;
+        if (w0 !== null && w1 !== null && w0 !== w1) rows.push(`<div class="mv-row"><span>Reading and drafting end</span><b>${fmtDNum(w0)} → ${fmtDNum(w1)}</b></div>`);
+        const h = loggedHours(id); if (h > 0.01) rows.push(`<div class="mv-row"><span>Hours logged on it</span><b>${hrsTxt(h)} go with it</b></div>`);
+        const p1 = D2.pieces.byId.get(id), reopens = !!(p0 && p0.done && p1 && !p1.done);
+        return { rows, reopens, finN: p0 ? p0.finN : null };
+    }
+    function placeLast(parentId, id) {
+        refresh(); const ids = (D.kidsOf.get(parentId) || []).map(k => k.id).filter(k => k !== id).concat([id]);
+        add({ t: 'goal', op: 'reorder', ids });
+    }
+    function doMove(id, target, beforeId) {
+        const sum = moveSummary(id, target), t0 = P().byId.get(id);
+        add({ t: 'goal', op: 'edit', gid: id, f: { parent: target } });
+        refresh();
+        if (beforeId) { const ids = (D.kidsOf.get(target) || []).map(k => k.id).filter(k => k !== id), at = ids.indexOf(beforeId); ids.splice(at < 0 ? ids.length : at, 0, id); add({ t: 'goal', op: 'reorder', ids }); } else placeLast(target, id);
+        if ((prefs.open || []).indexOf(target) < 0) { prefs.open = (prefs.open || []).concat([target]); persist(); }
+        render(); fx('up');
+        return sum;
+    }
+    async function moveConfirm(id, target, beforeId) {
+        const g = D.goals.get(id), t = D.goals.get(target), sum = moveSummary(id, target); if (!sum) return false;
+        const ok = await new Promise(res => {
+            sheet(`<h2>Move "${esc(g.title)}"</h2><div class="hint">to ${esc(pathOf(target))}</div><div class="mv">${sum.rows.join('') || '<div class="hint">Nothing else changes.</div>'}</div>${sum.reopens ? '<div class="pwarn">It was done only because its old task reached its total. In its new place it would be open.</div>' : ''}
+                <div class="modal-actions"><button class="btn-secondary" id="mv-no">Cancel</button><button class="btn-primary" id="mv-go">Move</button></div>`, box => { box.querySelector('#mv-no').onclick = () => { closeSheet(); res(false); }; box.querySelector('#mv-go').onclick = () => { closeSheet(); res(true); }; });
+        });
+        if (!ok) return false;
+        const was = P().byId.get(id), wasDone = !!(was && was.done), finN = was ? was.finN : null;
+        doMove(id, target, beforeId);
+        const now = P().byId.get(id);
+        if (wasDone && now && !now.done) {
+            const keep = await confirmSheet({ title: 'Keep it done?', sub: `"${g.title}" was finished with its old task. Keep it ticked as done in its new place?`, ok: 'Keep done', cancel: 'Leave open' });
+            if (keep) { add({ t: 'fin', goal: id, day: finN !== null ? E.keyOf(finN) : null }); render(); }
+        }
+        toast('Moved. Everything is recounted.');
+        return true;
+    }
+    function moveSheet(id) {
+        const g = D.goals.get(id); if (!g || !movable(id)) { toast('This one cannot be moved'); return; }
+        const ts = moveTargets(id);
+        sheet(`<h2>Move "${esc(g.title)}"</h2><p>Choose where it goes. Its hours, ticks and dates go with it, and both places are recounted.</p>
+            <div class="mv-list">${ts.length ? ts.map(t => `<button type="button" class="mv-opt" data-t="${t.id}">${esc(pathOf(t.id))}</button>`).join('') : '<div class="hint">There is no other place of the same kind to move it to.</div>'}</div>
+            <div class="modal-actions"><button class="btn-secondary" data-act="close">Close</button></div>`, box => {
+            box.querySelectorAll('.mv-opt').forEach(b => b.onclick = () => { const t = +b.dataset.t; closeSheet(); setTimeout(() => moveConfirm(id, t), 60); });
+        });
+    }
+    /* drag and drop in the chapter cards: pull the grip. Before or after a row puts it there; on a task puts it inside. */
+    let dragOff = false;
+    function dragInit() {
+        const root = $('s-plan'); if (!root || root.__dnd) return; root.__dnd = true;
+        root.addEventListener('click', e => { if (e.target.closest('.grip')) { e.stopPropagation(); e.preventDefault(); } }, true);
+        root.addEventListener('pointerdown', e => {
+            const grip = e.target.closest('.grip'); if (!grip || dragOff) return;
+            const row = grip.closest('.ol-row'); if (!row) return; const id = +row.dataset.id; if (!id) return;
+            e.preventDefault(); const rect = row.getBoundingClientRect();
+            const ghost = row.cloneNode(true); ghost.classList.add('dnd-ghost'); ghost.style.cssText += `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;z-index:90;pointer-events:none;`;
+            document.body.appendChild(ghost); row.classList.add('dnd-src');
+            const dy = e.clientY - rect.top; let tgt = null, mode = '', raf = 0, lastY = e.clientY;
+            const clear = () => document.querySelectorAll('.dz-before,.dz-after,.dz-in').forEach(x => x.classList.remove('dz-before', 'dz-after', 'dz-in'));
+            const find = (x, y) => {
+                ghost.style.display = 'none'; const els = document.elementsFromPoint(x, y); ghost.style.display = '';
+                const r = els.map(n => n.closest && n.closest('#s-plan .ol-row[data-id]')).find(n => n && n !== row && +n.dataset.id !== id && !isUnder(+n.dataset.id, id)); return r || null;
+            };
+            const move = ev => {
+                lastY = ev.clientY; ghost.style.top = (ev.clientY - dy) + 'px'; clear(); tgt = find(ev.clientX, ev.clientY); mode = '';
+                if (tgt) { const r = tgt.getBoundingClientRect(), f = (ev.clientY - r.top) / r.height, isNode = tgt.classList.contains('nr') || tgt.classList.contains('gr'); mode = f < 0.28 ? 'before' : f > 0.72 ? 'after' : (isNode ? 'in' : (f < 0.5 ? 'before' : 'after')); tgt.classList.add('dz-' + mode); }
+                const vh = window.innerHeight; cancelAnimationFrame(raf); const step = () => { if (lastY < 90) window.scrollBy(0, -10); else if (lastY > vh - 90) window.scrollBy(0, 10); else return; raf = requestAnimationFrame(step); }; step();
+            };
+            const up = async ev => {
+                document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up); cancelAnimationFrame(raf);
+                ghost.remove(); row.classList.remove('dnd-src'); clear();
+                if (!tgt || !mode || ev.type === 'pointercancel') return;
+                const tid = +tgt.dataset.id, tg = D.goals.get(tid), sg = D.goals.get(id); if (!tg || !sg) return;
+                if (!movable(id)) { toast('This one cannot be moved'); return; }
+                let parent = mode === 'in' ? tid : tg.parent, before = mode === 'before' ? tid : 0;
+                if (mode === 'after') { const sibs = (D.kidsOf.get(parent) || []).map(k => k.id); const at = sibs.indexOf(tid); before = sibs[at + 1] && sibs[at + 1] !== id ? sibs[at + 1] : 0; }
+                if (!parent) return;
+                if (grpOfG(parent) !== grpOfG(id) || (D.goals.get(parent) || {}).chap) { toast(grpOfG(id) === 'drafting' ? 'Drafting stays in Drafting' : grpOfG(id) === 'reading' ? 'Reading stays in Reading' : 'It stays in its own group'); fx('stop'); return; }
+                if (parent === sg.parent) {
+                    const ids = (D.kidsOf.get(parent) || []).map(k => k.id).filter(k => k !== id), at = before ? ids.indexOf(before) : -1; ids.splice(at < 0 ? ids.length : at, 0, id);
+                    const w0 = D.thesis && D.thesis.fifth ? D.thesis.fifth.writeN : null;
+                    add({ t: 'goal', op: 'reorder', ids }); render(); fx('up'); const w1 = D.thesis && D.thesis.fifth ? D.thesis.fifth.writeN : null;
+                    toast(w0 !== null && w1 !== null && w0 !== w1 ? `New order. Reading and drafting now end ${fmtDNum(w1)}. Deadlines stay fixed.` : 'New order. Deadlines stay fixed.');
+                } else moveConfirm(id, parent, before);
+            };
+            document.addEventListener('pointermove', move); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
+        });
+    }
+
+    /* ---------- adding something to a chapter: offer the same in the chapters built the same way ---------- */
+    function sigOf(id) { const t = []; let x = D.goals.get(id), n = 0; while (x && !x.chap && n++ < 30) { t.unshift(x.title); x = x.parent ? D.goals.get(x.parent) : null; } return x && x.chap ? { chap: x.id, path: t } : null; }
+    function similarPlaces(parentId) {
+        const s = sigOf(parentId); if (!s) return [];
+        const out = [];
+        [...D.goals.values()].filter(g => g.chap && g.id !== s.chap).sort((p, q) => p.id - q.id).forEach(c => {
+            let node = c, ok = true;
+            for (const title of s.path) { node = (D.kidsOf.get(node.id) || []).find(k => k.kind === 'project' && k.title === title); if (!node) { ok = false; break; } }
+            if (ok) out.push({ chap: c, node });
+        });
+        return out;
+    }
+    function similarSheet(parentId, items) {
+        const places = similarPlaces(parentId); if (!places.length || !items.length) return false;
+        const what = items.length === 1 ? `"${esc(items[0].title)}"` : plural(items.length, 'task');
+        setTimeout(() => sheet(`<h2>Add the same elsewhere?</h2><p>You added ${what} to <b>${esc(pathOf(parentId))}</b>. These chapters have the same place.</p>
+            <div class="sim-list">${places.map(pl => `<label class="sim-row"><input type="checkbox" data-n="${pl.node.id}" checked><span>${esc(pl.chap.title)}</span></label>`).join('')}</div>
+            <div class="modal-actions"><button class="btn-secondary" data-act="close">Not now</button><button class="btn-primary" id="sim-go">Add to ${places.length}</button></div>`, box => {
+            const upd = () => { const n = box.querySelectorAll('.sim-row input:checked').length; const b = box.querySelector('#sim-go'); b.textContent = n ? 'Add to ' + n : 'Add to none'; b.disabled = !n; };
+            box.querySelectorAll('.sim-row input').forEach(i => i.onchange = upd); upd();
+            box.querySelector('#sim-go').onclick = () => {
+                const ids = [...box.querySelectorAll('.sim-row input:checked')].map(i => +i.dataset.n);
+                ids.forEach(pid => { commit(pid, items.map(it => it.kind === 'section' ? nd(it.title, []) : pc(it.title, it.days, it.f))); if ((prefs.open || []).indexOf(pid) < 0) prefs.open = (prefs.open || []).concat([pid]); });
+                persist(); closeSheet(); render(); toast(`Added to ${plural(ids.length, 'more chapter')}`);
+            };
+        }), 80);
+        return true;
+    }
     function pieceAddSheet(parentId) {
         const g = D.goals.get(parentId);
         sheet(`<h2>Add tasks</h2><p>One per line. Add allotted days after a bar, for example <i>Definition | 2</i>. Lines without days use the default below.</p>
@@ -790,16 +942,17 @@
             <div class="modal-actions"><button class="btn-secondary" data-act="close">Cancel</button><button class="btn-primary" id="a-go">Add</button></div>`, box => {
             box.querySelector('#a-go').onclick = () => {
                 const def = Math.round(numv(box, '#a-d')), lines = parseLines(val(box, '#a-l')); if (!lines.length) { box.querySelector('#a-e').textContent = 'Type at least one task'; return; } if (!(def >= 1)) { box.querySelector('#a-e').textContent = 'Default days must be 1 or more'; return; }
-                commit(parentId, lines.map(l => { const [a, b] = l.split('|'); const d = parseInt(b, 10); return pc(a.trim(), d >= 1 ? d : def); }));
+                const items = lines.map(l => { const [a, b] = l.split('|'); const d = parseInt(b, 10); return { kind: 'piece', title: a.trim(), days: d >= 1 ? d : def }; });
+                commit(parentId, items.map(it => pc(it.title, it.days)));
                 if ((prefs.open || []).indexOf(parentId) < 0) { prefs.open = (prefs.open || []).concat([parentId]); persist(); }
-                closeSheet(); render(); toast('Added');
+                closeSheet(); render(); if (!similarSheet(parentId, items)) toast('Added');
             };
         });
     }
     const parseLines = txt => String(txt || '').split('\n').map(x => x.trim()).filter(Boolean);
     function sectionAddSheet(parentId) {
         sheet(`<h2>Add a section</h2><label class="field"><span>Name</span><input type="text" id="s-t" autofocus></label><div class="error" id="s-e"></div><div class="modal-actions"><button class="btn-secondary" data-act="close">Cancel</button><button class="btn-primary" id="s-go">Add</button></div>`, box => {
-            box.querySelector('#s-go').onclick = () => { const t = val(box, '#s-t').trim(); if (!t) { box.querySelector('#s-e').textContent = 'Give it a name'; return; } commit(parentId, [nd(t, [])]); prefs.open = (prefs.open || []).concat([parentId]); persist(); closeSheet(); render(); };
+            box.querySelector('#s-go').onclick = () => { const t = val(box, '#s-t').trim(); if (!t) { box.querySelector('#s-e').textContent = 'Give it a name'; return; } commit(parentId, [nd(t, [])]); prefs.open = (prefs.open || []).concat([parentId]); persist(); closeSheet(); render(); similarSheet(parentId, [{ kind: 'section', title: t }]); };
         });
     }
     function themesSheet(chapterId) {
@@ -994,16 +1147,17 @@
     }
     /* work-day balance this week: hours worked against 3 h a work day. Today counts only once it is met (or in the evening), so a half-finished day never shows as a loss. */
     function weekInfo() {
-        let diff = 0, any = false, worked = 0, days = 0;
+        let diff = 0, any = false, worked = 0, days = 0, per = [], todayI = -1;
         try {
             const r = GReport.report(Object.assign({ kind: 'week', back: 0 }, gInputs())), hr = new Date().getHours();
             for (let i = 0; i < r.elapsed; i++) {
                 const v = r.day[i] || 0, isToday = i === r.elapsed - 1, rest = r.leaveIdx[i] && !r.worked[i];
+                per[i] = rest ? null : v; if (isToday) todayI = i;
                 if (rest) continue; any = true; worked += v;
                 if (isToday) { if (v >= WD_H || hr >= 21) { diff += v - WD_H; days++; } } else { diff += v - WD_H; days++; }
             }
         } catch (e) { return null; }
-        return any ? { diff, worked, days } : null;
+        return any ? { diff, worked, days, per, todayI, len: 7 } : null;
     }
     /* what the target really asks of one day, from the engine: the plan days still open before the year-N target, spread over the days left, at 3 hours a plan day */
     function needHours() {
@@ -1032,10 +1186,22 @@
         else if (act) btn = tk ? { t: 'Plan met. Bank an extra hour', a: `data-act="tlog" data-id="${tk.id}"` } : { t: `Finish ${pTitle(act)}`, a: `data-act="tick" data-id="${act.id}"` };
         else if (PP.upcoming[0]) btn = { t: `Start ${pTitle(PP.upcoming[0])}`, a: `data-act="begin" data-id="${PP.upcoming[0].id}"` };
         else btn = { t: 'Choose a task', a: 'data-act="pick"' };
+        const ic = d => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+        const I = { target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/>', week: '<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/>', flag: '<path d="M6 21V4M6 5h11l-2 4 2 4H6"/>' };
+        const frac = h => { const q = wdParts(h); return (q.w ? q.w : '') + (WD_G[q.r] || (q.w ? '' : '0')); };
         const rows = [];
-        if (nd && nd.rem > 0) rows.push(`<div class="wd-row ${nd.hours > pl.h + 0.25 ? 'warn' : 'ok'}">The year-${J.target} target needs about <b>${hrsTxt(nd.hours)}</b> a day. You planned ${hrsTxt(pl.h)}.</div>`);
-        if (wk) rows.push(`<div class="wd-row">This week: <b>${hrsTxt(wk.worked)}</b> worked. ${Math.abs(wk.diff) < 0.25 ? `Level with ${WD_H} h a day.` : `${wdText(Math.abs(wk.diff))} ${wk.diff > 0 ? 'ahead of' : 'behind'} ${WD_H} h a day.`}</div>`);
-        if (R && R.speed >= 0.03 && nd && nd.rem > 0) { const fw = D.todayN + Math.ceil(nd.rem / R.speed) - 1; rows.push(`<div class="wd-row ${fw <= J.targetN ? 'ok' : 'warn'}">At your last ${R.basisDays} days' pace, reading and drafting end <b>${fmtDNum(fw)}</b>. The target is ${fmtDNum(J.targetN)}.</div>`); }
+        if (nd && nd.rem > 0) {
+            const sc = Math.max(pl.h, nd.hours, done, 0.1) * 1.06, warn = nd.hours > pl.h + 0.25;
+            rows.push(`<div class="wd-g" role="img" aria-label="The year-${J.target} target needs about ${hrsTxt(nd.hours)} a day. You planned ${hrsTxt(pl.h)}."><span class="wd-gi">${ic(I.target)}</span><div class="wd-bar"><i class="wd-plan" style="width:${(pl.h / sc * 100).toFixed(1)}%"></i><i class="wd-fill" style="width:${Math.min(100, done / sc * 100).toFixed(1)}%"></i><u class="wd-tick ${warn ? 'warn' : ''}" style="left:${Math.min(98, nd.hours / sc * 100).toFixed(1)}%"></u></div><b class="wd-gv ${warn ? 'warn' : ''}">${hrsTxt(nd.hours)}</b></div>`);
+        }
+        if (wk) {
+            const L = ['M', 'T', 'W', 'T', 'F', 'S', 'S'], up = wk.diff >= 0.25, dn = wk.diff <= -0.25;
+            rows.push(`<div class="wd-g" role="img" aria-label="This week ${hrsTxt(wk.worked)} worked. ${Math.abs(wk.diff) < 0.25 ? 'Level with' : wdText(Math.abs(wk.diff)) + (wk.diff > 0 ? ' ahead of' : ' behind')} ${WD_H} h a day."><span class="wd-gi">${ic(I.week)}</span><div class="wd-wk">${Array.from({ length: 7 }, (_, k) => { const v = wk.per[k]; const hh = v === undefined ? 0 : v === null ? 0 : v; return `<i class="${k === wk.todayI ? 'now' : ''} ${v === undefined ? 'fut' : v === null ? 'rest' : hh >= WD_H ? 'ok' : ''}" style="height:${Math.max(8, Math.min(100, hh / (WD_H * 1.25) * 100)).toFixed(0)}%"><em>${L[k]}</em></i>`; }).join('')}</div><b class="wd-gv ${up ? 'ok' : dn ? 'warn' : ''}">${up ? '+' : dn ? '−' : ''}${Math.abs(wk.diff) < 0.25 ? '0' : frac(Math.abs(wk.diff))}</b></div>`);
+        }
+        if (R && R.speed >= 0.03 && nd && nd.rem > 0) {
+            const fw = D.todayN + Math.ceil(nd.rem / R.speed) - 1, span = Math.max(J.targetN, fw) - D.todayN || 1, pos = n => Math.max(0, Math.min(100, (n - D.todayN) / (span * 1.04) * 100)), okp = fw <= J.targetN;
+            rows.push(`<div class="wd-g" role="img" aria-label="At your last ${R.basisDays} days' pace, reading and drafting end ${fmtDNum(fw)}. The target is ${fmtDNum(J.targetN)}."><span class="wd-gi">${ic(I.flag)}</span><div class="wd-tl"><i class="ln"></i><i class="ln on ${okp ? 'ok' : 'warn'}" style="width:${pos(fw).toFixed(1)}%"></i><u class="dot ${okp ? 'ok' : 'warn'}" style="left:${pos(fw).toFixed(1)}%"></u><u class="flag" style="left:${pos(J.targetN).toFixed(1)}%"></u><small class="${okp ? 'ok' : 'warn'}" style="left:${Math.min(80, pos(fw)).toFixed(1)}%">${dShort(fw)}</small><small class="tg" style="left:${Math.min(88, pos(J.targetN)).toFixed(1)}%">${dShort(J.targetN)}</small></div></div>`);
+        }
         const tone = left > 0.02 ? 'blue' : 'green';
         return wdCard({ cap: 'Today · plan', ic: left > 0.02 ? 'clock' : 'up', tone, h: done, big: hrsTxt(done), unit: `of ${hrsTxt(pl.h)} planned${left > 0.02 ? '' : ' · plan met'}`, size: 60, label: 1, sub: `${wdText(done)} done today`, more: `${rows.join('')}<button type="button" class="btn-line btn-accent wd-go" ${btn.a}>${esc(btn.t)}</button><button type="button" class="link-btn" data-act="plan-change">Change today's hours</button>` });
     }
@@ -2107,6 +2273,7 @@
             case 'sp-undo': add({ t: 'speed', goal: +id, op: 'pin', rate: +el.dataset.v }); closeSheet(); render(); toast('Back to ' + N(+el.dataset.v) + ' an hour. The app will not change it until you let it.'); setTimeout(() => (el.dataset.k === 'task' ? taskSheet : trackSheet)(+id), 60); break;
             case 'sp-auto': add({ t: 'speed', goal: +id, op: 'auto' }); closeSheet(); render(); setTimeout(() => (el.dataset.k === 'task' ? taskSheet : trackSheet)(+id), 60); break;
             case 'piece-add': pieceAddSheet(id); break;
+            case 'move': closeSheet(); setTimeout(() => moveSheet(id), 60); break;
             case 'sec-add2': sectionAddSheet(id); break;
             case 'bulk-grp': { const a = P().agg.get(id); closeSheet(); if (a) bulkSheet(a.pieces.map(p => p.id), (D.goals.get(id) || {}).title || ''); break; }
             case 'themes-add': themesSheet(id); break;

@@ -25,7 +25,7 @@
             thesis: g.thesis !== false, cat: g.cat || 'Other', due: g.due || null, notes: g.notes || '',
             createdAt: g.createdAt || 0,
             pdays: Math.max(0, num(g.pdays, 0)), fixedEnd: g.fixedEnd || null, mirror: g.mirror || null,
-            grp: g.grp || null, role: g.role || null, qty: Math.max(0, num(g.qty, 0)), qunit: g.qunit || 'pages', qpace: Math.max(0, num(g.qpace, 0)), uph: Math.max(0, num(g.uph, 0)), chap: !!g.chap, budget: Math.max(0, num(g.budget, 0)), wt: Math.max(0, num(g.wt, 0)), custom: !!g.custom
+            grp: g.grp || null, role: g.role || null, qty: Math.max(0, num(g.qty, 0)), qunit: g.qunit || 'pages', qpace: Math.max(0, num(g.qpace, 0)), uph: Math.max(0, num(g.uph, 0)), chap: !!g.chap, ord: (g.ord === undefined || g.ord === null) ? null : num(g.ord, 0), budget: Math.max(0, num(g.budget, 0)), wt: Math.max(0, num(g.wt, 0)), custom: !!g.custom
         };
     }
 
@@ -343,6 +343,7 @@
                         if (old.deadline0 && f.deadline0 && f.deadline0 !== old.deadline0 && e.ts - old.createdAt > 86400000) delete f.deadline0;   // a deadline cannot be moved after the first day
                         goals.set(e.gid, normGoal(Object.assign({}, old, f, { id: old.id, createdAt: old.createdAt })));
                     }
+                    else if (e.op === 'reorder') { (e.ids || []).forEach((gid, i) => { const g = goals.get(gid); if (g) goals.set(gid, normGoal(Object.assign({}, g, { ord: (i + 1) * 10 }))); }); }
                     else if (e.op === 'del') { const rm = id => { goals.delete(id); [...goals.values()].forEach(g => { if (g.parent === id) rm(g.id); }); }; rm(e.gid); }
                     break;
                 case 'log': {
@@ -375,7 +376,8 @@
         const ctx = { todayN, done, replans, leave };
         const kidsOf = new Map();
         goals.forEach(g => { if (g.parent) { if (!kidsOf.has(g.parent)) kidsOf.set(g.parent, []); kidsOf.get(g.parent).push(g); } });
-        kidsOf.forEach(a => a.sort((x, y) => x.id - y.id));
+        const sk = g => g.ord !== null && g.ord !== undefined ? g.ord : 1e9 + g.id;   // a task you placed by hand keeps its place; new ones come last
+        kidsOf.forEach(a => a.sort((x, y) => sk(x) - sk(y)));
         const sumMap = m => { let s = 0; if (m) m.forEach(q => { s += q; }); return s; };
         const itemsUnder = (root, out) => { out = out || []; (kidsOf.get(root) || []).forEach(c => { if (c.kind === 'item') out.push(c); else if (c.kind === 'project') itemsUnder(c.id, out); }); return out; };
         const ancestors = id => { const set = new Set(); let g = goals.get(id); while (g) { set.add(g.id); g = g.parent ? goals.get(g.parent) : null; } return set; };
