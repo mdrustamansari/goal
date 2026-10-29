@@ -831,3 +831,10 @@ html[data-scheme="dark"] .rp-chip.ok { color: #4fd896; border-color: #4fd896; } 
 .wd-tl { position: relative; flex: 1; height: 38px; } .wd-tl .ln { position: absolute; left: 0; right: 0; top: 10px; height: 3px; border-radius: 2px; background: color-mix(in srgb, var(--text-main) 14%, transparent); } .wd-tl .ln.on { right: auto; background: #4a86dc; } .wd-tl .ln.on.ok { background: #1f9d63; } .wd-tl .ln.on.warn { background: #d23b34; }
 .wd-tl .dot { position: absolute; top: 5px; width: 13px; height: 13px; margin-left: -6px; border-radius: 50%; background: #4a86dc; } .wd-tl .dot.ok { background: #1f9d63; } .wd-tl .dot.warn { background: #d23b34; } .wd-tl .flag { position: absolute; top: 3px; width: 3px; height: 18px; margin-left: -1px; border-radius: 2px; background: var(--text-main); }
 .wd-tl small { position: absolute; top: 24px; font-size: 10px; white-space: nowrap; opacity: .7; transform: translateX(-30%); } .wd-tl small.ok { color: #1f9d63; opacity: 1; } .wd-tl small.warn { color: #d23b34; opacity: 1; }
+/* tap to explain: rows, bars, dots and the ring speak through the companion */
+.wd-card [data-tell] { cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .15s, filter .15s; }
+.wd-card [data-tell]:active { transform: scale(.97); filter: brightness(1.25); }
+.wd-card .wd-g[data-tell]:active { transform: none; background: color-mix(in srgb, var(--accent, #4a8cf0) 14%, transparent); border-radius: 12px; }
+.wd-card.wd-hint .wd-g .wd-gi { animation: wdhint 2.2s ease-in-out 2; }
+@keyframes wdhint { 0%, 100% { opacity: .6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.18); } }
+body.still .wd-card.wd-hint .wd-g .wd-gi { animation: none; }

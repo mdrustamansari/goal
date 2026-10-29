@@ -173,3 +173,6 @@ Glass, rim, tint, button tint, accent, letters, paper and palette belong to the 
 
 ## 28. Move, order, and show-don't-tell (Goal v5.59)
 Any item can be moved by a "Move to…" sheet or by dragging its grip; both write the same event and show a preview first. Adding offers "same for similar chapters". Today's card uses bars and a timeline instead of sentences. Text next to a ring is clipped with a soft fade and slides when too long.
+
+## 29. Every graphic explains itself (Goal v5.60)
+A graphic is never left to be guessed. Each part carries data-tell with one line built from the engine's numbers; the companion speaks it (or a glass note shows it when it is hidden). A short pulse on the icons teaches the habit, then stops.
