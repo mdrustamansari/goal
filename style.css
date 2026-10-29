@@ -838,3 +838,10 @@ html[data-scheme="dark"] .rp-chip.ok { color: #4fd896; border-color: #4fd896; } 
 .wd-card.wd-hint .wd-g .wd-gi { animation: wdhint 2.2s ease-in-out 2; }
 @keyframes wdhint { 0%, 100% { opacity: .6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.18); } }
 body.still .wd-card.wd-hint .wd-g .wd-gi { animation: none; }
+
+/* v5.61: swipe edit/delete, work-on button, locked rows */
+.ol-row { position: relative; touch-action: pan-y; -webkit-touch-callout: none; }
+.ol-row .sw-only { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
+.wo-btn { flex: none; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--hairline); background: var(--glass); color: inherit; padding: 0; opacity: .8; }
+.wo-btn:active { opacity: 1; transform: scale(.94); }
+.ledger-row.is-locked { opacity: .5; }

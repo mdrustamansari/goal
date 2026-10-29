@@ -3,7 +3,7 @@
    Long-press = edit. Delete still asks for confirmation, so nothing is lost by accident. */
 (function (root) {
     'use strict';
-    const ROW = '.ledger-row, .hl-row';
+    const ROW = '.ledger-row, .hl-row, .ol-row';
     const reduced = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
     let row = null, x0 = 0, y0 = 0, dx = 0, mode = '', lp = 0, fired = false;
     const btns = r => ({ del: r.querySelector('.ico-btn.ico-del'), ed: r.querySelector('.ico-btn:not(.ico-del)') });
@@ -16,7 +16,7 @@
     document.addEventListener('touchstart', e => {
         const r = e.target.closest && e.target.closest(ROW);
         if (!r || r.classList.contains('led-edit') || e.touches.length !== 1) return;
-        if (e.target.closest('input,select,textarea,button')) return;
+        if (e.target.closest('input,select,textarea,button,.grip')) return;
         const b = btns(r); if (!b.del && !b.ed) return;
         row = r; x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dx = 0; mode = ''; fired = false;
         r.style.transition = 'none';

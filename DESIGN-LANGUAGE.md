@@ -176,3 +176,6 @@ Any item can be moved by a "Move to…" sheet or by dragging its grip; both writ
 
 ## 29. Every graphic explains itself (Goal v5.60)
 A graphic is never left to be guessed. Each part carries data-tell with one line built from the engine's numbers; the companion speaks it (or a glass note shows it when it is hidden). A short pulse on the icons teaches the habit, then stops.
+
+## 30. Your choice wins; only the end stage is locked (Goal v5.61)
+A lock protects the one thing that truly needs order (editing). Everything else guides and never blocks. Rows in lists swipe for Edit and Delete in every app, with one shared gesture (swipe.js).

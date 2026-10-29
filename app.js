@@ -482,6 +482,7 @@
     const DEFD_LABEL = [['skim', 'Skim Reading'], ['scan', 'Scan Reading'], ['orient', 'Orientation'], ['def', 'Definition'], ['inst', 'Instances and Ramifications'], ['ta', 'Theoretical Application'], ['trans', 'Concluding lines (transition)'], ['synth', 'Synthesis'], ['intro', 'Introduction chapter, drafting'], ['review', 'Theory and Review chapter, drafting'], ['concl', 'Conclusion chapter, drafting'], ['struct', 'Structural edit, per theme or part'], ['lang', 'Language edit, per theme or part'], ['cite', 'Citations and MLA check'], ['proof', 'Final proofread']];
     const defDays = k => { const v = Number((prefs.defDays || {})[k]); return v > 0 ? v : DEFD0[k]; };
     const nd = (title, children, f) => ({ kind: 'project', title, children: children || [], f: f || {} });
+    const H3 = 3, daysOfH = h => Math.max(1, Math.ceil(h / H3 - 1e-9)), hTxt = h => (Math.round(h * 2) / 2) + ' h';
     const pc = (title, days, f) => ({ kind: 'piece', title, f: Object.assign({ pdays: days }, f || {}) });
     function commit(parentId, specs) {
         refresh();
@@ -563,13 +564,16 @@
             ${p.workExp !== null ? `<div class="hint">The clock expects ${pctTxt(p.workExp)} by today (the small mark on the bar).</div>` : ''}`;
     }
     const gripHtml = () => '<span class="grip" role="button" aria-label="Drag to move" title="Drag to move"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>';
+    const workOnBtn = p => (p.done || p.locked || p.picked || (P().active || []).some(x => x.id === p.id)) ? '' : `<button type="button" class="wo-btn" data-act="${P().pickMode ? 'begin' : 'next'}" data-id="${p.id}" aria-label="Work on this" title="Work on this"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>`;
+    // hidden Edit and Delete buttons: the swipe gesture (swipe.js) clicks them, so one delete path serves the row, the sheet and the swipe
+    const swipeBtns = (id, canDel, what) => `<span class="sw-only">${icoBtn('edit', `data-act="swedit" data-id="${id}"`, what)}${canDel ? icoBtn('del', `data-act="swdel" data-id="${id}"`, what) : ''}</span>`;
     function pieceRow(p, depth) {
-        return `<div class="ol-row ol-item pr ${p.done ? 'is-done' : ''}" data-act="pc" data-id="${p.id}" style="padding-left:${depth * 14}px"><button class="tick ${p.done ? 'on' : ''}" data-act="tick" data-id="${p.id}" aria-label="${p.done ? 'Done' : 'Mark done'}">${p.done ? '✓' : p.locked ? '🔒' : ''}</button><span class="ol-title">${esc(pTitle(p))}</span>${pieceWorkBar(p, 'pw')}<span class="ol-sub">${p.days} d</span><span class="ol-sub">${pieceRight(p)}</span>${movable(p.id) ? gripHtml() : ''}</div>`;
+        return `<div class="ol-row ol-item pr ${p.done ? 'is-done' : ''}" data-act="pc" data-id="${p.id}" style="padding-left:${depth * 14}px"><button class="tick ${p.done ? 'on' : ''}" data-act="tick" data-id="${p.id}" aria-label="${p.done ? 'Done' : 'Mark done'}">${p.done ? '✓' : p.locked ? '🔒' : ''}</button><span class="ol-title">${esc(pTitle(p))}</span>${pieceWorkBar(p, 'pw')}<span class="ol-sub">${hTxt(p.hrs)}</span><span class="ol-sub">${pieceRight(p)}</span>${workOnBtn(p)}${movable(p.id) ? gripHtml() : ''}${swipeBtns(p.id, p.locked ? 0 : 1, 'task')}</div>`;
     }
     function nodeRow(g, depth) {
         const a = P().agg.get(g.id), open = (prefs.open || []).indexOf(g.id) >= 0, has = (D.kidsOf.get(g.id) || []).length > 0;
         const late = a && a.slip > 0.5 ? `<span class="chip bad">${dN(a.slip)} late</span>` : '';
-        return `<div class="ol-row nr" data-act="nodeS" data-id="${g.id}" style="padding-left:${depth * 14}px"><button class="ol-chev" data-act="toggle" data-id="${g.id}" aria-label="Open or close">${has ? (open ? '▾' : '▸') : ''}</button><span class="ol-title">${esc(g.title)}</span>${late}<span class="ol-sub">${a ? a.doneCount + '/' + a.count : ''}</span><div class="ol-bar"><i style="width:${(a ? a.pct : 0) * 100}%"></i></div>${movable(g.id) ? gripHtml() : ''}</div>` + (open ? treeHtml(g.id, depth + 1) : '');
+        return `<div class="ol-row nr" data-act="nodeS" data-id="${g.id}" style="padding-left:${depth * 14}px"><button class="ol-chev" data-act="toggle" data-id="${g.id}" aria-label="Open or close">${has ? (open ? '▾' : '▸') : ''}</button><span class="ol-title">${esc(g.title)}</span>${late}<span class="ol-sub">${a ? a.doneCount + '/' + a.count : ''}</span><div class="ol-bar"><i style="width:${(a ? a.pct : 0) * 100}%"></i></div>${movable(g.id) ? gripHtml() : ''}${swipeBtns(g.id, g.grp || g.chap ? 0 : 1, 'section')}</div>` + (open ? treeHtml(g.id, depth + 1) : '');
     }
     function treeHtml(parentId, depth) {
         return (D.kidsOf.get(parentId) || []).map(c => {
@@ -715,8 +719,8 @@
             ${pieceWorkRows(p)}
             ${p.dl0 !== null ? `<div class="row"><span class="muted">Original deadline (fixed)</span><b class="num">${fmtDNum(p.dl0)}</b></div>` : '<div class="hint">The deadline is fixed 24 hours after you create the task.</div>'}
             ${p.done && !p.doneUndated ? `<div class="row"><span class="muted">Finished</span><b class="num">${fmtDNum(p.finN)}${p.over !== null ? ` · ${p.over > 0 ? dN(p.over) + ' over' : p.over < 0 ? dN(-p.over) + ' early' : 'on time'}` : ''}</b></div>` : ''}
-            ${p.locked ? `<div class="pwarn">${p.lockWhy === 'edit' ? 'Locked until all reading and drafting is done.' : 'Locked until the chapter reading is done.'}</div>` : ''}
-            <div class="grid2 mt"><label class="field"><span>Allotted days</span><input type="number" inputmode="numeric" id="pc-d" value="${p.days}"></label>
+            ${p.locked ? '<div class="pwarn">Locked until all reading and drafting is done.</div>' : p.advise ? '<div class="pinfo">Reading in this chapter is still open. You may start this now.</div>' : ''}
+            <div class="grid2 mt"><label class="field"><span>Allotted work hours</span><input type="number" inputmode="decimal" step="0.5" id="pc-d" value="${p.hrs}"><span class="hint" id="pc-dd">${dN(p.days)} at 3 h a day</span></label>
             <label class="field"><span>Hard finish date ${p.fixed && !young ? '(locked)' : '(optional)'}</span><input type="date" id="pc-f" value="${g.fixedEnd || ''}" ${p.fixed && !young ? 'disabled' : ''}></label></div>
             ${g.mirror ? '' : `<label class="field"><span>Name</span><input type="text" id="pc-t" value="${esc(g.title)}"></label>`}
             <div class="error" id="pc-e"></div>
@@ -727,8 +731,8 @@
             ${movable(id) ? `<button class="btn-line" data-act="move" data-id="${id}" style="margin-top:8px">Move to…</button>` : ''}
             <div class="del-row">${icoBtn('del', 'id="pc-del"', 'task')}</div>`, box => {
             box.querySelector('#pc-go').onclick = () => {
-                const days = Math.round(numv(box, '#pc-d')); if (!(days >= 1)) { box.querySelector('#pc-e').textContent = 'Allot at least one day'; return; }
-                const f = { pdays: days }; const t = box.querySelector('#pc-t'); if (t && t.value.trim()) f.title = t.value.trim();
+                const hh = numv(box, '#pc-d'); if (!(hh > 0)) { box.querySelector('#pc-e').textContent = 'Allot some work hours'; return; }
+                const f = { pdays: daysOfH(hh), phrs: hh }; const t = box.querySelector('#pc-t'); if (t && t.value.trim()) f.title = t.value.trim();
                 const fe = box.querySelector('#pc-f'); if (fe && !fe.disabled) f.fixedEnd = fe.value || null;
                 add({ t: 'goal', op: 'edit', gid: id, f }); closeSheet(); render();
             };
@@ -746,7 +750,7 @@
             ${isGrp ? `<div class="grid2"><label class="field"><span>Days budget (optional)</span><input type="number" inputmode="numeric" id="n-b" value="${g.budget || ''}" placeholder="e.g. 60"></label><div class="field"><span>Tasks add up to</span><b class="num" style="font-size:1.1rem">${a ? a.totalDays : 0} d</b></div></div>
                 ${g.budget && a ? (a.totalDays === g.budget ? '<div class="pinfo">The tasks match the budget.</div>' : `<div class="pwarn">The tasks add up to ${dN(a.totalDays)}, ${dN(Math.abs(a.totalDays - g.budget))} ${a.totalDays > g.budget ? 'over' : 'under'} the budget.</div>`) : ''}
                 ${g.budget ? '<button class="btn-line" id="n-share">Share the budget across the tasks</button>' : ''}` : ''}
-            <div class="grid2 mt"><button class="btn-line btn-accent" data-act="piece-add" data-id="${id}">Add a task</button><button class="btn-line" data-act="sec-add2" data-id="${id}">Add a section</button></div>
+            ${grpOfG(id) === 'editing' && P().rdOpen > 0 ? '<div class="pwarn">Locked until all reading and drafting is done. You cannot add to it yet.</div>' : '<div class="grid2 mt"><button class="btn-line btn-accent" data-act="piece-add" data-id="${id}">Add a task</button><button class="btn-line" data-act="sec-add2" data-id="${id}">Add a section</button></div>'}
             <button class="btn-line" data-act="tset" data-id="${id}">${P().tracks.find(x => x.id === id) ? 'Change the daily pace' : 'Set a daily pace (pages or steps)'}</button>
             ${movable(id) ? `<button class="btn-line" data-act="move" data-id="${id}">Move to…</button>` : ''}
             ${P().tracks.find(x => x.id === id) ? trackBlock(P().tracks.find(x => x.id === id)) : ''}
@@ -936,14 +940,15 @@
     }
     function pieceAddSheet(parentId) {
         const g = D.goals.get(parentId);
-        sheet(`<h2>Add tasks</h2><p>One per line. Add allotted days after a bar, for example <i>Definition | 2</i>. Lines without days use the default below.</p>
+        sheet(`<h2>Add tasks</h2><p>One per line. Add the work hours after a bar, for example <i>Definition | 6</i>. Lines without hours use the default below. Three work hours make one work day.</p>
             <label class="field"><span>Tasks</span><textarea id="a-l" style="min-height:90px" autofocus></textarea></label>
-            <label class="field"><span>Default days</span><input type="number" inputmode="numeric" id="a-d" value="3"></label><div class="error" id="a-e"></div>
+            <label class="field"><span>Default work hours</span><input type="number" inputmode="decimal" step="0.5" id="a-d" value="3"></label><div class="hint" id="a-dd">3 work hours = 1 day</div><div class="error" id="a-e"></div>
             <div class="modal-actions"><button class="btn-secondary" data-act="close">Cancel</button><button class="btn-primary" id="a-go">Add</button></div>`, box => {
+            const dd = box.querySelector('#a-d'); dd.oninput = () => { const v = parseFloat(dd.value); box.querySelector('#a-dd').textContent = v > 0 ? `${hTxt(v)} = ${wdText(v)} = ${dN(daysOfH(v))} allotted` : ''; };
             box.querySelector('#a-go').onclick = () => {
-                const def = Math.round(numv(box, '#a-d')), lines = parseLines(val(box, '#a-l')); if (!lines.length) { box.querySelector('#a-e').textContent = 'Type at least one task'; return; } if (!(def >= 1)) { box.querySelector('#a-e').textContent = 'Default days must be 1 or more'; return; }
-                const items = lines.map(l => { const [a, b] = l.split('|'); const d = parseInt(b, 10); return { kind: 'piece', title: a.trim(), days: d >= 1 ? d : def }; });
-                commit(parentId, items.map(it => pc(it.title, it.days)));
+                const def = numv(box, '#a-d'), lines = parseLines(val(box, '#a-l')); if (!lines.length) { box.querySelector('#a-e').textContent = 'Type at least one task'; return; } if (!(def > 0)) { box.querySelector('#a-e').textContent = 'Default hours must be more than 0'; return; }
+                const items = lines.map(l => { const [a, b] = l.split('|'); const d = parseFloat(b); const hh = d > 0 ? d : def; return { kind: 'piece', title: a.trim(), hrs: hh, days: daysOfH(hh) }; });
+                commit(parentId, items.map(it => pc(it.title, it.days, { phrs: it.hrs })));
                 if ((prefs.open || []).indexOf(parentId) < 0) { prefs.open = (prefs.open || []).concat([parentId]); persist(); }
                 closeSheet(); render(); if (!similarSheet(parentId, items)) toast('Added');
             };
@@ -1019,7 +1024,7 @@
     /* ---------- pick, then start: the Today screen recommends, you choose ---------- */
     async function beginPiece(id) {
         const p = P().byId.get(id); if (!p || p.done) return;
-        if (p.locked) { fx('stop'); toast(p.lockWhy === 'edit' ? 'Locked until all reading and drafting is done.' : 'Locked until the chapter reading is done.'); return; }
+        if (p.locked) { fx('stop'); toast('Locked until all reading and drafting is done.'); return; }
         if (P().pickMode && !p.picked) {
             if (P().active.length >= 2) fx('stop');
             if (P().active.length >= 2 && !(await confirmSheet({ title: 'Two tasks are already under way', sub: 'Two at a time is easier to keep up, and the thesis forecast assumes one steady chain. You can still start a third.', ok: 'Start anyway', cancel: 'Not now' }))) return;
@@ -1060,9 +1065,9 @@
                 <div class="ledger-row" style="cursor:default"><span><b>${esc(pTitle(f))}</b><span class="muted"> · ${f.days} d</span><span class="hint" style="display:block">${esc(pathOf(f.parent))}</span></span></div>
                 <button class="btn-line btn-accent" data-act="begin" data-id="${f.id}">Start this</button>
                 ${PP.upcoming.slice(1).map(p => `<div class="ledger-row" data-act="begin" data-id="${p.id}" style="cursor:pointer"><span>${esc(pTitle(p))}<span class="muted"> · ${p.days} d</span></span><span class="muted">Start</span></div>`).join('')}
-                ${PP.active.length ? '' : '<button class="btn-line" data-act="pick">Choose another task</button>'}</div>`;
+                <button class="btn-line" data-act="pick">Choose another task</button></div>`;
         }
-        return h + (PP.active.length ? `<div class="soft-row"><button class="btn-soft" data-act="newdaily">Start a task</button>${PP.upcoming.length ? '<button class="btn-soft" data-act="pick">Choose another task</button>' : ''}</div>` : `<button class="btn-line" data-act="newdaily" style="margin-bottom:14px">Start a task</button>`);
+        return h + (PP.active.length ? `<div class="soft-row"><button class="btn-soft" data-act="newdaily">Start a task</button>${PP.open.length ? '<button class="btn-soft" data-act="pick">Choose another task</button>' : ''}</div>` : `<button class="btn-line" data-act="newdaily" style="margin-bottom:14px">Start a task</button>`);
     }
     /* ---------- the top panel of Today: today's work, pace, week and month, and where you are heading ---------- */
     function todayPanel(PP, T, J) {
@@ -1973,10 +1978,10 @@
     }
     function pickSheet() {
         const chs = [...D.goals.values()].filter(g => g.chap).sort((a, b) => a.id - b.id);
-        const open = P().open.filter(p => !p.locked);
-        const rows = chs.map(c => { const ps = open.filter(p => p.chapter === c.id); return ps.length ? `<div class="set-title" style="margin-top:10px">${esc(c.title)}</div>${ps.slice(0, 40).map(p => `<div class="ledger-row" data-act="${P().pickMode ? 'begin' : 'next'}" data-id="${p.id}" style="cursor:pointer"><span>${esc(pTitle(p))}<span class="muted"> · ${esc(pathOf(p.parent).split(' › ').slice(1, 2).join(''))} · ${p.days} d</span></span><span class="muted">Pick</span></div>`).join('')}` : ''; }).join('');
+        const open = P().open;
+        const rows = chs.map(c => { const ps = open.filter(p => p.chapter === c.id); return ps.length ? `<div class="set-title" style="margin-top:10px">${esc(c.title)}</div>${ps.slice(0, 120).map(p => `<div class="ledger-row ${p.locked ? 'is-locked' : ''}" data-act="${P().pickMode ? 'begin' : 'next'}" data-id="${p.id}" style="cursor:pointer"><span>${esc(pTitle(p))}<span class="muted"> · ${esc(pathOf(p.parent).split(' › ').slice(1, 2).join(''))} · ${hTxt(p.hrs)}</span></span><span class="muted">${p.locked ? '🔒 Locked' : 'Pick'}</span></div>`).join('')}` : ''; }).join('');
         const loose = open.filter(p => p.chapter === null).map(p => `<div class="ledger-row" data-act="${P().pickMode ? 'begin' : 'next'}" data-id="${p.id}" style="cursor:pointer"><span>${esc(pTitle(p))}</span><span class="muted">Pick</span></div>`).join('');
-        sheet(`<h2>What will you do next?</h2><p>${P().pickMode ? 'Pick any task that is not done. Its clock starts today, and the app will ask how you want to break it down.' : 'Pick any task that is not done. It moves to the front of the chain and its clock starts the day after your current task finishes.'} Locked drafting is not listed until its reading is done.</p><div style="max-height:52vh;overflow:auto">${rows}${loose ? '<div class="set-title" style="margin-top:10px">Custom tasks</div>' + loose : ''}${!rows && !loose ? '<p class="hint">Nothing left to pick.</p>' : ''}</div><div class="modal-actions"><button class="btn-secondary" data-act="close">Close</button></div>`);
+        sheet(`<h2>What will you do next?</h2><p>${P().pickMode ? 'Pick any task that is not done. Its clock starts today, and the app will ask how you want to break it down.' : 'Pick any task that is not done. It moves to the front of the chain and its clock starts the day after your current task finishes.'} Editing stays locked, and dimmed, until all reading and drafting is done.</p><div style="max-height:52vh;overflow:auto">${rows}${loose ? '<div class="set-title" style="margin-top:10px">Custom tasks</div>' + loose : ''}${!rows && !loose ? '<p class="hint">Nothing left to pick.</p>' : ''}</div><div class="modal-actions"><button class="btn-secondary" data-act="close">Close</button></div>`);
     }
 
     let IN = null, quiet = false;
@@ -2265,6 +2270,8 @@
             case 'chap': chapterSheet(id); break;
             case 'grp': case 'nodeS': nodeSheet2(id); break;
             case 'pc': pieceSheet(id); break;
+            case 'swedit': { const q = D.goals.get(id); if (q && q.kind === 'piece') pieceSheet(id); else nodeSheet2(id); break; }
+            case 'swdel': { const q = D.goals.get(id); if (!q) break; const isP = q.kind === 'piece'; (async () => { if (await confirmSheet({ title: isP ? 'Delete this task?' : 'Delete "' + q.title + '"?', sub: isP ? 'It leaves the plan. Later tasks move up.' : 'Everything inside it is removed.', ok: 'Delete', danger: true })) { add({ t: 'goal', op: 'del', gid: id }); render(); toast('Deleted'); } })(); break; }
             case 'tick': ev.stopPropagation(); tick(id); break;
             case 'sp-use': add({ t: 'speed', goal: +id, op: 'use', rate: +el.dataset.v }); closeSheet(); render(); setTimeout(() => (el.dataset.k === 'task' ? taskSheet : trackSheet)(+id), 60); break;
             case 'gr-kind': grKind = el.dataset.v === 'month' ? 'month' : 'week'; grBack = 0; grTouched = false; grSel = 0; renderOutlook(); break;

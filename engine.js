@@ -24,7 +24,7 @@
             start: g.start || null, deadline0: g.deadline0 || null,
             thesis: g.thesis !== false, cat: g.cat || 'Other', due: g.due || null, notes: g.notes || '',
             createdAt: g.createdAt || 0,
-            pdays: Math.max(0, num(g.pdays, 0)), fixedEnd: g.fixedEnd || null, mirror: g.mirror || null,
+            pdays: Math.max(0, num(g.pdays, 0)), phrs: Math.max(0, num(g.phrs, 0)), fixedEnd: g.fixedEnd || null, mirror: g.mirror || null,
             grp: g.grp || null, role: g.role || null, qty: Math.max(0, num(g.qty, 0)), qunit: g.qunit || 'pages', qpace: Math.max(0, num(g.qpace, 0)), uph: Math.max(0, num(g.uph, 0)), chap: !!g.chap, ord: (g.ord === undefined || g.ord === null) ? null : num(g.ord, 0), budget: Math.max(0, num(g.budget, 0)), wt: Math.max(0, num(g.wt, 0)), custom: !!g.custom
         };
     }
@@ -232,11 +232,11 @@
             const g = r.g, b = base.get(r.id), fin = finMap.get(r.id);
             const fixedN = g.fixedEnd ? dn(g.fixedEnd) : null;
             const dl0 = fixedN !== null ? fixedN : (dl0Map.has(r.id) ? dn(dl0Map.get(r.id)) : null);
-            const lockWhy = r.grp === 'drafting' && r.chapter != null && (readingOpen.get(r.chapter) || 0) > 0 ? 'reading' : (editLocked(r) ? 'edit' : null), locked = !!lockWhy;
+            const lockWhy = r.grp === 'drafting' && r.chapter != null && (readingOpen.get(r.chapter) || 0) > 0 ? 'reading' : (editLocked(r) ? 'edit' : null), locked = lockWhy === 'edit', advise = lockWhy === 'reading';
             const title = g.mirror && goals.get(g.mirror) ? 'Edit: ' + goals.get(g.mirror).title : g.title;
             const wk = workMap.get(r.id), wexp = !fin && wk && b.start <= todayN ? Math.min(1, Math.max(0, (todayN - b.start + 1) / g.pdays)) : null;
             const slip = fin ? (b.finN !== null && dl0 !== null ? b.finN - dl0 : 0) : (dl0 !== null && b.projN !== null ? b.projN - dl0 : 0);
-            return Object.assign({}, r, b, { i, title, finId: fin ? fin.id : null, done: !!fin, doneUndated: !!fin && b.finN === null, days: g.pdays, dl0, slip, locked, lockWhy, fixed: fixedN !== null, over: b.took !== null ? b.took - g.pdays : null, began: beginMap.has(r.id), started: pickMode ? (b.picked || !!fin) : (pstartMap.has(r.id) || b.start <= todayN), manual: pstartMap.has(r.id), parent: g.parent,
+            return Object.assign({}, r, b, { i, title, finId: fin ? fin.id : null, done: !!fin, doneUndated: !!fin && b.finN === null, days: g.pdays, hrs: (g.phrs > 0 && Math.ceil(g.phrs / 3 - 1e-9) === g.pdays) ? g.phrs : g.pdays * 3, dl0, slip, locked, lockWhy, advise, fixed: fixedN !== null, over: b.took !== null ? b.took - g.pdays : null, began: beginMap.has(r.id), started: pickMode ? (b.picked || !!fin) : (pstartMap.has(r.id) || b.start <= todayN), manual: pstartMap.has(r.id), parent: g.parent,
                 work: fin ? 1 : (wk ? wk.w : 0), hasWork: !!wk && !fin, workQty: wk && !fin ? wk.qty : null, workTotal: wk && !fin ? wk.total : null, workUnit: wk ? wk.unit : null,
                 workExp: wexp, workAhead: wexp !== null ? (wk.w - wexp) * g.pdays : null });
         });
@@ -283,7 +283,7 @@
             thesis = { slip: pf - bf, planned: jrf.endN - bf - FIN, buffer: jrf.endN - pf - FIN, fifth, lost: Math.max(0, pf - bf), gained: Math.max(0, bf - pf), projN: pf, baseN: bf, toTarget: pfW - jrf.targetN, forecastN: forecastFinal !== null ? forecastFinal : pf, forecastToTarget: (forecastFinal !== null ? forecastFinal : pf) - (pf - pfW) - jrf.targetN, ratio, paced: nT, pct: totalDays ? workDays / totalDays : 0, pctDone: totalDays ? doneDays / totalDays : 0, workDays, forgiven, projects: [], openDays: totalDays - workDays, daysToTarget: jrf.targetN - todayN };
         }
         const active = pickMode ? open.filter(p => p.picked) : open.filter(p => p.start <= todayN).slice(0, 4);
-        const upcoming = pickMode ? open.filter(p => !p.picked && !p.locked).slice(0, 3) : open.filter(p => p.start > todayN).slice(0, 3);
+        const upcoming = pickMode ? open.filter(p => !p.picked && !p.locked).sort((a, b) => (a.advise ? 1 : 0) - (b.advise ? 1 : 0)).slice(0, 3) : open.filter(p => p.start > todayN).slice(0, 3);
         const needLock = open.filter(p => p.dl0 === null && !p.fixed && now - (p.g.createdAt || now) >= 86400000);
         // a task with sub-tasks takes its daily pace from them (same unit only); with none, its pace is its own
         const trackIds = new Set(trackList.map(t => t.id));
