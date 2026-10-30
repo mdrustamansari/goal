@@ -484,11 +484,25 @@
     const nd = (title, children, f) => ({ kind: 'project', title, children: children || [], f: f || {} });
     const H3 = 3, daysOfH = h => Math.max(1, Math.ceil(h / H3 - 1e-9)), hTxt = h => (Math.round(h * 2) / 2) + ' h';
     const pc = (title, days, f) => ({ kind: 'piece', title, f: Object.assign({ pdays: days }, f || {}) });
+    let lastAdded = [];
+    // show where a new task or section landed: open every card above it, scroll to it, and let it glow
+    function revealAdded(parentId, what) {
+        const ids = lastAdded.slice(); if (!ids.length) return;
+        let x = D.goals.get(parentId), n = 0; const open = new Set(prefs.open || []);
+        while (x && n++ < 30) { open.add(x.id); x = x.parent ? D.goals.get(x.parent) : null; }
+        prefs.open = [...open]; persist(); screen = 'plan'; render();
+        setTimeout(() => {
+            const el = ids.map(i => document.querySelector(`.ol-row[data-id="${i}"]`)).find(Boolean);
+            if (el) { el.scrollIntoView({ block: 'center', behavior: document.body.classList.contains('still') ? 'auto' : 'smooth' }); ids.forEach(i => { const r = document.querySelector(`.ol-row[data-id="${i}"]`); if (r) r.classList.add('just-added'); }); setTimeout(() => document.querySelectorAll('.just-added').forEach(r => r.classList.remove('just-added')), 2600); }
+            toast(`${what} added to ${pathOf(parentId) || 'the plan'}`);
+        }, 120);
+    }
     function commit(parentId, specs) {
         refresh();
         let n = D.nextGoalId; const out = [];
         const walk = (pid, sp) => { const id = n++; sp.id = id; const g = Object.assign({ id, kind: sp.kind, title: sp.title, parent: pid || null }, sp.f); if (sp.mirrorOf) g.mirror = sp.mirrorOf.id; out.push(g); (sp.children || []).forEach(c => walk(id, c)); };
         specs.forEach(sp => walk(parentId, sp));
+        lastAdded = out.map(g => g.id);
         if (out.length) add({ t: 'goal', op: 'addmany', gs: out });
         refresh();
         return out.length;
@@ -750,7 +764,7 @@
             ${isGrp ? `<div class="grid2"><label class="field"><span>Days budget (optional)</span><input type="number" inputmode="numeric" id="n-b" value="${g.budget || ''}" placeholder="e.g. 60"></label><div class="field"><span>Tasks add up to</span><b class="num" style="font-size:1.1rem">${a ? a.totalDays : 0} d</b></div></div>
                 ${g.budget && a ? (a.totalDays === g.budget ? '<div class="pinfo">The tasks match the budget.</div>' : `<div class="pwarn">The tasks add up to ${dN(a.totalDays)}, ${dN(Math.abs(a.totalDays - g.budget))} ${a.totalDays > g.budget ? 'over' : 'under'} the budget.</div>`) : ''}
                 ${g.budget ? '<button class="btn-line" id="n-share">Share the budget across the tasks</button>' : ''}` : ''}
-            ${grpOfG(id) === 'editing' && P().rdOpen > 0 ? '<div class="pwarn">Locked until all reading and drafting is done. You cannot add to it yet.</div>' : '<div class="grid2 mt"><button class="btn-line btn-accent" data-act="piece-add" data-id="${id}">Add a task</button><button class="btn-line" data-act="sec-add2" data-id="${id}">Add a section</button></div>'}
+            ${grpOfG(id) === 'editing' && P().rdOpen > 0 ? '<div class="pwarn">Locked until all reading and drafting is done. You cannot add to it yet.</div>' : `<div class="grid2 mt"><button class="btn-line btn-accent" data-act="piece-add" data-id="${id}">Add a task</button><button class="btn-line" data-act="sec-add2" data-id="${id}">Add a section</button></div>`}
             <button class="btn-line" data-act="tset" data-id="${id}">${P().tracks.find(x => x.id === id) ? 'Change the daily pace' : 'Set a daily pace (pages or steps)'}</button>
             ${movable(id) ? `<button class="btn-line" data-act="move" data-id="${id}">Move to…</button>` : ''}
             ${P().tracks.find(x => x.id === id) ? trackBlock(P().tracks.find(x => x.id === id)) : ''}
@@ -939,7 +953,7 @@
         return true;
     }
     function pieceAddSheet(parentId) {
-        const g = D.goals.get(parentId);
+        const g = D.goals.get(parentId); if (!g) { toast('Open a section first'); return; }
         sheet(`<h2>Add tasks</h2><p>One per line. Add the work hours after a bar, for example <i>Definition | 6</i>. Lines without hours use the default below. Three work hours make one work day.</p>
             <label class="field"><span>Tasks</span><textarea id="a-l" style="min-height:90px" autofocus></textarea></label>
             <label class="field"><span>Default work hours</span><input type="number" inputmode="decimal" step="0.5" id="a-d" value="3"></label><div class="hint" id="a-dd">3 work hours = 1 day</div><div class="error" id="a-e"></div>
@@ -950,14 +964,15 @@
                 const items = lines.map(l => { const [a, b] = l.split('|'); const d = parseFloat(b); const hh = d > 0 ? d : def; return { kind: 'piece', title: a.trim(), hrs: hh, days: daysOfH(hh) }; });
                 commit(parentId, items.map(it => pc(it.title, it.days, { phrs: it.hrs })));
                 if ((prefs.open || []).indexOf(parentId) < 0) { prefs.open = (prefs.open || []).concat([parentId]); persist(); }
-                closeSheet(); render(); if (!similarSheet(parentId, items)) toast('Added');
+                closeSheet(); revealAdded(parentId, items.length > 1 ? items.length + ' tasks' : 'Task'); similarSheet(parentId, items);
             };
         });
     }
     const parseLines = txt => String(txt || '').split('\n').map(x => x.trim()).filter(Boolean);
     function sectionAddSheet(parentId) {
+        if (!D.goals.get(parentId)) { toast('Open a section first'); return; }
         sheet(`<h2>Add a section</h2><label class="field"><span>Name</span><input type="text" id="s-t" autofocus></label><div class="error" id="s-e"></div><div class="modal-actions"><button class="btn-secondary" data-act="close">Cancel</button><button class="btn-primary" id="s-go">Add</button></div>`, box => {
-            box.querySelector('#s-go').onclick = () => { const t = val(box, '#s-t').trim(); if (!t) { box.querySelector('#s-e').textContent = 'Give it a name'; return; } commit(parentId, [nd(t, [])]); prefs.open = (prefs.open || []).concat([parentId]); persist(); closeSheet(); render(); similarSheet(parentId, [{ kind: 'section', title: t }]); };
+            box.querySelector('#s-go').onclick = () => { const t = val(box, '#s-t').trim(); if (!t) { box.querySelector('#s-e').textContent = 'Give it a name'; return; } commit(parentId, [nd(t, [])]); prefs.open = (prefs.open || []).concat([parentId]); persist(); closeSheet(); revealAdded(parentId, 'Section'); similarSheet(parentId, [{ kind: 'section', title: t }]); };
         });
     }
     function themesSheet(chapterId) {

@@ -845,3 +845,6 @@ body.still .wd-card.wd-hint .wd-g .wd-gi { animation: none; }
 .wo-btn { flex: none; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--hairline); background: var(--glass); color: inherit; padding: 0; opacity: .8; }
 .wo-btn:active { opacity: 1; transform: scale(.94); }
 .ledger-row.is-locked { opacity: .5; }
+.ol-row.just-added { animation: justadd 2.4s ease-out 1; }
+@keyframes justadd { 0%, 60% { background: color-mix(in srgb, var(--accent, #4a8cf0) 28%, transparent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #4a8cf0) 55%, transparent); } 100% { background: transparent; box-shadow: 0 0 0 0 transparent; } }
+body.still .ol-row.just-added { animation: none; background: color-mix(in srgb, var(--accent, #4a8cf0) 22%, transparent); }

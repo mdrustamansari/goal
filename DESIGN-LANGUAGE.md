@@ -179,3 +179,6 @@ A graphic is never left to be guessed. Each part carries data-tell with one line
 
 ## 30. Your choice wins; only the end stage is locked (Goal v5.61)
 A lock protects the one thing that truly needs order (editing). Everything else guides and never blocks. Rows in lists swipe for Edit and Delete in every app, with one shared gesture (swipe.js).
+
+## 31. An action must show its result (Goal v5.62)
+After adding, the app opens the path, scrolls to the new row and lets it glow, and the note names the place. "Added" alone is never enough.
