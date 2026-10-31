@@ -236,7 +236,7 @@
             const title = g.mirror && goals.get(g.mirror) ? 'Edit: ' + goals.get(g.mirror).title : g.title;
             const wk = workMap.get(r.id), wexp = !fin && wk && b.start <= todayN ? Math.min(1, Math.max(0, (todayN - b.start + 1) / g.pdays)) : null;
             const slip = fin ? (b.finN !== null && dl0 !== null ? b.finN - dl0 : 0) : (dl0 !== null && b.projN !== null ? b.projN - dl0 : 0);
-            return Object.assign({}, r, b, { i, title, finId: fin ? fin.id : null, done: !!fin, doneUndated: !!fin && b.finN === null, days: g.pdays, hrs: (g.phrs > 0 && Math.ceil(g.phrs / 3 - 1e-9) === g.pdays) ? g.phrs : g.pdays * 3, dl0, slip, locked, lockWhy, advise, fixed: fixedN !== null, over: b.took !== null ? b.took - g.pdays : null, began: beginMap.has(r.id), started: pickMode ? (b.picked || !!fin) : (pstartMap.has(r.id) || b.start <= todayN), manual: pstartMap.has(r.id), parent: g.parent,
+            return Object.assign({}, r, b, { i, title, finId: fin ? fin.id : null, done: !!fin, doneUndated: !!fin && b.finN === null, days: g.pdays, hrs: (g.qunit === 'hours' && g.qty > 0) ? g.qty : (g.phrs > 0 && Math.ceil(g.phrs / 3 - 1e-9) === g.pdays) ? g.phrs : g.pdays * 3, dl0, slip, locked, lockWhy, advise, fixed: fixedN !== null, over: b.took !== null ? b.took - g.pdays : null, began: beginMap.has(r.id), started: pickMode ? (b.picked || !!fin) : (pstartMap.has(r.id) || b.start <= todayN), manual: pstartMap.has(r.id), parent: g.parent,
                 work: fin ? 1 : (wk ? wk.w : 0), hasWork: !!wk && !fin, workQty: wk && !fin ? wk.qty : null, workTotal: wk && !fin ? wk.total : null, workUnit: wk ? wk.unit : null,
                 workExp: wexp, workAhead: wexp !== null ? (wk.w - wexp) * g.pdays : null });
         });
@@ -378,6 +378,8 @@
         goals.forEach(g => { if (g.parent) { if (!kidsOf.has(g.parent)) kidsOf.set(g.parent, []); kidsOf.get(g.parent).push(g); } });
         const sk = g => g.ord !== null && g.ord !== undefined ? g.ord : 1e9 + g.id;   // a task you placed by hand keeps its place; new ones come last
         kidsOf.forEach(a => a.sort((x, y) => sk(x) - sk(y)));
+        // a task that was split into sub-sections and then lost them all is a task again (it must have a Done, a tick and its hours)
+        goals.forEach(g => { if (g.kind === 'project' && g.pdays > 0 && !g.chap && !g.grp && !g.role && !g.isPhase && !g.mirror && !(kidsOf.get(g.id) || []).length) g.kind = 'piece'; });
         const sumMap = m => { let s = 0; if (m) m.forEach(q => { s += q; }); return s; };
         const itemsUnder = (root, out) => { out = out || []; (kidsOf.get(root) || []).forEach(c => { if (c.kind === 'item') out.push(c); else if (c.kind === 'project') itemsUnder(c.id, out); }); return out; };
         const ancestors = id => { const set = new Set(); let g = goals.get(id); while (g) { set.add(g.id); g = g.parent ? goals.get(g.parent) : null; } return set; };

@@ -45,46 +45,46 @@ html[data-look="flagshipd"][data-acc="gold"] {
     --fl-glow: 226, 190, 90;
 }
 
-/* ===================== The five dark themes: muted, flat, modern. Soft grey-tinted colours; only a whisper of light in the corner. ===================== */
+/* ===================== The five dark themes: flat and modern, with neon accents (only the accent is vivid; glass and text stay soft). ===================== */
 html[data-look="royal"], html[data-look="midnight"], html[data-look="deepocean"], html[data-look="ember"], html[data-look="graphite"] {
     --on-shadow: none; --warning: #f08a82; --track: rgba(255, 255, 255, 0.10); --input-bg: rgba(255, 255, 255, 0.06);
     --shadow: 0 8px 20px rgba(0, 0, 0, 0.30), 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 /* Royal Gold: near-black aubergine, soft champagne-gold hairlines, a serif feel */
 html[data-look="royal"] {
-    --blue-a: #dcc994; --blue-b: #b59d5f; --ink-a: #e2d09c; --ink-b: #c9b377; --on-accent: #1d1a12;
+    --blue-a: #ffd84a; --blue-b: #ffae00; --ink-a: #ffe27a; --ink-b: #ffc933; --on-accent: #1d1500;
     --text-main: #ece6d8; --text-muted: #a39c8c; --base: #121017; --scrim: rgba(18, 16, 23, 0.55);
     --glass: rgba(34, 31, 40, 0.62); --glass-hi: rgba(30, 27, 36, 0.96); --glass-line: rgba(201, 179, 119, 0.20); --sheen: rgba(255, 240, 200, 0.04);
     --hairline: rgba(201, 179, 119, 0.14);
     --aur-1: rgba(120, 100, 150, 0.12); --aur-2: rgba(70, 80, 120, 0.09); --aur-3: rgba(201, 179, 119, 0.05); --aur-4: rgba(110, 90, 130, 0.05);
-    --fl-glow: 200, 180, 120;
+    --fl-glow: 130, 160, 255;
 }
 html[data-look="midnight"] {
-    --blue-a: #94b8a3; --blue-b: #5f8873; --ink-a: #a9cbb7; --ink-b: #86ae98; --on-accent: #0d1713;
+    --blue-a: #3dffa8; --blue-b: #00e07a; --ink-a: #7dffc6; --ink-b: #3cf0a2; --on-accent: #03140b;
     --text-main: #e1e9e4; --text-muted: #8b9a91; --base: #0d1210; --scrim: rgba(13, 18, 16, 0.55);
     --glass: rgba(26, 34, 30, 0.62); --glass-hi: rgba(22, 30, 26, 0.96); --glass-line: rgba(255, 255, 255, 0.09); --sheen: rgba(255, 255, 255, 0.04);
     --hairline: rgba(255, 255, 255, 0.07);
     --aur-1: rgba(70, 120, 95, 0.12); --aur-2: rgba(60, 100, 85, 0.08); --aur-3: rgba(70, 120, 95, 0.05); --aur-4: rgba(90, 120, 80, 0.05);
-    --fl-glow: 120, 180, 150;
+    --fl-glow: 60, 255, 160;
 }
 html[data-look="deepocean"] {
-    --blue-a: #8aadc3; --blue-b: #5a809b; --ink-a: #a1c2d6; --ink-b: #82a8c3; --on-accent: #0b141b;
+    --blue-a: #44d2ff; --blue-b: #1f8fff; --ink-a: #84e0ff; --ink-b: #58bcff; --on-accent: #021019;
     --text-main: #e2eaf0; --text-muted: #8a98a4; --base: #0c1117; --scrim: rgba(12, 17, 23, 0.55);
     --glass: rgba(24, 33, 42, 0.62); --glass-hi: rgba(20, 28, 36, 0.96); --glass-line: rgba(255, 255, 255, 0.09); --sheen: rgba(255, 255, 255, 0.04);
     --hairline: rgba(255, 255, 255, 0.07);
     --aur-1: rgba(60, 110, 150, 0.12); --aur-2: rgba(50, 80, 130, 0.08); --aur-3: rgba(70, 130, 160, 0.05); --aur-4: rgba(70, 100, 140, 0.05);
-    --fl-glow: 120, 165, 200;
+    --fl-glow: 70, 200, 255;
 }
 html[data-look="ember"] {
-    --blue-a: #d9a98c; --blue-b: #b3775f; --ink-a: #e5bda4; --ink-b: #d0937c; --on-accent: #1f120c;
+    --blue-a: #ff9a55; --blue-b: #ff4f33; --ink-a: #ffb07a; --ink-b: #ff7d5c; --on-accent: #1d0802;
     --text-main: #efe5dd; --text-muted: #a89589; --base: #14100e; --scrim: rgba(20, 16, 14, 0.55);
     --glass: rgba(40, 32, 29, 0.62); --glass-hi: rgba(34, 27, 24, 0.96); --glass-line: rgba(255, 220, 200, 0.10); --sheen: rgba(255, 220, 200, 0.04);
     --hairline: rgba(255, 220, 200, 0.08);
     --aur-1: rgba(170, 100, 80, 0.11); --aur-2: rgba(120, 70, 80, 0.07); --aur-3: rgba(200, 140, 100, 0.05); --aur-4: rgba(110, 60, 70, 0.05);
-    --fl-glow: 210, 150, 120;
+    --fl-glow: 255, 120, 70;
 }
 html[data-look="graphite"] {
-    --blue-a: #bcc1cb; --blue-b: #868e9b; --ink-a: #d3d8e0; --ink-b: #adb5c2; --on-accent: #12151a;
+    --blue-a: #8eaeff; --blue-b: #6585ff; --ink-a: #b0c4ff; --ink-b: #8ea6ff; --on-accent: #050a1c;
     --text-main: #e9eaec; --text-muted: #9a9da3; --base: #141415; --scrim: rgba(20, 20, 21, 0.55);
     --glass: rgba(42, 44, 48, 0.62); --glass-hi: rgba(36, 38, 42, 0.96); --glass-line: rgba(255, 255, 255, 0.09); --sheen: rgba(255, 255, 255, 0.04);
     --hairline: rgba(255, 255, 255, 0.07);
