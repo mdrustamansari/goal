@@ -561,13 +561,13 @@ html.lite #scene-fx { display: none !important; }
 @keyframes pop { from { transform: scale(0); } }
 .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 
-.cstrip { display: flex; gap: 2px; height: 22px; border-radius: 8px; overflow: hidden; }
-.cstrip i { display: block; min-width: 2px; border-radius: 2px; }
+.cstrip { display: flex; gap: 1px; height: 22px; border-radius: 8px; overflow: hidden; }
+.cstrip i { display: block; min-width: 0; border-radius: 2px; }
 .cstrip i.done, .legend i.done { background: linear-gradient(180deg, #5fd3a0, #2da872); }
 .cstrip i.now, .legend i.now { background: linear-gradient(180deg, var(--blue-a), var(--blue-b)); }
 .cstrip i.late, .legend i.late { background: linear-gradient(180deg, #f0a35e, var(--warning)); }
 .cstrip i.later, .legend i.later { background: var(--track); }
-.cstrip i.lk, .legend i.lk { background: color-mix(in srgb, var(--text-muted) 35%, transparent); }
+.cstrip i.lkd, .legend i.lkd { background: color-mix(in srgb, var(--text-muted) 35%, transparent); }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 0.8rem; color: var(--text-muted); }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
 .chrow { margin-bottom: 11px; }

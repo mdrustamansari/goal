@@ -1628,9 +1628,9 @@
     }
     function chainStrip() {
         const PP = P(); if (!PP.list.length) return '';
-        const seg = p => { const c = p.done ? 'done' : p.status === 'late' ? 'late' : p.lockWhy ? 'lk' : (P().pickMode ? p.picked : p.start <= D.todayN) ? 'now' : 'later'; return `<i class="${c}" style="flex:${p.days}" title="${esc(pTitle(p))}"></i>`; };
+        const seg = p => { const c = p.done ? 'done' : p.status === 'late' ? 'late' : p.lockWhy ? 'lkd' : (P().pickMode ? p.picked : p.start <= D.todayN) ? 'now' : 'later'; return `<i class="${c}" style="flex:${p.days}" title="${esc(pTitle(p))}"></i>`; };
         return `<div class="card"><h3>The whole chain</h3><div class="cstrip">${PP.list.map(seg).join('')}</div>
-            <div class="legend"><span><i class="done"></i>done</span><span><i class="now"></i>now</span><span><i class="late"></i>late</span><span><i class="later"></i>to come</span><span><i class="lk"></i>locked</span></div>
+            <div class="legend"><span><i class="done"></i>done</span><span><i class="now"></i>now</span><span><i class="late"></i>late</span><span><i class="later"></i>to come</span><span><i class="lkd"></i>locked</span></div>
             <div class="hint mt">Each block is one task. A wider block has more allotted days.</div></div>`;
     }
     function chapterBars() {
