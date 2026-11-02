@@ -1,0 +1,13 @@
+/* Major update (Budget 3.00 / Goal 6.00): every control has a 44 px touch area, whatever its look. */
+:where(.fchip, .wz-chip, .ok, .no, .add-btn, .grip, .tick, .ol-chev, .ls-chip, .pchip, .nav-item, .link-btn, .bm-row) { position: relative; }
+.fchip::after, .wz-chip::after, .ok::after, .no::after, .add-btn::after, .grip::after, .tick::after, .ol-chev::after, .ls-chip::after, .pchip::after, .link-btn::after { content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%); }
+.nav-item { min-height: 44px; display: flex; align-items: center; justify-content: center; }
+/* more hit areas: small buttons keep their look, the finger gets 44 px */
+:where(.ico-btn, .mini-btn, .tp-chip, .phase-h, .bm-row, .bk-steps button) { position: relative; }
+.ico-btn::after, .mini-btn::after, .tp-chip::after, .phase-h::after { content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%); }
+.add-btn.sm { width: 44px; height: 44px; }
+/* nothing hides behind the floating bar or the save button */
+body { padding-bottom: calc(150px + env(safe-area-inset-bottom)); }
+/* bigger text needs more air above the markers */
+.tide .tide-top { margin-bottom: 14px; }
+.tide .tide-track { margin-top: 32px; }

@@ -419,7 +419,7 @@
         return `<div class="cat-item2 trow" data-id="${t.id}" data-act="task" style="--i:${i};--g1:${rgb(over.g1)};--g2:${rgb(over.g2)};--glow:${rgb(over.mid, 0.35)}">
             <div class="cat-meta" style="min-width:0"><div class="cat-name"><span class="cat-ico">${unitIcon(t.unit)}</span>${esc(t.g.title)}</div>
             <div class="cat-bar"><div style="width:${frac * 100}%"></div></div></div>
-            <div class="cat-spent">${doneAll ? '✓' : big}<span class="hint" style="font-family:var(--font-sans);font-weight:400;font-size:0.8rem"> ${doneAll || nothing ? '' : esc(t.unit)}</span></div>
+            <div class="cat-spent">${doneAll ? '✓' : big}<span class="hint" style="font-family:var(--font-sans);font-weight:400;font-size:0.98rem"> ${doneAll || nothing ? '' : esc(t.unit)}</span></div>
             <div class="cat-nums" style="opacity:1">${esc(line)}<div style="margin-top:4px">${statusChip(t)} <span class="chip">${esc(projTitle(t))}</span></div></div>
             <button class="add-btn sm" data-act="log" data-id="${t.id}" aria-label="Log progress">+</button></div>`;
     }
@@ -1421,12 +1421,12 @@
                 <p class="tight">Tasks follow one another on a single clock, so every day a task runs over moves all later tasks. Each day a task finishes early comes back as time.</p>`;
             [...D.goals.values()].filter(g => g.chap).sort((a, b) => a.id - b.id).forEach(c => { const a = PP.agg.get(c.id); if (!a || !a.count) return; const w = Math.min(100, Math.abs(a.slip) / 60 * 100); h += `<div class="env"><div class="top"><span>${esc(c.title)}</span><b class="${a.slip > 0.5 ? 'bad' : a.slip < -0.5 ? 'good' : ''}">${a.doneCount === a.count ? 'done' : slipText(a.slip)}</b></div><div class="slipbar"><i style="width:${a.doneCount === a.count ? 100 : w}%;background:${a.slip > 0.5 ? 'var(--warning)' : '#2da872'}"></i></div></div>`; });
             h += `</div>`;
-            const ph = [['reading', 'Reading', '📖'], ['drafting', 'Drafting', '✍️'], ['editing', 'Editing and proofreading', '🔍']].map(([k, l, ico]) => { const ps = PP.list.filter(p => p.grp === k); if (!ps.length) return ''; const td = ps.reduce((s, p) => s + p.days, 0), dd = ps.filter(p => p.done).reduce((s, p) => s + p.days, 0); return `<div class="env"><div class="top"><span>${ico} ${l}</span><b>${pctTxt(dd / td)}</b></div><div class="slipbar"><i style="width:${dd / td * 100}%;background:linear-gradient(90deg,var(--blue-a),var(--blue-b))"></i></div><div class="meta muted" style="font-size:0.85rem">${ps.filter(p => p.done).length} of ${ps.length} tasks</div></div>`; }).join('');
+            const ph = [['reading', 'Reading', '📖'], ['drafting', 'Drafting', '✍️'], ['editing', 'Editing and proofreading', '🔍']].map(([k, l, ico]) => { const ps = PP.list.filter(p => p.grp === k); if (!ps.length) return ''; const td = ps.reduce((s, p) => s + p.days, 0), dd = ps.filter(p => p.done).reduce((s, p) => s + p.days, 0); return `<div class="env"><div class="top"><span>${ico} ${l}</span><b>${pctTxt(dd / td)}</b></div><div class="slipbar"><i style="width:${dd / td * 100}%;background:linear-gradient(90deg,var(--blue-a),var(--blue-b))"></i></div><div class="meta muted" style="font-size:0.98rem">${ps.filter(p => p.done).length} of ${ps.length} tasks</div></div>`; }).join('');
             h += `<div class="card"><h3>Thesis progress</h3>${ph}<div class="hint mt">Progress is counted in allotted days, so a long task weighs more than a short one.</div></div>`;
             const recs = recsList();
             if (recs.length) h += `<div class="card"><h3>What to do next</h3>${recs.map(x => `<div class="rec ${x.c}">${x.h}</div>`).join('')}</div>`;
             const late = PP.open.filter(p => p.status === 'late').sort((a, b) => b.lateDays - a.lateDays);
-            if (late.length) h += `<div class="card"><h3>Overdue</h3>${late.map(p => `<div class="want tap" data-act="pc" data-id="${p.id}"><div class="row"><span>${esc(pTitle(p))}</span><b class="bad">${dN(p.lateDays)}</b></div><div class="meta muted" style="font-size:0.9rem">${esc((chapOf(p.id) || {}).title || 'Custom')} · due ${fmtDNum(p.due)}</div></div>`).join('')}</div>`;
+            if (late.length) h += `<div class="card"><h3>Overdue</h3>${late.map(p => `<div class="want tap" data-act="pc" data-id="${p.id}"><div class="row"><span>${esc(pTitle(p))}</span><b class="bad">${dN(p.lateDays)}</b></div><div class="meta muted" style="font-size:0.98rem">${esc((chapOf(p.id) || {}).title || 'Custom')} · due ${fmtDNum(p.due)}</div></div>`).join('')}</div>`;
         }
         const ledger = D.tasks.flatMap(t => t.ledger.map(l => ({ t, l })));
         if (ledger.length || D.leave.size || PP.rebases.length) {

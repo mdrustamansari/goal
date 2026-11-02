@@ -198,3 +198,6 @@ A multi-part entry is a short conversation, not a form. Three steps (item, quant
 Update (v2.52): the multi-step flow lives in a wizard layer above the card, never inside it. The card keeps its size; the wizard has its own keypad, Cancel and Done. Lists opened by "More…" sit in a third layer above the wizard.
 
 Rule (v2.53): choices that can change in length are underlined links; a dynamic button is a circle for one or two characters and a pill with a minimum width for longer text. Interface text cannot be selected by long press; only text boxes can.
+
+## Major update, release 1 (Budget 3.00 / Goal 6.00)
+Text never below about 11.5 px. Every control has a 44 px touch area even when it looks smaller (an invisible ::after). Bottom of every screen leaves room for the floating bar and the save button. Markers above bars get 32 px of air.
