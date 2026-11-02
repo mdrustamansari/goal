@@ -91,7 +91,9 @@
         root.setAttribute('data-theme', id);
         const fx = GLook.FIXED[prefs.look], base = !fx ? null : ({ flagship: prefs.accent === 'gold' ? '#f7f6f2' : '#f6f7fa', flagshipd: prefs.accent === 'gold' ? '#18181a' : '#17191d', royal: '#0e0b17', midnight: '#07130e', deepocean: '#04121f', ember: '#170c0b', graphite: '#131415' })[prefs.look];
         document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute('content', base || THEMES[id].mL));
-                root.classList.toggle('lite', !!prefs.lite);
+                root.style.fontSize = ({ s: '70%', m: '', l: '82%', x: '86%' })[prefs.tsize || 'm'] || '';
+        root.setAttribute('data-voice', prefs.titleFont === 'serif' ? 'serif' : 'sans');
+        root.classList.toggle('lite', !!prefs.lite);
         root.classList.toggle('pm', !!prefs.privacy);
         root.style.setProperty('--glass-blur', prefs.glassBlur + 'px');
         applyBackground();
@@ -1451,7 +1453,7 @@
     function lookCard() {
         const look = prefs.look || 'flagship', dark = GLook.isDarkLook(look), isFl = look === 'flagship' || look === 'flagshipd';
         let hasBg = false; try { hasBg = !!localStorage.getItem(K_BG); } catch (e) {}
-        let h = `<div class="card"><h3>Look</h3>` + GAcc.sec('look-l', 'Light themes', lookGrid(LIGHT_LOOKS()), !dark) + GAcc.sec('look-d', 'Dark themes', lookGrid(DARK_LOOKS()), dark);
+        let h = `<div class="card"><h3>Look</h3><div class="set-meta" style="margin-bottom:6px">Text size</div><div class="seg tsz">${[['s', 'Small'], ['m', 'Default'], ['l', 'Large'], ['x', 'Larger']].map(([k, t]) => `<button type="button" data-act="tsize" data-v="${k}" class="${(prefs.tsize || 'm') === k ? 'on' : ''}">${t}</button>`).join('')}</div><div class="set-meta" style="margin:10px 0 6px">Title style</div><div class="seg voice-seg">${[['sans', 'Sans everywhere'], ['serif', 'Serif name & question']].map(([k, t]) => `<button type="button" data-act="voice" data-v="${k}" class="${(prefs.titleFont || 'sans') === k ? 'on' : ''}">${t}</button>`).join('')}</div>` + GAcc.sec('look-l', 'Light themes', lookGrid(LIGHT_LOOKS()), !dark) + GAcc.sec('look-d', 'Dark themes', lookGrid(DARK_LOOKS()), dark);
         h += sw('follow', 'Follow my phone', 'Light or dark follows your phone. It goes to the last light or dark theme you used. Each theme stays exactly as designed.');
         if (isFl) {
             const acc = prefs.accent === 'gold' ? 'gold' : 'sapphire';
@@ -2306,6 +2308,8 @@
             case 'rebase': rebaseSheet(); break;
             case 'toggle': { ev.stopPropagation(); const o = prefs.open || []; prefs.open = o.indexOf(id) >= 0 ? o.filter(x => x !== id) : o.concat([id]); persist(); renderPlan(); break; }
             case 'accent': prefs.accent = el.dataset.v === 'gold' ? 'gold' : 'sapphire'; persist(); render(); break;
+            case 'tsize': prefs.tsize = el.dataset.v; persist(); applyTheme(); render(); break;
+            case 'voice': prefs.titleFont = el.dataset.v; persist(); applyTheme(); render(); break;
             case 'look': setLook(el.dataset.v); GLook.remember(prefs); persist(); render(); break;
             case 'pr-set': prefs.p = Object.assign({}, prefs.p, { [el.dataset.k]: el.dataset.v }); persist(); render(); break;
             case 'task-add': D.cfg ? taskSheet(0, +el.dataset.parent || 0) : cfgSheet(); break;

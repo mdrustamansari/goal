@@ -11,3 +11,19 @@ body { padding-bottom: calc(150px + env(safe-area-inset-bottom)); }
 /* bigger text needs more air above the markers */
 .tide .tide-top { margin-bottom: 14px; }
 .tide .tide-track { margin-top: 32px; }
+
+/* Release 2: one voice, one card shape.
+   Titles use the app's sans face (or serif for the app name and the big question only: Settings > Look > Title style). */
+html[data-voice][data-voice] { --font-serif: var(--font-sans); }
+html[data-voice="serif"] :is(.brand, .pl-q) { font-family: "Times New Roman", Times, "Noto Serif", serif; font-weight: 700; letter-spacing: -.3px; }
+html[data-voice] :is(.title-serif, .set-title, .ring-pct, .t-val, .cat-spent, h2, h3, .list-header > span:first-child:not(.hint)) { font-weight: 650; letter-spacing: -.2px; }
+html[data-voice="sans"] .brand { font-weight: 650; letter-spacing: -.2px; }
+html body .card { padding: 20px; border-radius: 24px; margin-bottom: 16px; }
+html body .panel { border-radius: 24px; margin-bottom: 16px; }
+.tsz button, .voice-seg button { min-height: 44px; }
+
+/* The frame never moves: nothing can widen the page, and a pinch cannot zoom it. */
+html, body { max-width: 100%; overflow-x: clip; touch-action: pan-x pan-y; overscroll-behavior-x: none; }
+.app-header > div:not(#orb) { min-width: 0; flex: 1 1 auto; }
+.app-header #orb { flex: none; }
+html body .brand { white-space: normal; font-size: min(1.55rem, 4.2vw); overflow-wrap: anywhere; }

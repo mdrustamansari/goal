@@ -201,3 +201,6 @@ Rule (v2.53): choices that can change in length are underlined links; a dynamic 
 
 ## Major update, release 1 (Budget 3.00 / Goal 6.00)
 Text never below about 11.5 px. Every control has a 44 px touch area even when it looks smaller (an invisible ::after). Bottom of every screen leaves room for the floating bar and the save button. Markers above bars get 32 px of air.
+
+## Release 2 (3.01 / 6.01)
+One voice: titles are sans; a setting offers serif for the app name and the big question only. Cards: 24 px corners, 20 px padding, 16 px gap. The frame never moves: nothing may widen the page; pinch zoom is locked. Text size is a user setting (Small, Default, Large, Larger).

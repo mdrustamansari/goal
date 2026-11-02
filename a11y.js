@@ -25,3 +25,12 @@
     later();
     root.GA11y = { pass };
 })(window);
+
+/* No pinch zoom: the frame stays fixed to the screen. */
+(function () {
+    const stop = e => e.preventDefault();
+    document.addEventListener('gesturestart', stop, { passive: false });
+    document.addEventListener('gesturechange', stop, { passive: false });
+    document.addEventListener('touchmove', e => { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+    document.addEventListener('wheel', e => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+})();

@@ -62,7 +62,7 @@ body {
     padding-top: calc(20px + env(safe-area-inset-top));
     padding-bottom: calc(100px + env(safe-area-inset-bottom));
     max-width: 640px; margin: 0 auto;
-    touch-action: manipulation;
+    touch-action: pan-x pan-y;
     transition: color 0.3s;
 }
 body::before {
