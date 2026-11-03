@@ -27,3 +27,9 @@ html, body { max-width: 100%; overflow-x: clip; touch-action: pan-x pan-y; overs
 .app-header > div:not(#orb) { min-width: 0; flex: 1 1 auto; }
 .app-header #orb { flex: none; }
 html body .brand { white-space: normal; font-size: min(1.55rem, 4.2vw); overflow-wrap: anywhere; }
+
+/* ---- release 3: sheets arrive with a soft spring (transform only: an opacity animation would switch the frosted glass off) ---- */
+@keyframes r3spring { 0% { transform: translateY(22px) scale(.94); } 55% { transform: translateY(-4px) scale(1.012); } 100% { transform: none; } }
+html body .modal-backdrop.show > .modal:not(.wz) { animation: r3spring .46s cubic-bezier(.2,.9,.3,1) both; }
+@media (prefers-reduced-motion: reduce) { html body .modal-backdrop.show > .modal { animation: none; } }
+body.still .modal-backdrop.show > .modal { animation: none !important; }

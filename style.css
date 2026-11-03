@@ -117,7 +117,7 @@ button, input, select { font: inherit; color: inherit; }
 .ring-arc { transition: stroke-dasharray 0.9s cubic-bezier(0.2, 0.8, 0.25, 1); }
 .ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .ring-pct { font-family: var(--font-serif); font-weight: 700; font-size: 1.3rem; line-height: 1; }
-.ring-cap { font-size: 0.98rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-top: 3px; }
+.ring-cap { font-size: 0.98rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-top: 3px; text-align: center; width: 100%; padding: 0 14%; box-sizing: border-box; }
 .pace { position: relative; margin-top: 18px; }
 .progress-container { width: 100%; height: 7px; background: var(--track); border-radius: 4px; overflow: hidden; }
 .progress-bar { height: 100%; border-radius: 4px; transition: width 0.3s; }
@@ -608,7 +608,7 @@ body.still .orb-btn, body.still .orb-eye, body.still .flame.lit { animation: non
 .tp-top { display: flex; align-items: center; gap: 16px; }
 .tp-ringwrap { flex: none; cursor: pointer; } .tp-ringbox { width: 104px; height: 104px; }
 .tp-ringbox svg { width: 100%; height: 100%; } .tp-num { font-family: var(--font-thin); font-size: 1.9rem; font-weight: 200; line-height: 1; }
-.tp-ringbox .ring-cap { font-size: 0.98rem; max-width: 70px; line-height: 1.1; }
+.tp-ringbox .ring-cap { font-size: 0.98rem; max-width: none; text-align: center; line-height: 1.1; }
 .tp-arc { animation: tparc 1s cubic-bezier(.2,.8,.25,1) backwards; animation-delay: var(--d, 0ms); }
 @keyframes tparc { from { stroke-dasharray: 0 226.2; } }
 .tp-side { min-width: 0; flex: 1; } .tp-sub { font-family: var(--font-thin); font-size: 1.7rem; font-weight: 200; line-height: 1.15; margin: 2px 0 8px; }

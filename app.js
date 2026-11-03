@@ -55,6 +55,12 @@
         storageOK = save(K_EV, events) && save(K_PREF, prefs);
         if (!storageOK) toast('Could not save: the phone storage may be full');
     }
+    // Delete with a way back: the delete is an event, so voiding it brings everything back exactly as it was
+    function delU(gid) {
+        const q = D.goals.get(gid), nm = q && q.title ? (q.title.length > 28 ? q.title.slice(0, 27) + '…' : q.title) : '';
+        const ev = add({ t: 'goal', op: 'del', gid }); render();
+        toast('Deleted' + (nm ? ' "' + nm + '"' : ''), () => { add({ t: 'void', target: ev.id }); render(); fx('down'); });
+    }
     function add(e, ts) {
         e.id = nextId++; e.ts = ts || Date.now();
         events.push(e); persist(); return e;
@@ -754,7 +760,7 @@
             };
             const st = box.querySelector('#pc-st'); if (st) st.onclick = () => { if (P().pickMode) { closeSheet(); beginPiece(id); return; } add({ t: 'pstart', goal: id, day: todayKey() }); closeSheet(); render(); toast('Clock started today'); };
             const sp = box.querySelector('#pc-stop'); if (sp) sp.onclick = () => { add({ t: 'unbegin', goal: id }); closeSheet(); render(); toast('Moved back to the recommended list'); };
-            box.querySelector('#pc-del').onclick = async () => { if (await confirmSheet({ title: 'Delete this task?', sub: 'It leaves the plan. Later tasks move up.', ok: 'Delete', danger: true })) { add({ t: 'goal', op: 'del', gid: id }); render(); } };
+            box.querySelector('#pc-del').onclick = async () => { if (await confirmSheet({ title: 'Delete this task?', sub: 'It leaves the plan. Later tasks move up.', ok: 'Delete', danger: true })) { delU(id); } };
         });
     }
     function nodeSheet2(id) {
@@ -777,7 +783,7 @@
             const sh = box.querySelector('#n-share'); if (sh) sh.onclick = () => { shareBudget(id); closeSheet(); render(); toast('Budget shared across the tasks'); };
             const bk = box.querySelector('#n-bulk'); if (bk) bk.onclick = () => { closeSheet(); bulkSheet(ids, g.title); };
             box.querySelector('#n-ren').onclick = async () => { const v = await promptSheet('Rename', g.title); if (v) { add({ t: 'goal', op: 'edit', gid: id, f: { title: v } }); closeSheet(); render(); } };
-            const dl = box.querySelector('#n-del'); if (dl) dl.onclick = async () => { if (await confirmSheet({ title: 'Delete "' + g.title + '"?', sub: 'Everything inside it is removed.', ok: 'Delete', danger: true })) { add({ t: 'goal', op: 'del', gid: id }); closeSheet(); render(); } };
+            const dl = box.querySelector('#n-del'); if (dl) dl.onclick = async () => { if (await confirmSheet({ title: 'Delete "' + g.title + '"?', sub: 'Everything inside it is removed.', ok: 'Delete', danger: true })) { closeSheet(); delU(id); } };
         });
     }
     function shareBudget(id) {
@@ -807,7 +813,7 @@
             ${descendants(id, g => g.role === 'analysis').length ? `<button class="btn-line btn-accent" data-act="themes-add" data-id="${id}">Add themes to the analysis</button>` : ''}
             <div class="modal-actions"><button class="btn-secondary" data-act="close">Close</button><button class="btn-secondary" id="c-ren">Rename</button>${icoBtn('del', 'id="c-del"', 'chapter')}</div>`, box => {
             box.querySelector('#c-ren').onclick = async () => { const v = await promptSheet('Rename chapter', c.title); if (v) { add({ t: 'goal', op: 'edit', gid: id, f: { title: v } }); closeSheet(); render(); } };
-            box.querySelector('#c-del').onclick = async () => { if (await confirmSheet({ title: 'Delete "' + c.title + '"?', sub: 'All its reading, drafting and editing tasks are removed.', ok: 'Delete', danger: true })) { add({ t: 'goal', op: 'del', gid: id }); closeSheet(); render(); } };
+            box.querySelector('#c-del').onclick = async () => { if (await confirmSheet({ title: 'Delete "' + c.title + '"?', sub: 'All its reading, drafting and editing tasks are removed.', ok: 'Delete', danger: true })) { closeSheet(); delU(id); } };
         });
     }
 
@@ -1497,7 +1503,7 @@
     const sRow = (page, ico, col, label, val) => `<button type="button" class="si-row" data-act="set-go" data-p="${page}">${sIco(ico, col)}<span class="si-l">${label}</span><span class="si-v">${val}</span><svg class="si-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${SI.chev}</svg></button>`;
     const sHead = t => `<button type="button" class="si-back" data-act="set-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${SI.back}</svg>Settings</button><h2 class="si-title">${t}</h2>`;
     function setBackupFacts() {
-        const lb = prefs.lastBackup; if (!lb) return { n: '—', u: 'Not backed up yet', ok: false, short: 'Not yet' };
+        const lb = prefs.lastBackup; if (!lb) return { n: '', u: 'Not backed up yet', ok: false, short: 'Not yet' };
         const days = Math.floor(Math.round((new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()) - new Date(new Date(lb).getFullYear(), new Date(lb).getMonth(), new Date(lb).getDate())) / 864e5));
         const when = days <= 0 ? ['Today', ''] : days === 1 ? ['Yesterday', ''] : [String(days), 'days ago'];
         return { n: when[0], u: when[1], ok: days < 7, short: days <= 0 ? 'Today' : days === 1 ? 'Yesterday' : days + ' days ago', days };
@@ -1539,10 +1545,10 @@
         } else if (setPage === 'backup') {
             let kb = 0; try { kb = Math.round((localStorage.getItem(K_EV) || '').length / 1024); } catch (e) {}
             h += sHead('Backup and data') + `<div class="card si-bk"><div class="si-ring ${bk.ok ? '' : 'warn'}"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="35" fill="none" stroke-width="5" class="rt"/><circle cx="40" cy="40" r="35" fill="none" stroke-width="5" stroke-linecap="round" class="ra" stroke-dasharray="${bk.ok ? 220 : 60} 220" transform="rotate(-90 40 40)"/>${bk.ok ? '<path d="M28 41l9 9 16-18" fill="none" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" class="rk"/>' : '<path d="M40 27v16M40 52v1" fill="none" stroke-width="5" stroke-linecap="round" class="rk"/>'}</svg></div>
-                <div class="si-hero"><span class="si-big ${bk.ok ? '' : 'warn'}">${bk.n}${bk.u ? `<small> ${bk.u}</small>` : ''}</span><span class="si-small">${bk.ok ? 'Your data is safe.' : (prefs.lastBackup ? 'A fresh backup is due.' : 'Back up once, to be safe.')} About ${kb} KB, kept on this phone.</span></div>
+                <div class="si-hero"><span class="si-big ${bk.ok ? '' : 'warn'}">${bk.n}${bk.u ? (bk.n ? `<small> ${bk.u}</small>` : bk.u) : ''}</span><span class="si-small">${bk.ok ? 'Your data is safe.' : (prefs.lastBackup ? 'A fresh backup is due.' : 'Back up once, to be safe.')} About ${kb} KB, kept on this phone.${(() => { const ai = window.R3 && R3.autoInfo(); return ai ? ' A safety copy from ' + fmtDay(ai.at) + ' is also kept here.' : ''; })()}</span></div>
                 <button class="btn-line btn-accent" data-act="backup" data-m="share">Back up now</button><button class="btn-line" data-act="backup" data-m="download">Save to Downloads</button></div>
                 <div class="card">${sw('remindOn', 'Daily reminder at 10 pm', 'A banner late in the evening, only if there is no backup in 18 hours.')}${sw('rememberPass', 'Remember backup password', 'Stored on this phone only.')}${sw('learnOn', 'Learn from my entries', 'Gives suggested days, habit insights and a work chain.')}</div>
-                <div class="si-links"><button type="button" class="link-btn" data-act="restore">Restore from a file</button><button type="button" class="link-btn" data-act="backup" data-m="plain">Share unencrypted copy</button><button type="button" class="link-btn" data-act="deleted">Recently deleted (${deletedList().length})</button></div>
+                <div class="si-links"><button type="button" class="link-btn" data-act="restore">Restore from a file</button>${window.R3 && R3.autoInfo() ? '<button type="button" class="link-btn" data-act="restore-auto">Restore the safety copy (' + fmtDay(R3.autoInfo().at) + ')</button>' : ''}<button type="button" class="link-btn" data-act="backup" data-m="plain">Share unencrypted copy</button><button type="button" class="link-btn" data-act="deleted">Recently deleted (${deletedList().length})</button></div>
                 <div class="si-erase"><button type="button" class="link-btn danger" data-act="erase">Erase everything…</button><p class="hint">Always asks first. Back up before you erase.</p></div>`;
         }
         put($('s-set'), h);
@@ -2237,7 +2243,7 @@
                 closeSheet(); render();
             };
             const del = box.querySelector('#g-del');
-            if (del) del.onclick = async () => { if (await confirmSheet({ title: 'Delete "' + l.title + '"?', sub: 'Its steps are removed too.', ok: 'Delete', danger: true })) { add({ t: 'goal', op: 'del', gid: id }); render(); } };
+            if (del) del.onclick = async () => { if (await confirmSheet({ title: 'Delete "' + l.title + '"?', sub: 'Its steps are removed too.', ok: 'Delete', danger: true })) { delU(id); } };
         });
     }
     function msSheet(parent) {
@@ -2288,7 +2294,7 @@
             case 'grp': case 'nodeS': nodeSheet2(id); break;
             case 'pc': pieceSheet(id); break;
             case 'swedit': { const q = D.goals.get(id); if (q && q.kind === 'piece') pieceSheet(id); else nodeSheet2(id); break; }
-            case 'swdel': { const q = D.goals.get(id); if (!q) break; const isP = q.kind === 'piece'; (async () => { if (await confirmSheet({ title: isP ? 'Delete this task?' : 'Delete "' + q.title + '"?', sub: isP ? 'It leaves the plan. Later tasks move up.' : 'Everything inside it is removed.', ok: 'Delete', danger: true })) { add({ t: 'goal', op: 'del', gid: id }); render(); toast('Deleted'); } })(); break; }
+            case 'swdel': { const q = D.goals.get(id); if (!q) break; const isP = q.kind === 'piece'; (async () => { if (await confirmSheet({ title: isP ? 'Delete this task?' : 'Delete "' + q.title + '"?', sub: isP ? 'It leaves the plan. Later tasks move up.' : 'Everything inside it is removed.', ok: 'Delete', danger: true })) { delU(id); } })(); break; }
             case 'tick': ev.stopPropagation(); tick(id); break;
             case 'sp-use': add({ t: 'speed', goal: +id, op: 'use', rate: +el.dataset.v }); closeSheet(); render(); setTimeout(() => (el.dataset.k === 'task' ? taskSheet : trackSheet)(+id), 60); break;
             case 'gr-kind': grKind = el.dataset.v === 'month' ? 'month' : 'week'; grBack = 0; grTouched = false; grSel = 0; renderOutlook(); break;
@@ -2315,7 +2321,7 @@
             case 'task-add': D.cfg ? taskSheet(0, +el.dataset.parent || 0) : cfgSheet(); break;
             case 'task': taskDetail(id); break;
             case 'task-edit': { const tt = D.goals.get(id); taskSheet(id); break; }
-            case 'task-del': if (await confirmSheet({ title: 'Delete this task?', sub: 'Its progress is removed from the plan and the buffer.', ok: 'Delete', danger: true })) { add({ t: 'goal', op: 'del', gid: id }); render(); } break;
+            case 'task-del': if (await confirmSheet({ title: 'Delete this task?', sub: 'Its progress is removed from the plan and the buffer.', ok: 'Delete', danger: true })) { delU(id); } break;
             case 'log': logSheet(id); break;
             case 'replan': replanSheet(id); break;
             case 'leave': leaveSheet(); break;
@@ -2345,6 +2351,7 @@
             case 'pin-off': if (await confirmSheet({ title: 'Remove PIN?', ok: 'Remove' })) { try { localStorage.removeItem(K_PIN); } catch (e) {} render(); } break;
             case 'backup': backupSheet(el.dataset.m); break;
             case 'restore': $('file-restore').click(); break;
+            case 'restore-auto': { const a = window.R3 && R3.autoGet(); if (a) applyRestore({ events: a.events, exportedAt: a.at }); else toast('No safety copy yet'); break; }
             case 'look-save': {
                 const skip = ['pass', 'rememberPass', 'lastBackup', 'remindSnooze', 'open', 'acc', 'defDays', 'posAsk', 'pickAsked', 'lastLight', 'lastDark', 'planToday', 'planLog'], pr = {};
                 Object.keys(prefs).forEach(k => { if (skip.indexOf(k) < 0) pr[k] = prefs[k]; });
@@ -2440,6 +2447,7 @@
           ] });
         const y0 = GResume.init({ key: 'gl_resume', screens: ['today','ins','life','mind','month','out','plan'], get: () => screen, set: s => { screen = s; } }); render(); GResume.restoreScroll(y0); companionReturns(); showSplash(); setTimeout(maybeAskPosition, 5200);
         document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(maybeAskPosition, 1800); });
+        if (window.R3) R3.init({ name: 'gl', evKey: K_EV, app: 'rustams-goals', v: 1 });
         if (window.GFeel) GFeel.saveButton({ save: () => { persist(); try { return !events.length || localStorage.getItem(K_EV) !== null; } catch (e) { return false; } }, backup: () => backupSheet('share') });
         if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
     }

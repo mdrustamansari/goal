@@ -204,3 +204,7 @@ Text never below about 11.5 px. Every control has a 44 px touch area even when i
 
 ## Release 2 (3.01 / 6.01)
 One voice: titles are sans; a setting offers serif for the app name and the big question only. Cards: 24 px corners, 20 px padding, 16 px gap. The frame never moves: nothing may widen the page; pinch zoom is locked. Text size is a user setting (Small, Default, Large, Larger).
+
+## Release 3 (6.02)
+- Same spring, Enter-to-next and safety copy as Budget 3.02 (`r3.js`, keys `gl_auto1`, `gl_auto2`).
+- Every delete goes through `delU(id)`: one place, one Undo toast.
