@@ -52,13 +52,24 @@
             let a = 0, b = 0; ds.forEach((p, i) => { const w = i + 1; a += w * p.took; b += w * p.days; });
             learned[g] = { n: ds.length, ratio: Math.min(3, Math.max(0.5, a / b)) };
         });
+        // ---- the same, in HOURS: the hours you logged in sittings against the hours you planned (needs a start and finish time or a sitting length)
+        const minBy = new Map();
+        live.forEach(e => { if (e.t === 'log' && e.sit && e.min > 0) minBy.set(e.goal, (minBy.get(e.goal) || 0) + e.min); });
+        GROUPS.forEach(g => {
+            const ds = D.pieces.list.filter(p => p.done && p.grp === g && !p.mirror && p.hrs > 0 && (minBy.get(p.id) || 0) >= 15).sort((a, b) => a.finN - b.finN).slice(-8);
+            learned[g].hn = ds.length; learned[g].hr = null;
+            if (ds.length < MIN_SAMPLES) return;
+            let a = 0, b = 0; ds.forEach((p, i) => { const w = i + 1; a += w * minBy.get(p.id) / 60; b += w * p.hrs; });
+            learned[g].hr = Math.min(3, Math.max(0.5, a / b));
+        });
         // ---- suggestions: only for tasks that have not started and have no hard date. You decide; nothing changes by itself.
         const suggestions = [];
         GROUPS.forEach(g => {
-            const L = learned[g]; if (L.ratio === null || (L.ratio > 0.85 && L.ratio < 1.15)) return;
+            const L = learned[g], r = L.hr !== null && L.hr !== undefined ? L.hr : L.ratio; if (r === null || (r > 0.85 && r < 1.15)) return;
+            const byH = L.hr !== null && L.hr !== undefined;
             const ps = D.pieces.list.filter(p => !p.done && p.grp === g && p.status === 'later' && !p.fixed && !p.g.mirror)
-                .map(p => ({ id: p.id, title: p.title, from: p.days, to: Math.max(1, Math.round(p.days * L.ratio)) })).filter(x => x.to !== x.from);
-            if (ps.length) suggestions.push({ grp: g, ratio: L.ratio, n: L.n, pieces: ps, change: ps.reduce((t, x) => t + x.to - x.from, 0) });
+                .map(p => { const toH = byH ? Math.max(0.5, Math.round(p.hrs * r * 2) / 2) : null; return { id: p.id, title: p.title, from: p.days, to: byH ? Math.max(1, Math.ceil(toH / 3 - 1e-9)) : Math.max(1, Math.round(p.days * r)), fromH: p.hrs, toH }; }).filter(x => x.to !== x.from || (x.toH !== null && x.toH !== x.fromH));
+            if (ps.length) suggestions.push({ grp: g, ratio: r, byH, n: byH ? L.hn : L.n, pieces: ps, change: ps.reduce((t, x) => t + x.to - x.from, 0) });
         });
 
         // ---- the companion's mood

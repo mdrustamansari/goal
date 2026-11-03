@@ -1169,9 +1169,21 @@
     };
     function tornStrip() {
         const L = lastSitting(), next = () => { lineBump++; return pickLine(); };
-        if (!L) return GBanner.html({ last: null, tips: prefs.lineOn, next });
-                const txt = L.unit === 'pages' ? `You last stopped at page <b>${N(L.page)}</b>, ${whenWords(L.ts)}.` : `You last stopped at <b>${N(L.page)}</b> ${esc(L.unit)}, ${whenWords(L.ts)}.`;
-        return GBanner.html({ last: { html: txt, tell: `Your last entry was ${N(L.qty)} ${L.unit}. Tap Log history to see all of them.`, act: 'hist' }, tips: prefs.lineOn, next });
+        const lastAny = D.logs.slice().sort((a, b) => b.ts - a.ts)[0];
+        if (!L && !lastAny) return GBanner.html({ last: null, tips: prefs.lineOn, next });
+        const short = id => { const t = (D.goals.get(id) || {}).title || ''; return t.length > 26 ? t.slice(0, 25) + '…' : t; };
+        const kindWord = id => { const k = kindOfGoal(id); return k && KIND_N[k] ? KIND_N[k] : ''; };
+        let txt, tell, act = 'hist';
+        if (lastAny && lastAny.sit && (!L || lastAny.ts >= L.ts)) {       // the newest thing is a timed sitting: say what kind of work, which task, how long
+            const k = kindWord(lastAny.goal), hrs = (lastAny.min > 0 ? lastAny.min / 60 : lastAny.qty);
+            txt = `Last work: <b>${k ? esc(k) + ' · ' : ''}${esc(short(lastAny.goal))}</b>, ${hrsTxt(hrs)}, ${whenWords(lastAny.ts)}.`;
+            tell = `Your last sitting was ${hrsTxt(hrs)}${k ? ' of ' + k.toLowerCase() : ''}. Tap Log history to see all of them.`;
+        } else {
+            const k = kindWord(L.goal), tl = `${k ? '<b>' + esc(k) + '</b> · ' : ''}${esc(short(L.goal))}: `;
+            txt = L.unit === 'pages' ? `${tl}you last stopped at page <b>${N(L.page)}</b>, ${whenWords(L.ts)}.` : `${tl}you last stopped at <b>${N(L.page)}</b> ${esc(L.unit)}, ${whenWords(L.ts)}.`;
+            tell = `Your last entry was ${N(L.qty)} ${L.unit}. Tap Log history to see all of them.`;
+        }
+        return GBanner.html({ last: { html: txt, tell, act }, tips: prefs.lineOn, next });
     }
     /* work-day balance this week: hours worked against 3 h a work day. Today counts only once it is met (or in the evening), so a half-finished day never shows as a loss. */
     function weekInfo() {
@@ -1232,7 +1244,7 @@
         }
         const tone = left > 0.02 ? 'blue' : 'green';
         let hint = ''; try { const n = +localStorage.getItem('gl_tellhint') || 0; if (n < 12) { localStorage.setItem('gl_tellhint', String(n + 1)); hint = ' wd-hint'; } } catch (e) {}
-        return wdCard({ hint, cap: 'Today · plan', ic: left > 0.02 ? 'clock' : 'up', tone, h: done, big: hrsTxt(done), unit: `of ${hrsTxt(pl.h)} planned${left > 0.02 ? '' : ' · plan met'}`, size: 60, label: 1, sub: `${wdText(done)} done today`, more: `${rows.join('')}<button type="button" class="btn-line btn-accent wd-go" ${btn.a}>${esc(btn.t)}</button><button type="button" class="link-btn" data-act="plan-change">Change today's hours</button>` });
+        return wdCard({ hint, cap: 'Today · plan', ic: left > 0.02 ? 'clock' : 'up', tone, h: done, big: hrsTxt(done), unit: `of ${hrsTxt(pl.h)} planned${left > 0.02 ? '' : ' · plan met'}`, size: 60, label: 1, sub: `${wdText(done)} done today${(() => { const kl = kindsLine(hoursByKind(D.todayN)); return kl ? ' · ' + kl : ''; })()}`, more: `${rows.join('')}<button type="button" class="btn-line btn-accent wd-go" ${btn.a}>${esc(btn.t)}</button><button type="button" class="link-btn" data-act="plan-change">Change today's hours</button>` });
     }
     function renderToday() {
         const el = $('s-today'); let h = '';
@@ -1650,12 +1662,26 @@
         const GN = { reading: 'Reading', drafting: 'Drafting', editing: 'Editing and proofreading' };
         let h = `<div class="card"><h3>What the app has learned</h3>`;
         if (prefs.learnOn === false) return h + `<p class="hint">Learning is switched off in Settings.</p></div>`;
-        const rows = window.GInsight.GROUPS.map(g => { const L = IN.learned[g]; return L.ratio === null ? `<div class="row"><span class="muted">${GN[g]}</span><span class="muted">needs ${window.GInsight.MIN_SAMPLES - L.n} more finished ${window.GInsight.MIN_SAMPLES - L.n === 1 ? 'task' : 'tasks'}</span></div>` : `<div class="row"><span class="muted">${GN[g]}</span><b class="num ${L.ratio > 1.15 ? 'bad' : L.ratio < 0.85 ? 'good' : ''}">${N(L.ratio)}× your plan</b></div>`; }).join('');
-        h += rows + `<div class="hint mt">The app compares the days you take with the days you allot. Newer tasks count more. It needs ${window.GInsight.MIN_SAMPLES} finished tasks of one kind before it learns.</div>`;
+        const GI = window.GInsight; const rows = GI.GROUPS.map(g => { const L = IN.learned[g], byH = L.hr !== null && L.hr !== undefined, r = byH ? L.hr : L.ratio; return r === null || r === undefined ? `<div class="row"><span class="muted">${GN[g]}</span><span class="muted">needs ${Math.max(1, GI.MIN_SAMPLES - Math.max(L.n, L.hn || 0))} more finished ${Math.max(1, GI.MIN_SAMPLES - Math.max(L.n, L.hn || 0)) === 1 ? 'task' : 'tasks'}</span></div>` : `<div class="row"><span class="muted">${GN[g]}</span><b class="num ${r > 1.15 ? 'bad' : r < 0.85 ? 'good' : ''}">${N(r)}× your plan${byH ? ' in hours' : ' in days'}</b></div>`; }).join('');
+        h += rows + `<div class="hint mt">The app compares the work hours you log in sittings with the hours you plan for a task (and falls back to days when a task has no timed sittings). Newer tasks count more. It needs ${window.GInsight.MIN_SAMPLES} finished tasks of one kind before it learns.</div>${dayLenLine()}`;
         IN.suggestions.forEach(s => {
-            h += `<div class="sugg"><div><b>${GN[s.grp]}</b> takes you ${N(s.ratio)} times the days you allot.</div><div class="hint">${plural(s.pieces.length, 'task')} not yet started would change by ${s.change > 0 ? '+' : ''}${s.change} days in total. Your first deadlines stay fixed, so the delay still shows.</div><div class="hint">${s.pieces.slice(0, 3).map(x => `${esc(x.title)} ${x.from}→${x.to}`).join(' · ')}${s.pieces.length > 3 ? ' …' : ''}</div><button class="btn-line btn-accent" data-act="sugg" data-g="${s.grp}">Use these days</button></div>`;
+            h += `<div class="sugg"><div><b>${GN[s.grp]}</b> takes you ${N(s.ratio)} times the ${s.byH ? 'hours' : 'days'} you plan.</div><div class="hint">${plural(s.pieces.length, 'task')} not yet started would change by ${s.change > 0 ? '+' : ''}${s.change} days in total. Your first deadlines stay fixed, so the delay still shows.</div><div class="hint">${s.pieces.slice(0, 3).map(x => `${esc(x.title)} ${x.toH !== null && x.toH !== undefined ? hTxt(x.fromH) + '→' + hTxt(x.toH) : x.from + '→' + x.to}`).join(' · ')}${s.pieces.length > 3 ? ' …' : ''}</div><button class="btn-line btn-accent" data-act="sugg" data-g="${s.grp}">Use these ${s.byH ? 'hours' : 'days'}</button></div>`;
         });
         return h + '</div>';
+    }
+    // work by kind: Reading, Drafting, Editing and proofreading, in work hours (the one unit behind every sum)
+    const KIND_N = { reading: 'Reading', drafting: 'Drafting', editing: 'Editing' };
+    function kindOfGoal(id) { let g = D.goals.get(id), n = 0; while (g && n++ < 12) { if (g.grp || g.phase) return g.grp || g.phase; g = g.parent ? D.goals.get(g.parent) : null; } return null; }
+    function hoursByKind(dayN) { const o = { reading: 0, drafting: 0, editing: 0 }; try { GReport.prep(gInputs()).filter(l => l.day === dayN).forEach(l => { const k = kindOfGoal(l.key); if (k && k in o) o[k] += l.h; }); } catch (e) {} return o; }
+    const kindsLine = o => Object.keys(o).filter(k => o[k] > 0.05).map(k => `${KIND_N[k]} ${hrsTxt(o[k])}`).join(' · ');
+    // how long your real working day is: hours logged on days you worked, set against the 3 hours that make one work day
+    function dayLenLine() {
+        try {
+            const by = new Map(), n0 = D.todayN; GReport.prep(gInputs()).filter(l => l.day > n0 - 28 && l.day <= n0).forEach(l => by.set(l.day, (by.get(l.day) || 0) + l.h));
+            if (by.size < 7) return '';
+            const avg = [...by.values()].reduce((s, x) => s + x, 0) / by.size;
+            return `<div class="hint mt">On the ${by.size} days you worked in the last 4 weeks you averaged ${hrsTxt(avg)} a day. One work day is still counted as ${WD_H} hours. ${Math.abs(avg - WD_H) >= 0.5 ? 'That is a clear gap, so the app will offer to change it once you agree.' : 'That is close, so nothing needs changing.'}</div>`;
+        } catch (e) { return ''; }
     }
     // when in the day you work, and how fast you go, from the time of every entry
     function dayPartLine() {
@@ -2330,7 +2356,7 @@
             case 'orb': toast(orbMessage()); break;
             case 'sugg': {
                 const s = (IN && IN.suggestions || []).find(x => x.grp === el.dataset.g); if (!s) break;
-                const made = s.pieces.map(x => add({ t: 'goal', op: 'edit', gid: x.id, f: { pdays: x.to } })); render();
+                const made = s.pieces.map(x => add({ t: 'goal', op: 'edit', gid: x.id, f: x.toH !== null && x.toH !== undefined ? { pdays: x.to, phrs: x.toH } : { pdays: x.to } })); render();
                 toast(plural(made.length, 'task') + ' updated', () => { made.forEach(e => add({ t: 'void', target: e.id })); render(); fx('down'); }); break;
             }
             case 'deleted': deletedSheet(); break;

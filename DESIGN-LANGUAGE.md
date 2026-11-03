@@ -208,3 +208,7 @@ One voice: titles are sans; a setting offers serif for the app name and the big 
 ## Release 3 (6.02)
 - Same spring, Enter-to-next and safety copy as Budget 3.02 (`r3.js`, keys `gl_auto1`, `gl_auto2`).
 - Every delete goes through `delU(id)`: one place, one Undo toast.
+
+## 6.03: work named by kind
+- Kinds are Reading, Drafting, Editing (shown "Editing" in short lines, "Editing and proofreading" in full). `kindOfGoal(id)` finds it by walking up to the phase or group.
+- Pace is learned in hours first (`learned[g].hr`), in days as the fallback.
