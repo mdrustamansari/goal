@@ -197,6 +197,7 @@ ${A('gf-snd', 'Sounds', snd, true)}${A('gf-vib', 'Vibration', vib, false)}${A('g
     });
 
     const api = { play, buzz, moment, settingsHTML, saveButton, prefs: { get: load, set }, names: () => Object.keys(SOUNDS), lengths: () => Object.fromEntries(Object.entries(SOUNDS).map(([k, v]) => [k, v[0]])),
+        flash() { if (!btn || load().save === false) return; btn.classList.add('flash', 'ok'); clearTimeout(api._ft); api._ft = setTimeout(() => btn.classList.remove('flash', 'ok'), 2400); },
         _onSave() { if (btn) btn.style.display = load().save === false ? 'none' : ''; if (pop && load().save === false) pop.classList.remove('show'); } };
     root.GFeel = api;
 })(typeof window !== 'undefined' ? window : this);

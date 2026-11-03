@@ -62,6 +62,7 @@
         toast('Deleted' + (nm ? ' "' + nm + '"' : ''), () => { add({ t: 'void', target: ev.id }); render(); fx('down'); });
     }
     function add(e, ts) {
+        if (window.GFeel && GFeel.flash) setTimeout(GFeel.flash, 0);
         e.id = nextId++; e.ts = ts || Date.now();
         events.push(e); persist(); return e;
     }
@@ -1167,6 +1168,18 @@
         const day = days <= 0 ? 'today' : days === 1 ? 'yesterday' : days < 7 ? 'on ' + d.toLocaleDateString('en-GB', { weekday: 'long' }) : 'on ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
         return `${day} at ${tm}`;
     };
+    /* the orb's best next step: the same choice as the Today card's main button */
+    function orbPick() {
+        if (screen === 'set' || !D || !D.cfg) return null;
+        if (screen === 'plan') return { icon: 'plus', label: 'Add task', act: 'task-add' };
+        const PP = P(), act = PP.active[0] || null, tk = act ? trackOf(act.id) : null;
+        let met = false;
+        try { const pl = prefs.planToday; if (pl && pl.k === todayKey() && pl.h > 0) { const n0 = E.dn(todayKey()); const done = GReport.prep(gInputs()).filter(l => l.day === n0).reduce((s, l) => s + l.h, 0); met = done >= pl.h - 0.02; } } catch (e) {}
+        if (act && (met || !tk)) return { icon: 'check', label: 'Finish task', act: 'tick', id: act.id };
+        if (act && tk) return { icon: 'plus', label: 'Log work', act: 'tlog', id: tk.id };
+        if (PP.upcoming[0]) return { icon: 'play', label: 'Start task', act: 'begin', id: PP.upcoming[0].id };
+        return { icon: 'plus', label: 'Choose task', act: 'pick' };
+    }
     function tornStrip() {
         const L = lastSitting(), next = () => { lineBump++; return pickLine(); };
         const lastAny = D.logs.slice().sort((a, b) => b.ts - a.ts)[0];
@@ -1174,7 +1187,11 @@
         const short = id => { const t = (D.goals.get(id) || {}).title || ''; return t.length > 26 ? t.slice(0, 25) + '…' : t; };
         const kindWord = id => { const k = kindOfGoal(id); return k && KIND_N[k] ? KIND_N[k] : ''; };
         let txt, tell, act = 'hist';
-        if (lastAny && lastAny.sit && (!L || lastAny.ts >= L.ts)) {       // the newest thing is a timed sitting: say what kind of work, which task, how long
+        if (L && L.unit === 'hours' && !(lastAny && lastAny.sit && lastAny.ts >= L.ts)) {       // an hours task: say the time, not a position
+            const k = kindWord(L.goal);
+            txt = `Last work: <b>${k ? esc(k) + ' · ' : ''}${esc(short(L.goal))}</b>, ${hrsTxt(L.qty)}, ${whenWords(L.ts)}.`;
+            tell = `Your last entry was ${hrsTxt(L.qty)}. Tap Log history to see all of them.`;
+        } else if (lastAny && lastAny.sit && (!L || lastAny.ts >= L.ts)) {       // the newest thing is a timed sitting: say what kind of work, which task, how long
             const k = kindWord(lastAny.goal), hrs = (lastAny.min > 0 ? lastAny.min / 60 : lastAny.qty);
             txt = `Last work: <b>${k ? esc(k) + ' · ' : ''}${esc(short(lastAny.goal))}</b>, ${hrsTxt(hrs)}, ${whenWords(lastAny.ts)}.`;
             tell = `Your last sitting was ${hrsTxt(hrs)}${k ? ' of ' + k.toLowerCase() : ''}. Tap Log history to see all of them.`;
@@ -2048,6 +2065,7 @@
         document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === 's-' + screen));
         document.body.classList.toggle('still', quiet || prefs.animOn === false || reduced());
         ({ today: renderToday, plan: renderPlan, out: renderOutlook, life: renderLife, set: renderSet })[screen]();
+        if (window.GOrb) GOrb.refresh();
         renderOrb(); countUps();
     }
 
@@ -2473,6 +2491,7 @@
           ] });
         const y0 = GResume.init({ key: 'gl_resume', screens: ['today','ins','life','mind','month','out','plan'], get: () => screen, set: s => { screen = s; } }); render(); GResume.restoreScroll(y0); companionReturns(); showSplash(); setTimeout(maybeAskPosition, 5200);
         document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(maybeAskPosition, 1800); });
+        if (window.GOrb) GOrb.init({ pick: orbPick });
         if (window.R3) R3.init({ name: 'gl', evKey: K_EV, app: 'rustams-goals', v: 1 });
         if (window.GFeel) GFeel.saveButton({ save: () => { persist(); try { return !events.length || localStorage.getItem(K_EV) !== null; } catch (e) { return false; } }, backup: () => backupSheet('share') });
         if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
